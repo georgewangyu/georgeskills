@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import math
 import os
@@ -33,6 +34,7 @@ from repo_paths import resolve_private_repo_root
 ROOT = resolve_private_repo_root()
 TOKENS_FILE = ROOT / ".tokens" / "traccar.env"
 PLACES_FILE = ROOT / ".tokens" / "location_places.json"
+TRACCAR_CACHE_DIR = ROOT / ".cache" / "traccar"
 LOCAL_TZ = datetime.now().astimezone().tzinfo
 GEOCODER_USER_AGENT = "georgeskills-journal-ops/1.0"
 
@@ -83,6 +85,7 @@ class ReportStop:
 STATIONARY_SPEED_KPH = 3.0
 STOP_RADIUS_M = 120.0
 MIN_STOP_MINUTES = 8
+CACHE_TTL_SECONDS = 300
 
 
 def load_env_file(path: Path) -> None:
@@ -140,6 +143,46 @@ def api_get_json(base_url: str, email: str, password: str, path: str, params: di
         return json.loads(resp.read().decode("utf-8"))
 
 
+def cache_ttl_seconds() -> int:
+    raw = os.environ.get("TRACCAR_CACHE_TTL_SECONDS", "").strip()
+    if not raw:
+        return CACHE_TTL_SECONDS
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return CACHE_TTL_SECONDS
+
+
+def cache_path(endpoint: str, device_id: str, day_text: str) -> Path:
+    key = hashlib.sha1(f"{endpoint}|{device_id}|{day_text}".encode("utf-8")).hexdigest()[:12]
+    return TRACCAR_CACHE_DIR / day_text / f"{endpoint}_{device_id}_{key}.json"
+
+
+def load_cached_json(endpoint: str, device_id: str, day_text: str) -> Any | None:
+    ttl = cache_ttl_seconds()
+    if ttl <= 0:
+        return None
+    path = cache_path(endpoint, device_id, day_text)
+    if not path.exists():
+        return None
+    age = datetime.now().timestamp() - path.stat().st_mtime
+    if age > ttl:
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def save_cached_json(endpoint: str, device_id: str, day_text: str, payload: Any) -> None:
+    ttl = cache_ttl_seconds()
+    if ttl <= 0:
+        return
+    path = cache_path(endpoint, device_id, day_text)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+
 def fetch_public_json(url: str) -> Any:
     req = request.Request(url)
     req.add_header("Accept", "application/json")
@@ -190,17 +233,20 @@ def fetch_positions(config: TraccarConfig, day_text: str) -> list[Position]:
         start_dt = start_dt.replace(tzinfo=LOCAL_TZ)
         end_dt = end_dt.replace(tzinfo=LOCAL_TZ)
 
-    payload = api_get_json(
-        config.base_url,
-        config.email,
-        config.password,
-        "/api/reports/route",
-        {
-            "deviceId": config.device_id,
-            "from": start_dt.isoformat(),
-            "to": end_dt.isoformat(),
-        },
-    )
+    payload = load_cached_json("route", config.device_id, day_text)
+    if payload is None:
+        payload = api_get_json(
+            config.base_url,
+            config.email,
+            config.password,
+            "/api/reports/route",
+            {
+                "deviceId": config.device_id,
+                "from": start_dt.isoformat(),
+                "to": end_dt.isoformat(),
+            },
+        )
+        save_cached_json("route", config.device_id, day_text, payload)
 
     positions: list[Position] = []
     for row in payload:
@@ -230,17 +276,20 @@ def fetch_report_stops(config: TraccarConfig, day_text: str) -> list[ReportStop]
         start_dt = start_dt.replace(tzinfo=LOCAL_TZ)
         end_dt = end_dt.replace(tzinfo=LOCAL_TZ)
 
-    payload = api_get_json(
-        config.base_url,
-        config.email,
-        config.password,
-        "/api/reports/stops",
-        {
-            "deviceId": config.device_id,
-            "from": start_dt.isoformat(),
-            "to": end_dt.isoformat(),
-        },
-    )
+    payload = load_cached_json("stops", config.device_id, day_text)
+    if payload is None:
+        payload = api_get_json(
+            config.base_url,
+            config.email,
+            config.password,
+            "/api/reports/stops",
+            {
+                "deviceId": config.device_id,
+                "from": start_dt.isoformat(),
+                "to": end_dt.isoformat(),
+            },
+        )
+        save_cached_json("stops", config.device_id, day_text, payload)
 
     stops: list[ReportStop] = []
     for row in payload:
@@ -483,7 +532,7 @@ def summarize_report_stops(stops: list[ReportStop], places: list[SavedPlace]) ->
     return summaries[:8]
 
 
-def print_summary(day_text: str, positions: list[Position], places: list[SavedPlace]) -> None:
+def print_summary(day_text: str, config: TraccarConfig, positions: list[Position], places: list[SavedPlace]) -> None:
     print(f"Location context for {day_text}:")
     if not positions:
         print("- No Traccar positions found for this date.")
@@ -512,10 +561,8 @@ def print_summary(day_text: str, positions: list[Position], places: list[SavedPl
 
     stops: list[str] = []
     try:
-        config = build_config()
-        if config is not None:
-            report_stops = fetch_report_stops(config, day_text)
-            stops = summarize_report_stops(report_stops, places)
+        report_stops = fetch_report_stops(config, day_text)
+        stops = summarize_report_stops(report_stops, places)
     except Exception:
         stops = []
 
@@ -552,7 +599,7 @@ def main() -> int:
         return 0
 
     places = load_places(PLACES_FILE)
-    print_summary(args.date, positions, places)
+    print_summary(args.date, config, positions, places)
     return 0
 
 

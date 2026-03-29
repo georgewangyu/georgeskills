@@ -10,18 +10,20 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from health_paths import apple_health_export_xml, health_auto_export_raw_dir
+from health_paths import apple_health_export_xml, health_auto_export_raw_dir, resolve_health_records_root
 from repo_paths import resolve_private_repo_root
 
 ROOT = resolve_private_repo_root()
 DEFAULT_EXPORT_XML = apple_health_export_xml(ROOT)
 DEFAULT_RAW_JSON_DIR = health_auto_export_raw_dir(ROOT)
+OVERNIGHT_CACHE_DIR = resolve_health_records_root(ROOT) / ".cache" / "overnight_analysis"
 
 SLEEP_ASLEEP_VALUES = {
     "HKCategoryValueSleepAnalysisAsleep",
@@ -119,6 +121,77 @@ def overlaps(start: datetime, end: datetime, window_start: datetime, window_end:
 
 def latest_json_candidates(raw_json_dir: Path) -> list[Path]:
     return sorted(raw_json_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+
+
+def _source_state(path: Path | None) -> dict[str, Any]:
+    if path is None or not path.exists():
+        return {"path": "", "mtime_ns": None, "size": None}
+    stat = path.stat()
+    return {"path": str(path), "mtime_ns": stat.st_mtime_ns, "size": stat.st_size}
+
+
+def _cache_path_for(target_date: str) -> Path:
+    return OVERNIGHT_CACHE_DIR / f"{target_date}.json"
+
+
+def _truthy_env(name: str) -> bool | None:
+    raw = os.environ.get(name, "").strip().lower()
+    if not raw:
+        return None
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    return None
+
+
+def should_allow_xml_fallback(target_date: str) -> bool:
+    override = _truthy_env("LIFEREPO_HEALTH_ALLOW_XML_FALLBACK")
+    if override is not None:
+        return override
+    # Morning runs usually target "today", and current-day JSON exports often do
+    # not yet include overnight sleep/SpO2. Avoid reparsing the full XML export
+    # on that path unless explicitly requested.
+    return target_date != date.today().isoformat()
+
+
+def load_cached_result(target_date: str, *, export_xml: Path, latest_json: Path | None) -> dict[str, Any] | None:
+    cache_path = _cache_path_for(target_date)
+    if not cache_path.exists():
+        return None
+    try:
+        payload = json.loads(cache_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+    expected_state = {
+        "target_date": target_date,
+        "export_xml": _source_state(export_xml),
+        "latest_json": _source_state(latest_json),
+    }
+    if payload.get("cache_state") != expected_state:
+        return None
+
+    result = payload.get("result")
+    if not isinstance(result, dict):
+        return None
+    result = dict(result)
+    result["source"] = "xml-cache"
+    return result
+
+
+def save_cached_result(target_date: str, *, export_xml: Path, latest_json: Path | None, result: dict[str, Any]) -> None:
+    cache_path = _cache_path_for(target_date)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "cache_state": {
+            "target_date": target_date,
+            "export_xml": _source_state(export_xml),
+            "latest_json": _source_state(latest_json),
+        },
+        "result": result,
+    }
+    cache_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
 
 
 def collect_from_json(raw_json_dir: Path, target_date: str) -> tuple[list[SleepInterval], list[TimedSample], list[TimedSample]]:
@@ -292,8 +365,14 @@ def analyze_overnight(target_date: str, export_xml: Path | None = None, raw_json
     sleep_intervals, oxygen_samples, hr_samples = collect_from_json(raw_json_dir, target_date)
     source = "json"
     if not sleep_intervals and not oxygen_samples and export_xml.exists():
-        sleep_intervals, oxygen_samples, hr_samples = collect_from_xml(export_xml, target_date)
-        source = "xml"
+        latest_json = latest_json_candidates(raw_json_dir)
+        latest_json_path = latest_json[0] if latest_json else None
+        cached = load_cached_result(target_date, export_xml=export_xml, latest_json=latest_json_path)
+        if cached is not None:
+            return cached
+        if should_allow_xml_fallback(target_date):
+            sleep_intervals, oxygen_samples, hr_samples = collect_from_xml(export_xml, target_date)
+            source = "xml"
 
     oxygen_during_sleep = overlap_sleep_only(oxygen_samples, sleep_intervals) or oxygen_samples
     hr_during_sleep = overlap_sleep_only(hr_samples, sleep_intervals) or hr_samples
@@ -301,7 +380,7 @@ def analyze_overnight(target_date: str, export_xml: Path | None = None, raw_json
     hr_stats = sample_stats(hr_during_sleep)
     severity, findings = classify_overnight_oxygen(oxygen_stats)
 
-    return {
+    result = {
         "target_date": target_date,
         "source": source,
         "sleep_interval_count": len(sleep_intervals),
@@ -311,6 +390,11 @@ def analyze_overnight(target_date: str, export_xml: Path | None = None, raw_json
         "severity": severity,
         "findings": findings,
     }
+    if source == "xml":
+        latest_json = latest_json_candidates(raw_json_dir)
+        latest_json_path = latest_json[0] if latest_json else None
+        save_cached_result(target_date, export_xml=export_xml, latest_json=latest_json_path, result=result)
+    return result
 
 
 def fmt_pct(value: float | None) -> str:

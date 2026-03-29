@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -64,6 +65,13 @@ class StepResult:
     detail: str
 
 
+def _print_proc_output(proc: subprocess.CompletedProcess[str]) -> None:
+    if proc.stdout:
+        print(proc.stdout, end="" if proc.stdout.endswith("\n") else "\n")
+    if proc.stderr:
+        print(proc.stderr, end="" if proc.stderr.endswith("\n") else "\n", file=sys.stderr)
+
+
 def run_step(name: str, cmd: list[str], *, ok_codes: set[int] | None = None) -> StepResult:
     ok_codes = ok_codes or {0}
     print(f"\n== {name} ==")
@@ -72,6 +80,33 @@ def run_step(name: str, cmd: list[str], *, ok_codes: set[int] | None = None) -> 
     if proc.returncode in ok_codes:
         return StepResult(name=name, ok=True, detail=f"exit {proc.returncode}")
     return StepResult(name=name, ok=False, detail=f"exit {proc.returncode}")
+
+
+def run_step_captured(name: str, cmd: list[str], *, ok_codes: set[int] | None = None) -> StepResult:
+    ok_codes = ok_codes or {0}
+    proc = subprocess.run(cmd, cwd=ROOT, text=True, capture_output=True)
+    print(f"\n== {name} ==")
+    print("$", " ".join(cmd))
+    _print_proc_output(proc)
+    if proc.returncode in ok_codes:
+        return StepResult(name=name, ok=True, detail=f"exit {proc.returncode}")
+    return StepResult(name=name, ok=False, detail=f"exit {proc.returncode}")
+
+
+def run_steps_parallel(step_specs: list[tuple[str, list[str], set[int] | None]]) -> list[StepResult]:
+    if not step_specs:
+        return []
+
+    results_by_index: dict[int, StepResult] = {}
+    with ThreadPoolExecutor(max_workers=len(step_specs)) as executor:
+        futures = [
+            executor.submit(run_step_captured, name, cmd, ok_codes=ok_codes)
+            for name, cmd, ok_codes in step_specs
+        ]
+        for idx, future in enumerate(futures):
+            results_by_index[idx] = future.result()
+
+    return [results_by_index[idx] for idx in range(len(step_specs))]
 
 
 def latest_health_auto_export_csv() -> Path | None:
@@ -192,8 +227,11 @@ def main() -> int:
         results.append(run_step("Apple Notes export", ["python3", str(APPLE_NOTES_EXPORT)]))
         results.append(run_step("Email export", ["python3", str(EMAIL_EXPORT)]))
         results.append(run_step("Calendar export", ["python3", str(CALENDAR_EXPORT)]))
-    results.append(run_step("Email interview context", ["python3", str(PRINT_EMAIL), "--date", args.date]))
-    results.append(run_step("Location interview context", ["python3", str(PRINT_LOCATION), "--date", args.date]))
+
+    initial_parallel_steps: list[tuple[str, list[str], set[int] | None]] = [
+        ("Email interview context", ["python3", str(PRINT_EMAIL), "--date", args.date], None),
+        ("Location interview context", ["python3", str(PRINT_LOCATION), "--date", args.date], None),
+    ]
 
     health_missing = False
     if not args.skip_health:
@@ -212,9 +250,12 @@ def main() -> int:
             print("\n== Health import source ==")
             print(source_label)
             for idx, cmd in enumerate(commands, start=1):
-                label = f"Health step {idx}"
-                results.append(run_step(label, cmd))
-            results.append(run_step("Health interview context", ["python3", str(PRINT_HEALTH), "--date", args.date]))
+                initial_parallel_steps.append((f"Health step {idx}", cmd, None))
+
+    results.extend(run_steps_parallel(initial_parallel_steps))
+
+    if not args.skip_health and not health_missing:
+        results.append(run_step("Health interview context", ["python3", str(PRINT_HEALTH), "--date", args.date]))
 
     results.append(run_step("Workflow completeness", ["python3", str(CHECK_COMPLETENESS), "--date", args.date], ok_codes={0, 1}))
 
