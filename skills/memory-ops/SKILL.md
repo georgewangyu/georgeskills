@@ -1,6 +1,6 @@
 ---
 name: memory-ops
-description: Modular tooling for structured memory extraction, validation, and promotion workflows.
+description: Modular tooling for structured memory extraction, validation, promotion workflows, and document access/salience indexing.
 memory_tags:
   - domain:memory
   - workflow:candidate-promotion

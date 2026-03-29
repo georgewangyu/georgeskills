@@ -1,6 +1,6 @@
 ---
 name: utility-ops
-description: Modular utility tooling for resume conversion, PDF text helpers, and repository summary generation.
+description: Modular utility tooling for resume conversion, PDF text helpers, repository summary generation, and document frontmatter backfills.
 memory_tags:
   - domain:utility
   - workflow:maintenance
@@ -17,6 +17,7 @@ Use this skill for reusable utility scripts that are not domain-specific:
 - document conversion helpers
 - lightweight local extraction helpers
 - repository metadata/summaries generation
+- document frontmatter normalization/backfills
 
 ## Boundaries
 

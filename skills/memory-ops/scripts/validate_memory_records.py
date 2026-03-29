@@ -35,7 +35,14 @@ ALLOWED_DURABILITY = {"ephemeral", "active", "durable"}
 
 
 def iter_jsonl_files() -> list[Path]:
-    paths = sorted(MEMORY_DIR.glob("*.jsonl"))
+    canonical = [
+        MEMORY_DIR / "decisions.jsonl",
+        MEMORY_DIR / "commitments.jsonl",
+        MEMORY_DIR / "status_changes.jsonl",
+        MEMORY_DIR / "people.jsonl",
+        MEMORY_DIR / "patterns.jsonl",
+    ]
+    paths = [path for path in canonical if path.exists()]
     paths.extend(sorted((MEMORY_DIR / "candidates").glob("*.jsonl")))
     return paths
 

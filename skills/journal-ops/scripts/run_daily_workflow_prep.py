@@ -172,6 +172,11 @@ def main() -> int:
         help="Skip structured-memory candidate refresh when a summary file exists",
     )
     parser.add_argument(
+        "--skip-doc-memory",
+        action="store_true",
+        help="When refreshing memory candidates, only use the daily summary source (skip other memory-eligible docs).",
+    )
+    parser.add_argument(
         "--allow-health-miss",
         action="store_true",
         help="Return success even when no health source is available",
@@ -216,10 +221,13 @@ def main() -> int:
     summary_path = summary_path_for(args.date)
     if not args.skip_memory:
         if summary_path.exists():
+            memory_cmd = ["python3", str(MEMORY_EXTRACT), "--date", args.date]
+            if not args.skip_doc_memory:
+                memory_cmd.append("--also-docs")
             results.append(
                 run_step(
                     "Memory candidate refresh",
-                    ["python3", str(MEMORY_EXTRACT), "--date", args.date],
+                    memory_cmd,
                 )
             )
         else:
