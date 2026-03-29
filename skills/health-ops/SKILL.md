@@ -22,6 +22,7 @@ Use this skill for reusable health processing logic:
 
 - Specification source: `liferepo/health/`
 - Private state source: `<private-repo>/personal-health/` and `<private-repo>/health-family/`
+- New-user Apple Health setup guide: `liferepo/health/APPLE_HEALTH_ONBOARDING.md`
 
 ## Current Script Surface
 
