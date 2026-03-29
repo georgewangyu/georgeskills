@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--interactive",
         action="store_true",
-        help="Prompt for optional scaffold modules (journal/resume/exports).",
+        help="Run a guided first-run setup for repo config, private docs, and optional scaffold modules.",
     )
     parser.add_argument(
         "--init-journal",
@@ -297,10 +297,96 @@ def prompt_yes_no(question: str, default: bool = False) -> bool:
         print("Please answer y or n.")
 
 
+def prompt_text(question: str, default: str = "") -> str:
+    suffix = f" [{default}]: " if default else ": "
+    raw = input(question + suffix).strip()
+    return raw or default
+
+
+def prompt_optional_line(question: str) -> str:
+    return input(question + " (leave blank to skip): ").strip()
+
+
+def prompt_bullets(
+    title: str,
+    questions: list[tuple[str, str]],
+    existing_path: Path | None = None,
+) -> str:
+    lines = [title, ""]
+    if existing_path is not None and existing_path.exists():
+        lines.append(
+            f"_Replaces the current contents of `{existing_path.name}` with the guided answers below._"
+        )
+        lines.append("")
+    for heading, question in questions:
+        answer = prompt_optional_line(question)
+        lines.append(f"## {heading}")
+        lines.append("")
+        if answer:
+            chunks = [chunk.strip() for chunk in answer.split(";") if chunk.strip()]
+            if chunks:
+                for chunk in chunks:
+                    lines.append(f"- {chunk}")
+            else:
+                lines.append("- TODO")
+        else:
+            lines.append("- TODO")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def maybe_customize_soul(private_root: Path) -> bool:
+    soul_path = private_root / "SOUL.md"
+    should_write = prompt_yes_no(
+        "Customize SOUL.md now with a guided quick start?",
+        default=not soul_path.exists(),
+    )
+    if not should_write:
+        return False
+    content = prompt_bullets(
+        "# SOUL.md",
+        [
+            ("Core", "What tone or qualities should Codex default to? Use ';' to split multiple bullets"),
+            ("Guardrails", "What should Codex avoid or treat carefully? Use ';' to split multiple bullets"),
+            ("Working Style", "How should Codex work with you day to day? Use ';' to split multiple bullets"),
+        ],
+        existing_path=soul_path,
+    )
+    soul_path.write_text(content, encoding="utf-8")
+    return True
+
+
+def maybe_customize_runtime(private_root: Path) -> bool:
+    runtime_path = private_root / "PRIVATE_RUNTIME.md"
+    should_write = prompt_yes_no(
+        "Customize PRIVATE_RUNTIME.md now with machine/workspace specifics?",
+        default=not runtime_path.exists(),
+    )
+    if not should_write:
+        return False
+    content = prompt_bullets(
+        "# Private Runtime Overrides",
+        [
+            ("Purpose", "What private runtime context should this file cover? Use ';' to split multiple bullets"),
+            ("Runtime Quirks", "List concrete machine, shell, or workspace quirks. Use ';' to split multiple bullets"),
+            ("Local Policy Overrides", "List private execution preferences or defaults. Use ';' to split multiple bullets"),
+            ("Maintenance", "How should this file be maintained over time? Use ';' to split multiple bullets"),
+        ],
+        existing_path=runtime_path,
+    )
+    runtime_path.write_text(content, encoding="utf-8")
+    return True
+
+
 def main() -> int:
     args = parse_args()
 
     liferepo_root = resolve_liferepo_root(args.liferepo_root)
+    if args.interactive and not args.private_repo_name.strip() and not args.private_repo_path.strip():
+        args.private_repo_name = prompt_text(
+            "Private repo folder name",
+            default="my-private-repo",
+        )
     repo_name, private_root = resolve_private_repo_root(
         liferepo_root=liferepo_root,
         name=args.private_repo_name,
@@ -320,12 +406,16 @@ def main() -> int:
     pointer_path = write_pointer(liferepo_root, repo_name, private_root)
     created_soul = ensure_private_soul(liferepo_root, private_root)
     created_runtime = ensure_private_runtime(liferepo_root, private_root)
+    wrote_guided_soul = False
+    wrote_guided_runtime = False
 
     init_journal = args.init_all or args.init_journal
     init_resume = args.init_all or args.init_resume
     init_exports = args.init_all or args.init_exports
 
     if args.interactive:
+        wrote_guided_soul = maybe_customize_soul(private_root)
+        wrote_guided_runtime = maybe_customize_runtime(private_root)
         if not init_journal:
             init_journal = prompt_yes_no("Initialize private journal folders now?")
         if not init_resume:
@@ -345,8 +435,10 @@ def main() -> int:
     print(f"private repo:  {private_root}")
     print(f"pointer file:  {pointer_path}")
     print(f"marker file:   {private_root / MARKER_FILENAME}")
-    print(f"SOUL.md:       {'created' if created_soul else 'exists'}")
-    print(f"PRIVATE_RUNTIME.md: {'created' if created_runtime else 'exists'}")
+    soul_state = "guided" if wrote_guided_soul else ("created" if created_soul else "exists")
+    runtime_state = "guided" if wrote_guided_runtime else ("created" if created_runtime else "exists")
+    print(f"SOUL.md:       {soul_state}")
+    print(f"PRIVATE_RUNTIME.md: {runtime_state}")
     if scaffold_notes:
         print("scaffold:")
         for note in scaffold_notes:
@@ -354,6 +446,11 @@ def main() -> int:
     print("")
     print("Optional shell export:")
     print(f'export LIFEREPO_PRIVATE_ROOT="{private_root}"')
+    print("")
+    print("Next steps:")
+    print("  1. Review and refine SOUL.md.")
+    print("  2. Add private records and overlays to the private repo, not liferepo.")
+    print("  3. Ask Codex to help continue setup inside the private repo.")
 
     return 0
 

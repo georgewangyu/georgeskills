@@ -73,6 +73,12 @@ To initialize a user-named private data repo for `liferepo`:
 python3 scripts/bootstrap_private_repo.py --name my-private-repo --create
 ```
 
+For a guided first-run setup:
+
+```bash
+python3 scripts/bootstrap_private_repo.py --name my-private-repo --create --interactive
+```
+
 ## Notes
 
 - `~/.codex` is machine-level, not workspace-local.
