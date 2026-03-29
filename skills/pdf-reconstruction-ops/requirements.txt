@@ -1,0 +1,12 @@
+# PDF Text Extraction Dependencies
+# Install with: pip3 install -r requirements.txt
+
+# Primary extraction library (fast, good for most PDFs)
+pymupdf>=1.23.0
+
+# Alternative extraction library (better for complex layouts and tables)
+pdfplumber>=0.10.0
+
+
+
+
