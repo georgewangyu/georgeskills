@@ -34,6 +34,7 @@ ROOT = resolve_private_repo_root()
 TOKENS_FILE = ROOT / ".tokens" / "traccar.env"
 PLACES_FILE = ROOT / ".tokens" / "location_places.json"
 LOCAL_TZ = datetime.now().astimezone().tzinfo
+GEOCODER_USER_AGENT = "georgeskills-journal-ops/1.0"
 
 
 @dataclass
@@ -59,6 +60,29 @@ class SavedPlace:
     latitude: float
     longitude: float
     radius_m: float
+    category: str = ""
+    aliases: list[str] | None = None
+
+
+@dataclass
+class StopWindow:
+    start: Position
+    end: Position
+    points: list[Position]
+
+
+@dataclass
+class ReportStop:
+    start: datetime
+    end: datetime
+    latitude: float
+    longitude: float
+    address: str
+
+
+STATIONARY_SPEED_KPH = 3.0
+STOP_RADIUS_M = 120.0
+MIN_STOP_MINUTES = 8
 
 
 def load_env_file(path: Path) -> None:
@@ -112,6 +136,14 @@ def api_get_json(base_url: str, email: str, password: str, path: str, params: di
     req = request.Request(url)
     req.add_header("Authorization", auth_header(email, password))
     req.add_header("Accept", "application/json")
+    with request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def fetch_public_json(url: str) -> Any:
+    req = request.Request(url)
+    req.add_header("Accept", "application/json")
+    req.add_header("User-Agent", GEOCODER_USER_AGENT)
     with request.urlopen(req, timeout=15) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
@@ -190,6 +222,46 @@ def fetch_positions(config: TraccarConfig, day_text: str) -> list[Position]:
     return positions
 
 
+def fetch_report_stops(config: TraccarConfig, day_text: str) -> list[ReportStop]:
+    target_day = datetime.strptime(day_text, "%Y-%m-%d").date()
+    start_dt = datetime.combine(target_day, time.min)
+    end_dt = datetime.combine(target_day + timedelta(days=1), time.min)
+    if LOCAL_TZ is not None:
+        start_dt = start_dt.replace(tzinfo=LOCAL_TZ)
+        end_dt = end_dt.replace(tzinfo=LOCAL_TZ)
+
+    payload = api_get_json(
+        config.base_url,
+        config.email,
+        config.password,
+        "/api/reports/stops",
+        {
+            "deviceId": config.device_id,
+            "from": start_dt.isoformat(),
+            "to": end_dt.isoformat(),
+        },
+    )
+
+    stops: list[ReportStop] = []
+    for row in payload:
+        start = parse_timestamp(str(row.get("startTime") or ""))
+        end = parse_timestamp(str(row.get("endTime") or ""))
+        latitude = parse_float(row.get("latitude"))
+        longitude = parse_float(row.get("longitude"))
+        if start is None or end is None or latitude is None or longitude is None:
+            continue
+        stops.append(
+            ReportStop(
+                start=start,
+                end=end,
+                latitude=latitude,
+                longitude=longitude,
+                address=str(row.get("address") or "").strip(),
+            )
+        )
+    return stops
+
+
 def load_places(path: Path) -> list[SavedPlace]:
     if not path.exists():
         return []
@@ -215,6 +287,12 @@ def load_places(path: Path) -> list[SavedPlace]:
                 latitude=latitude,
                 longitude=longitude,
                 radius_m=radius_m,
+                category=str(item.get("category") or "").strip(),
+                aliases=[
+                    str(alias).strip()
+                    for alias in item.get("aliases", [])
+                    if str(alias).strip()
+                ] if isinstance(item.get("aliases"), list) else [],
             )
         )
     return places
@@ -269,36 +347,140 @@ def nearest_saved_place(position: Position, places: list[SavedPlace]) -> tuple[S
     return best
 
 
-def summarize_stop_clusters(positions: list[Position], places: list[SavedPlace]) -> list[str]:
-    if not positions:
-        return []
-    clusters: list[tuple[Position, Position, list[Position]]] = []
-    current = [positions[0]]
-    for pos in positions[1:]:
-        if haversine_km(current[-1], pos) <= 0.25:
+def nearest_saved_place_for_coords(latitude: float, longitude: float, places: list[SavedPlace]) -> tuple[SavedPlace, float] | None:
+    best: tuple[SavedPlace, float] | None = None
+    for place in places:
+        dist_m = haversine_km_to_coords(latitude, longitude, place.latitude, place.longitude) * 1000.0
+        if dist_m <= place.radius_m:
+            if best is None or dist_m < best[1]:
+                best = (place, dist_m)
+    return best
+
+
+def reverse_geocode_label(latitude: float, longitude: float) -> str:
+    params = parse.urlencode(
+        {
+            "format": "jsonv2",
+            "lat": f"{latitude:.6f}",
+            "lon": f"{longitude:.6f}",
+            "zoom": "18",
+            "addressdetails": "1",
+        }
+    )
+    payload = fetch_public_json(f"https://nominatim.openstreetmap.org/reverse?{params}")
+    address = payload.get("address") if isinstance(payload, dict) else None
+    if not isinstance(address, dict):
+        return ""
+
+    parts: list[str] = []
+    road = address.get("road")
+    neighbourhood = (
+        address.get("neighbourhood")
+        or address.get("suburb")
+        or address.get("quarter")
+        or address.get("city_district")
+    )
+    city = address.get("city") or address.get("town") or address.get("village")
+
+    if road:
+        parts.append(str(road))
+    if neighbourhood and neighbourhood not in parts:
+        parts.append(str(neighbourhood))
+    if city and city not in parts:
+        parts.append(str(city))
+    return ", ".join(parts[:3])
+
+
+def distance_meters(a: Position, b: Position) -> float:
+    return haversine_km(a, b) * 1000.0
+
+
+def representative_position(points: list[Position]) -> Position:
+    return points[len(points) // 2]
+
+
+def candidate_stop_window(points: list[Position]) -> StopWindow | None:
+    if not points:
+        return None
+    start = points[0]
+    end = points[-1]
+    dwell_minutes = (end.timestamp - start.timestamp).total_seconds() / 60.0
+    if dwell_minutes < MIN_STOP_MINUTES:
+        return None
+    return StopWindow(start=start, end=end, points=points)
+
+
+def detect_stationary_stops(positions: list[Position]) -> list[StopWindow]:
+    stops: list[StopWindow] = []
+    current: list[Position] = []
+    anchor: Position | None = None
+
+    for pos in positions:
+        if pos.speed_kph > STATIONARY_SPEED_KPH:
+            stop = candidate_stop_window(current)
+            if stop is not None:
+                stops.append(stop)
+            current = []
+            anchor = None
+            continue
+
+        if not current:
+            current = [pos]
+            anchor = pos
+            continue
+
+        assert anchor is not None
+        if distance_meters(anchor, pos) <= STOP_RADIUS_M:
             current.append(pos)
             continue
-        clusters.append((current[0], current[-1], current))
-        current = [pos]
-    clusters.append((current[0], current[-1], current))
 
+        stop = candidate_stop_window(current)
+        if stop is not None:
+            stops.append(stop)
+        current = [pos]
+        anchor = pos
+
+    stop = candidate_stop_window(current)
+    if stop is not None:
+        stops.append(stop)
+    return stops
+
+
+def summarize_stop_clusters(positions: list[Position], places: list[SavedPlace]) -> list[str]:
     summaries: list[str] = []
-    for start, end, cluster in clusters:
-        dwell_minutes = int((end.timestamp - start.timestamp).total_seconds() / 60)
-        if dwell_minutes < 20:
-            continue
-        saved = nearest_saved_place(start, places)
-        address = next((p.address for p in cluster if p.address), "")
+    for stop in detect_stationary_stops(positions):
+        anchor = representative_position(stop.points)
+        saved = nearest_saved_place(anchor, places)
+        address = next((p.address for p in stop.points if p.address), "")
         if saved is not None:
             label = saved[0].name
         elif address:
             label = address
         else:
-            label = f"{start.latitude:.4f}, {start.longitude:.4f}"
+            label = f"{anchor.latitude:.4f}, {anchor.longitude:.4f}"
         summaries.append(
-            f"{start.timestamp.strftime('%H:%M')}-{end.timestamp.strftime('%H:%M')} | {label}"
+            f"{stop.start.timestamp.strftime('%H:%M')}-{stop.end.timestamp.strftime('%H:%M')} | {label}"
         )
-    return summaries[:5]
+    return summaries[:8]
+
+
+def summarize_report_stops(stops: list[ReportStop], places: list[SavedPlace]) -> list[str]:
+    summaries: list[str] = []
+    for stop in stops:
+        dwell_minutes = (stop.end - stop.start).total_seconds() / 60.0
+        if dwell_minutes < MIN_STOP_MINUTES:
+            continue
+        saved = nearest_saved_place_for_coords(stop.latitude, stop.longitude, places)
+        if saved is not None:
+            label = saved[0].name
+        elif stop.address:
+            label = stop.address
+        else:
+            label = reverse_geocode_label(stop.latitude, stop.longitude) or f"{stop.latitude:.4f}, {stop.longitude:.4f}"
+        summaries.append(
+            f"{stop.start.strftime('%H:%M')}-{stop.end.strftime('%H:%M')} | {label}"
+        )
+    return summaries[:8]
 
 
 def print_summary(day_text: str, positions: list[Position], places: list[SavedPlace]) -> None:
@@ -328,7 +510,17 @@ def print_summary(day_text: str, positions: list[Position], places: list[SavedPl
     print(f"- Moving samples: {moving_points}")
     print(f"- Peak observed speed: {max_speed:.1f} km/h")
 
-    stops = summarize_stop_clusters(positions, places)
+    stops: list[str] = []
+    try:
+        config = build_config()
+        if config is not None:
+            report_stops = fetch_report_stops(config, day_text)
+            stops = summarize_report_stops(report_stops, places)
+    except Exception:
+        stops = []
+
+    if not stops:
+        stops = summarize_stop_clusters(positions, places)
     if stops:
         print(f"- Longer stops: {len(stops)}")
         for stop in stops:

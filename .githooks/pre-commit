@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+[[ -z "$staged_files" ]] && exit 0
+
+while IFS= read -r file; do
+  [[ -z "$file" ]] && continue
+  [[ ! -f "$file" ]] && continue
+
+  if git diff --cached --numstat -- "$file" | awk '{print $1,$2}' | grep -q '^- -$'; then
+    continue
+  fi
+
+  perl -i -pe 's/[ \t]+$//; END { print "\n" unless /\n\z/ }' "$file"
+  git add -- "$file"
+done <<< "$staged_files"
+
+check_out="$(git diff --cached --check || true)"
+if [[ -n "$check_out" ]]; then
+  echo "pre-commit hook: whitespace errors remain in staged changes." >&2
+  printf '%s\n' "$check_out" >&2
+  exit 1
+fi
+
+exit 0

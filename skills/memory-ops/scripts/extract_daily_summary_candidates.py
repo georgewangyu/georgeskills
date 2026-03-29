@@ -282,8 +282,8 @@ def main() -> int:
         out_path = write_candidates(summary_path, records)
         wrote_any = True
         print(
-            f"{summary_path.relative_to(LIFEREPO_ROOT)} -> "
-            f"{out_path.relative_to(LIFEREPO_ROOT)} ({len(records)} candidates)"
+            f"{summary_path.relative_to(PRIVATE_REPO_ROOT)} -> "
+            f"{out_path.relative_to(PRIVATE_REPO_ROOT)} ({len(records)} candidates)"
         )
         if args.print_records:
             for record in records:

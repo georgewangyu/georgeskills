@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MSG_FILE="$1"
+msg="$(cat "$MSG_FILE")"
+
+fail() {
+  echo "commit-msg hook: $1" >&2
+  exit 1
+}
+
+subject="$(printf '%s' "$msg" | head -n1)"
+
+if ! printf '%s' "$subject" | grep -Eq '^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)(\([^)]+\))?: .+'; then
+  fail "First line must be a conventional commit subject (e.g., 'fix: ...' or 'feat(scope): ...')."
+fi
+
+for section in "What we did" "Challenges faced" "Acceptance criteria" "Testing"; do
+  if ! printf '%s' "$msg" | grep -Eiq "^[[:space:]]*${section}[[:space:]]*:?[[:space:]]*$"; then
+    fail "Missing required section heading: '${section}'"
+  fi
+done
+
+if ! printf '%s' "$msg" | grep -Eq '^[[:space:]]*---[[:space:]]*$'; then
+  fail "Missing '---' separator line before Prompt."
+fi
+if ! printf '%s' "$msg" | grep -Eiq '^[[:space:]]*Prompt:[[:space:]]+.+'; then
+  fail "Missing 'Prompt: ...' line."
+fi
+
+sep_line="$(awk '/^[[:space:]]*---[[:space:]]*$/ {print NR; exit}' "$MSG_FILE")"
+prompt_line="$(awk '/^[[:space:]]*Prompt:[[:space:]]+.+/ {print NR; exit}' "$MSG_FILE")"
+if [[ -z "${sep_line:-}" || -z "${prompt_line:-}" || "$prompt_line" -le "$sep_line" ]]; then
+  fail "'Prompt: ...' must come after the '---' separator."
+fi
+
+exit 0
