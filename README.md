@@ -38,6 +38,8 @@ georgeskills/
 │   │   └── SKILL.md
 │   ├── aida-ops/
 │   │   └── SKILL.md
+│   ├── naming-ops/
+│   │   └── SKILL.md
 │   └── deep-exploration-ops/
 │       └── SKILL.md
 ├── templates/
@@ -54,6 +56,15 @@ Each `SKILL.md` should include YAML frontmatter with `memory_tags`.
 See:
 - `templates/SKILL_TEMPLATE.md`
 - `MEMORY_TAGS.md`
+
+## Reusability Rule
+
+Skills in `georgeskills` are shared, reusable building blocks.
+
+- Do not hardcode user-specific handles, emails, account ids, profile URLs, or private defaults in `skills/`.
+- Do not store personal credentials, cookies, tokens, or private account metadata in this repo.
+- Put user-specific wrappers, defaults, and private overlays in the user's private repo instead.
+- When documenting examples, use generic placeholders such as `examplecreator`, `exampleuser`, or `<target>`.
 
 ## Install / Sync
 
