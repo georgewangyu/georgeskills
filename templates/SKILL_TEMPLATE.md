@@ -39,3 +39,4 @@ Do not use when:
 - Public specs live in `liferepo`.
 - Private state lives in `<private-repo>`.
 - This skill only owns modular tooling behavior.
+- Keep the skill reusable: no hardcoded personal handles, emails, account ids, credentials, or user-specific defaults.
