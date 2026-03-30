@@ -1,6 +1,6 @@
 ---
 name: revenue-signal-research-ops
-description: Estimate which apps or SaaS products are likely making meaningful revenue by combining rankings, pricing, review volume, traffic, filings, hiring, and other public commercial signals. Use when the user wants a money map rather than just a competitor list.
+description: Estimate which apps or SaaS products are likely making meaningful revenue by combining rankings, pricing, review volume, traffic, filings, hiring, and other public commercial signals. Use when the user wants a money map rather than just a competitor list. This skill is for absolute revenue strength, not breakout-from-small-base patterns.
 memory_tags:
   - domain:market-research
   - workflow:revenue-signal-estimation
@@ -22,6 +22,7 @@ Use when:
 Do not use when:
 - the goal is only to list competitors
 - the goal is to choose a product wedge without first collecting evidence
+- the main question is “what small or simple product broke out unexpectedly?”
 
 ## Inputs
 
@@ -58,3 +59,5 @@ Do not use when:
 - Never invent exact revenue numbers without a source.
 - Treat third-party estimate tools as signals, not truth.
 - Prefer ranges and confidence notes over fake precision.
+
+If the user is looking for asymmetric winners relative to size, audience, age, or apparent simplicity, hand off to `breakout-signal-research-ops`.

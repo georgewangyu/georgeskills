@@ -1,6 +1,6 @@
 ---
 name: idea-wedge-selection-ops
-description: Turn market, revenue, and pain research into a concrete product direction by selecting a sharp initial wedge, target user, and why-now thesis. Use when the user wants a shortlist of what not to build, what might work, and what to pursue first.
+description: Turn market, revenue, breakout, and pain research into a concrete product direction by selecting a sharp initial wedge, target user, and why-now thesis. Use when the user wants a shortlist of what not to build, what might work, and what to pursue first.
 memory_tags:
   - domain:product-strategy
   - workflow:wedge-selection
@@ -15,7 +15,7 @@ memory_tags:
 ## Trigger
 
 Use when:
-- market research has already produced competitors, revenue signals, or pain maps
+- market research has already produced competitors, revenue signals, breakout signals, or pain maps
 - the user wants a concrete recommendation on what SaaS or app idea to pursue
 - the task is narrowing broad opportunity into a focused starting wedge
 
@@ -34,6 +34,7 @@ Do not use when:
 2. Score each opportunity on:
    - pain intensity
    - monetization evidence
+   - asymmetry or breakout signal strength
    - crowding
    - founder advantage
    - speed to first usable product
@@ -59,5 +60,6 @@ Do not use when:
 ## Guardrails
 
 - Do not confuse “big market” with “good starting point.”
+- Do not confuse “largest incumbent” with “best wedge.”
 - Prefer one painful narrow workflow over a broad generic platform.
 - Make the rejection reasons explicit.
