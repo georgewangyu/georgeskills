@@ -32,6 +32,16 @@ georgeskills/
 │   │   └── SKILL.md
 │   ├── exports-ops/
 │   │   └── SKILL.md
+│   ├── x-check-ops/
+│   │   └── SKILL.md
+│   ├── email-ops/
+│   │   └── SKILL.md
+│   ├── calendar-ops/
+│   │   └── SKILL.md
+│   ├── apple-notes-export-ops/
+│   │   └── SKILL.md
+│   ├── cursor-chat-export-ops/
+│   │   └── SKILL.md
 │   ├── pdf-reconstruction-ops/
 │   │   └── SKILL.md
 │   ├── utility-ops/
