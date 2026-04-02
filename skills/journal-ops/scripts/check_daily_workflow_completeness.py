@@ -31,6 +31,32 @@ class DayCheck:
     notes: str
 
 
+STABLE_HEADERS = {
+    "Today at a Glance",
+    "Daily Metrics",
+    "Sprints Today",
+    "Deep Sprint Plan",
+    "Highlights",
+    "Challenges",
+    "Key Decisions",
+    "People / Relationships",
+    "Tomorrow Priorities",
+}
+
+PLANNED_REQUIRED_HEADERS = {
+    "Today at a Glance",
+    "Deep Sprint Plan",
+}
+
+ACTIVE_MEMORY_HEADERS = {
+    "Key Decisions",
+    "People / Relationships",
+    "Tomorrow Priorities",
+    "Conversation Milestones",
+    "Narrator Notes",
+}
+
+
 def iter_days(start: date, end: date) -> Iterable[date]:
     current = start
     while current <= end:
@@ -77,6 +103,15 @@ def detect_summary_state(text: str) -> str:
     return "partial"
 
 
+def extract_level2_headers(text: str) -> set[str]:
+    headers: set[str] = set()
+    for match in re.finditer(r"^##\s+(.+?)\s*$", text, flags=re.MULTILINE):
+        title = match.group(1).strip()
+        title = re.sub(r"\s+\(Optional\)$", "", title).strip()
+        headers.add(title)
+    return headers
+
+
 def load_metrics_dates() -> set[str]:
     if not METRICS_CSV.exists():
         return set()
@@ -100,12 +135,29 @@ def check_date(day: date, metrics_dates: set[str]) -> DayCheck:
     state = detect_summary_state(text)
     has_metrics_row = day.isoformat() in metrics_dates
 
-    notes = ""
+    note_parts: list[str] = []
     if status == "missing":
-        notes = "add summary_status header"
+        note_parts.append("add summary_status header")
     elif status not in {"planned", "partial", "completed"}:
-        notes = "unknown header value"
+        note_parts.append("unknown header value")
 
+    headers = extract_level2_headers(text)
+    if status == "planned":
+        missing = sorted(PLANNED_REQUIRED_HEADERS - headers)
+        if missing:
+            note_parts.append(f"missing planned headers: {', '.join(missing)}")
+    else:
+        missing = sorted(STABLE_HEADERS - headers)
+        if missing:
+            note_parts.append(f"missing stable headers: {', '.join(missing)}")
+
+    # Memory-sensitive section names should stay stable once the day is active.
+    if status in {"partial", "completed"}:
+        for header in sorted(ACTIVE_MEMORY_HEADERS):
+            if header not in headers:
+                note_parts.append(f"missing memory header: {header}")
+
+    notes = "; ".join(note_parts)
     return DayCheck(day, state, status, has_metrics_row, notes)
 
 
@@ -148,7 +200,7 @@ def main() -> int:
     for r in results:
         metric_flag = "yes" if r.metrics_row else "no"
         print(f"{r.day.isoformat()}  {r.summary_state:17}  {r.summary_status_header:12}  {metric_flag:10}  {r.notes}")
-        if r.summary_state in {"missing_file", "planned_only", "partial"} or not r.metrics_row:
+        if r.summary_state in {"missing_file", "planned_only", "partial"} or not r.metrics_row or r.notes:
             failed += 1
 
     email_fresh, cal_fresh = parse_export_freshness()

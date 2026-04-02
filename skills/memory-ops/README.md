@@ -11,7 +11,8 @@ Current focus:
 
 - extract conservative memory candidates from daily summaries
 - validate memory files
-- later support querying, reinforcement, and promotion workflows
+- support querying, reinforcement, and promotion workflows
+- run a lightweight unattended "dream" maintenance pass that leaves a review report
 
 ## Current Scripts
 
@@ -27,6 +28,12 @@ Current focus:
   - Checks canonical and candidate JSONL files for parse errors and required fields
 - `promote_memory_candidates.py`
   - Promotes reviewed candidates into canonical stores by id or whole file
+- `query_memory.py`
+  - Filters canonical and candidate records by type, date, durability, text, or source
+- `dream_memory.py`
+  - Refreshes recent candidate extraction
+  - Validates memory files
+  - Writes a review report under `memory/reports/`
 
 ## Operating Model
 
@@ -44,7 +51,7 @@ The extractor intentionally starts with sections that are already semantically
 strong in the daily-summary format:
 
 - `Key Decisions`
-- `Tomorrow`
+- `Tomorrow` / `Tomorrow Priorities`
 - `Conversation Milestones`
 - `Challenges`
 - `Narrator Notes`

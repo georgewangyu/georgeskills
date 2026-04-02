@@ -117,6 +117,8 @@ def clean_summary_text(text: str) -> str:
 def infer_durability(memory_type: str, section: Section) -> str:
     if memory_type == "decision":
         return "durable"
+    if memory_type == "person":
+        return "durable"
     if memory_type in {"commitment", "status_change"}:
         return "active"
     if memory_type == "pattern" and section.title == "Narrator Notes":
@@ -125,7 +127,7 @@ def infer_durability(memory_type: str, section: Section) -> str:
 
 
 def infer_strength(memory_type: str, section: Section) -> int:
-    if memory_type in {"decision", "commitment", "status_change"}:
+    if memory_type in {"decision", "commitment", "status_change", "person"}:
         return 3
     if memory_type == "pattern" and section.title == "Narrator Notes":
         return 3
@@ -208,7 +210,7 @@ def candidate_records_for_summary(path: Path) -> list[dict[str, object]]:
                         source_path=path,
                     )
                 )
-        elif section.title == "Tomorrow":
+        elif section.title in {"Tomorrow", "Tomorrow Priorities"}:
             for index, bullet in enumerate(bullets, start=1):
                 records.append(
                     build_record(
@@ -220,13 +222,30 @@ def candidate_records_for_summary(path: Path) -> list[dict[str, object]]:
                         source_path=path,
                     )
                 )
-        elif section.parent_titles and section.parent_titles[-1].startswith("Conversation Milestones"):
+        elif section.title.startswith("Conversation Milestones") or any(
+            parent.startswith("Conversation Milestones") for parent in section.parent_titles
+        ):
             for index, bullet in enumerate(bullets, start=1):
                 records.append(
                     build_record(
                         date_text=date_text,
                         section=section,
                         memory_type="status_change",
+                        text=bullet,
+                        index=index,
+                        source_path=path,
+                    )
+                )
+        elif section.title.startswith("People / Relationships"):
+            for index, bullet in enumerate(bullets, start=1):
+                lowered = bullet.lower()
+                if lowered.startswith("no notable") or lowered.startswith("none"):
+                    continue
+                records.append(
+                    build_record(
+                        date_text=date_text,
+                        section=section,
+                        memory_type="person",
                         text=bullet,
                         index=index,
                         source_path=path,
