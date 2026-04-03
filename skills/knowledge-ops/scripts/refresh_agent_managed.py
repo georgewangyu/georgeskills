@@ -15,6 +15,7 @@ import argparse
 import json
 import re
 import subprocess
+from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -28,9 +29,11 @@ AGENT_MANAGED_DIR = PRIVATE_REPO_ROOT / "agent-managed"
 TOPICS_DIR = AGENT_MANAGED_DIR / "topics"
 CANDIDATES_DIR = AGENT_MANAGED_DIR / "_candidates"
 INDEXES_DIR = AGENT_MANAGED_DIR / "indexes"
+REPORTS_DIR = AGENT_MANAGED_DIR / "reports"
 SUMMARY_DIR = PRIVATE_REPO_ROOT / "journal" / "summaries"
 SUMMARY_FILENAME_RE = re.compile(r"(\d{4}-\d{2}-\d{2})_Summary\.md$")
 LEVEL2_HEADER_RE = re.compile(r"^##\s+(.+?)\s*$", flags=re.MULTILINE)
+DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
 INTERESTING_SECTIONS = {
     "Highlights",
     "Challenges",
@@ -88,6 +91,63 @@ GENERIC_TOPIC_WORDS = {
     "memory",
     "current",
 }
+STOPWORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "because", "been", "but",
+    "by", "for", "from", "had", "has", "have", "if", "in", "into", "is",
+    "it", "its", "of", "on", "or", "that", "the", "their", "them", "there",
+    "this", "to", "too", "up", "was", "were", "with", "your", "you", "after",
+    "before", "during", "over", "under", "than", "then", "when", "while",
+    "still", "just", "also", "only", "more", "most", "some", "very", "not",
+    "now", "out", "through", "across", "off", "again", "like", "into",
+}
+THEME_RULES = {
+    "workflow_automation": {
+        "keywords": {
+            "workflow", "automation", "pipeline", "process", "system", "template",
+            "loop", "orchestration", "compiler", "refresh", "index", "memory",
+            "fanout", "heartbeat", "integration", "setup", "migration",
+        },
+        "label": "workflow design, automation, and operating loops",
+    },
+    "content_distribution": {
+        "keywords": {
+            "content", "social", "video", "script", "tiktok", "substack",
+            "post", "posting", "editing", "hook", "creator", "x", "twitter",
+            "youtube", "distribution", "publish", "publishing",
+        },
+        "label": "content production, hooks, and distribution",
+    },
+    "product_infra": {
+        "keywords": {
+            "openclaw", "agent", "agents", "infrastructure", "proposal", "tool",
+            "tools", "mission", "control", "imessage", "workspace", "product",
+            "prototype", "architecture", "deployment", "build",
+        },
+        "label": "product infrastructure and architecture work",
+    },
+    "learning_research": {
+        "keywords": {
+            "research", "learning", "course", "study", "paper", "papers",
+            "concept", "concepts", "framework", "reading", "lecture", "education",
+        },
+        "label": "learning, research, and concept-building",
+    },
+    "health_behavior": {
+        "keywords": {
+            "adhd", "health", "sleep", "energy", "focus", "pattern", "patterns",
+            "habit", "habits", "sprint", "curiosity", "detox", "battery",
+        },
+        "label": "health, attention, and behavior patterns",
+    },
+    "strategy_positioning": {
+        "keywords": {
+            "strategy", "positioning", "interview", "resume", "consulting",
+            "offer", "client", "pricing", "business", "priority", "prioritized",
+            "focus",
+        },
+        "label": "strategy, positioning, and prioritization",
+    },
+}
 
 
 @dataclass
@@ -112,6 +172,17 @@ class SeedTopic:
     description: str
     source_paths: list[str]
     keywords: list[str]
+
+
+@dataclass
+class TopicHealth:
+    slug: str
+    title: str
+    evidence_count: int
+    source_seed_count: int
+    summary_quality: str
+    current_understanding_quality: str
+    top_themes: list[str]
 
 
 def ensure_dir(path: Path) -> None:
@@ -228,6 +299,43 @@ def bullet_lines(section: Section) -> list[str]:
     return bullets
 
 
+def strip_source_suffix(text: str) -> str:
+    text = re.sub(r"\s+Source:\s+`[^`]+`\s*$", "", text).strip()
+    return text.strip()
+
+
+def strip_code_spans(text: str) -> str:
+    return re.sub(r"`([^`]+)`", r"\1", text)
+
+
+def section_bullets(text: str, title: str) -> list[str]:
+    for section in parse_sections(text):
+        base_title = re.sub(r"\s+\(Optional\)$", "", section.title).strip()
+        if base_title == title:
+            return bullet_lines(section)
+    return []
+
+
+def markdown_body(text: str) -> str:
+    _, body = split_frontmatter(text)
+    return body
+
+
+def prose_sentences(text: str) -> list[str]:
+    body = markdown_body(text)
+    lines = []
+    for raw_line in body.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("#") or stripped.startswith("- ") or stripped.startswith("```"):
+            continue
+        lines.append(stripped)
+    joined = " ".join(lines)
+    sentences = re.split(r"(?<=[.!?])\s+", joined)
+    return [s.strip() for s in sentences if len(s.strip()) > 30]
+
+
 def parse_frontmatter_header(text: str) -> str:
     frontmatter, _ = split_frontmatter(text)
     return frontmatter
@@ -313,6 +421,271 @@ def load_topic_pages() -> list[TopicPage]:
             )
         )
     return pages
+
+
+def source_seed_paths_for_page(path: Path) -> list[str]:
+    text = path.read_text(encoding="utf-8")
+    header = parse_frontmatter_header(text)
+    return frontmatter_list(header, "source_seed_paths")
+
+
+def readable_path_label(path: str) -> str:
+    stem = Path(path).stem.replace("-", " ")
+    return re.sub(r"\s+", " ", stem).strip()
+
+
+def source_seed_snippets(seed_paths: list[str]) -> list[str]:
+    snippets: list[str] = []
+    for source_path in seed_paths[:8]:
+        path = PRIVATE_REPO_ROOT / source_path
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        bullets = []
+        for section in parse_sections(text):
+            bullets.extend(bullet_lines(section))
+            if len(bullets) >= 2:
+                break
+        for bullet in bullets[:2]:
+            snippets.append(strip_code_spans(bullet))
+        if len(snippets) >= 10:
+            break
+        for sentence in prose_sentences(text)[:1]:
+            snippets.append(strip_code_spans(sentence))
+            break
+        if len(snippets) >= 10:
+            break
+    return snippets[:10]
+
+
+def evidence_texts_for_page(path: Path) -> list[str]:
+    text = path.read_text(encoding="utf-8")
+    bullets = [strip_code_spans(strip_source_suffix(b)) for b in section_bullets(text, "Important Evidence")]
+    cleaned: list[str] = []
+    for bullet in bullets:
+        if not bullet or bullet.startswith("Seeded from "):
+            continue
+        if bullet not in cleaned:
+            cleaned.append(bullet)
+    return cleaned
+
+
+def source_dates_for_page(path: Path) -> list[str]:
+    text = path.read_text(encoding="utf-8")
+    refs = section_bullets(text, "Source Map") + section_bullets(text, "Important Evidence")
+    dates: list[str] = []
+    for line in refs:
+        match = DATE_RE.search(line)
+        if match:
+            dates.append(match.group(1))
+    return sorted(set(dates))
+
+
+def word_counter(texts: list[str]) -> Counter[str]:
+    counter: Counter[str] = Counter()
+    for text in texts:
+        normalized = strip_code_spans(text).lower()
+        for token in re.findall(r"[a-z0-9][a-z0-9-]+", normalized):
+            if len(token) < 4 or token in STOPWORDS or token in GENERIC_TOPIC_WORDS:
+                continue
+            counter[token] += 1
+    return counter
+
+
+def infer_theme_labels(topic: TopicPage, evidence_texts: list[str], source_snippets: list[str], seed_paths: list[str]) -> list[str]:
+    haystacks = [topic.title.lower(), *topic.keywords, *[p.lower() for p in seed_paths], *[t.lower() for t in evidence_texts], *[t.lower() for t in source_snippets]]
+    score_by_theme: dict[str, int] = {}
+    for theme_name, theme in THEME_RULES.items():
+        score = 0
+        for keyword in theme["keywords"]:
+            for haystack in haystacks:
+                if keyword in haystack:
+                    score += 1
+        if score > 0:
+            score_by_theme[theme_name] = score
+    ordered = sorted(score_by_theme.items(), key=lambda item: (-item[1], item[0]))
+    labels = [THEME_RULES[name]["label"] for name, _ in ordered[:3]]
+    if not labels:
+        frequent = [word for word, _ in word_counter(evidence_texts + source_snippets).most_common(3)]
+        if frequent:
+            labels.append(", ".join(frequent))
+    return labels
+
+
+def representative_evidence(evidence_texts: list[str], limit: int = 3) -> list[str]:
+    if not evidence_texts:
+        return []
+    token_counts = word_counter(evidence_texts)
+    scored: list[tuple[int, str]] = []
+    for text in evidence_texts:
+        score = sum(token_counts.get(token, 0) for token in re.findall(r"[a-z0-9][a-z0-9-]+", text.lower()))
+        scored.append((score, text))
+    selected: list[str] = []
+    used_tokens: set[str] = set()
+    for _, text in sorted(scored, key=lambda item: (-item[0], item[1])):
+        tokens = {
+            token for token in re.findall(r"[a-z0-9][a-z0-9-]+", text.lower())
+            if len(token) >= 5 and token not in STOPWORDS
+        }
+        if selected and tokens and len(tokens & used_tokens) / max(len(tokens), 1) > 0.7:
+            continue
+        selected.append(text.rstrip(".") + ".")
+        used_tokens |= tokens
+        if len(selected) >= limit:
+            break
+    return selected[:limit]
+
+
+def operational_signals(evidence_texts: list[str]) -> list[str]:
+    joined = " ".join(evidence_texts).lower()
+    bullets: list[str] = []
+    if any(word in joined for word in ("prioritized", "primary focus", "postponed", "worth prioritizing", "committed to")):
+        bullets.append("This topic repeatedly influences priority decisions instead of staying as a passive note archive.")
+    if any(word in joined for word in ("reorganized", "workflow", "system", "template", "structure", "directory", "pipeline", "setup")):
+        bullets.append("The work is trending toward explicit structure, repeatable workflows, and reusable assets rather than ad hoc notes.")
+    if any(word in joined for word in ("tired", "fatigue", "slipped", "lost", "overloaded", "delay", "challenge")):
+        bullets.append("Execution quality appears sensitive to energy and overload, so keeping scope controlled matters for follow-through.")
+    if any(word in joined for word in ("shipped", "committed", "completed", "progress", "integrated", "landed", "edited", "captured")):
+        bullets.append("There is repeated evidence of shipping and iteration, not just abstract planning.")
+    deduped: list[str] = []
+    for bullet in bullets:
+        if bullet not in deduped:
+            deduped.append(bullet)
+    return deduped[:3]
+
+
+def synthesize_summary(topic: TopicPage, evidence_texts: list[str], source_snippets: list[str], seed_paths: list[str], dates: list[str]) -> list[str]:
+    theme_labels = infer_theme_labels(topic, evidence_texts, source_snippets, seed_paths)
+    bullets = [
+        f"{topic.title} is a recurring canonical topic grounded in {len(seed_paths)} seed documents and {len(evidence_texts)} accumulated evidence bullets."
+    ]
+    if theme_labels:
+        if len(theme_labels) == 1:
+            bullets.append(f"The strongest throughline is {theme_labels[0]}.")
+        else:
+            bullets.append(f"The strongest throughlines are {', '.join(theme_labels[:-1])}, and {theme_labels[-1]}.")
+    if dates:
+        bullets.append(f"Preserved evidence currently spans {dates[0]} through {dates[-1]}.")
+    return [f"- {bullet}" for bullet in bullets[:3]]
+
+
+def synthesize_current_understanding(topic: TopicPage, evidence_texts: list[str], source_snippets: list[str], seed_paths: list[str]) -> list[str]:
+    bullets: list[str] = []
+    theme_labels = infer_theme_labels(topic, evidence_texts, source_snippets, seed_paths)
+    if theme_labels:
+        bullets.append(
+            f"{topic.title} currently appears to be centered on {', '.join(theme_labels[:2]) if len(theme_labels) > 1 else theme_labels[0]}."
+        )
+    reps = representative_evidence(evidence_texts, limit=2)
+    for rep in reps:
+        bullets.append(rep)
+    for signal in operational_signals(evidence_texts):
+        if signal not in bullets:
+            bullets.append(signal)
+    if len(bullets) < 3:
+        for snippet in source_snippets[:3]:
+            normalized = snippet.rstrip(".") + "."
+            if normalized not in bullets:
+                bullets.append(normalized)
+            if len(bullets) >= 3:
+                break
+    deduped: list[str] = []
+    for bullet in bullets:
+        cleaned = strip_code_spans(bullet).strip()
+        if cleaned and cleaned not in deduped:
+            deduped.append(cleaned)
+    return [f"- {bullet}" for bullet in deduped[:4]]
+
+
+def quality_for_section(bullets: list[str], placeholder_markers: list[str]) -> str:
+    joined = " ".join(bullets).lower()
+    if not bullets:
+        return "missing"
+    if any(marker in joined for marker in placeholder_markers):
+        return "template"
+    if len(bullets) < 2:
+        return "thin"
+    return "compiled"
+
+
+def compile_topic_page(topic: TopicPage) -> bool:
+    path = topic.path
+    text = path.read_text(encoding="utf-8")
+    seed_paths = source_seed_paths_for_page(path)
+    evidence = evidence_texts_for_page(path)
+    snippets = source_seed_snippets(seed_paths)
+    dates = source_dates_for_page(path)
+
+    summary_body = "\n".join(synthesize_summary(topic, evidence, snippets, seed_paths, dates))
+    current_body = "\n".join(synthesize_current_understanding(topic, evidence, snippets, seed_paths))
+
+    updated = upsert_level2_section(text, "Summary", summary_body)
+    updated = upsert_level2_section(updated, "Current Understanding", current_body)
+
+    if updated != text:
+        path.write_text(updated, encoding="utf-8")
+        return True
+    return False
+
+
+def build_health_report(topic_pages: list[TopicPage]) -> Path:
+    ensure_dir(REPORTS_DIR)
+    entries: list[TopicHealth] = []
+    for topic in topic_pages:
+        text = topic.path.read_text(encoding="utf-8")
+        entries.append(
+            TopicHealth(
+                slug=topic.slug,
+                title=topic.title,
+                evidence_count=len(evidence_texts_for_page(topic.path)),
+                source_seed_count=len(source_seed_paths_for_page(topic.path)),
+                summary_quality=quality_for_section(
+                    [strip_source_suffix(b) for b in section_bullets(text, "Summary")],
+                    ["seeded from", "canonical agent-managed synthesis"],
+                ),
+                current_understanding_quality=quality_for_section(
+                    [strip_source_suffix(b) for b in section_bullets(text, "Current Understanding")],
+                    ["good candidate for a maintained canonical page", "historical daily-summary replay"],
+                ),
+                top_themes=infer_theme_labels(topic, evidence_texts_for_page(topic.path), source_seed_snippets(source_seed_paths_for_page(topic.path)), source_seed_paths_for_page(topic.path)),
+            )
+        )
+    entries.sort(key=lambda item: (item.current_understanding_quality, -item.evidence_count, item.title.lower()))
+    lines = [
+        "---",
+        'doc_schema: "doc-frontmatter-v1"',
+        'doc_id: "georgerepo/agent-managed/reports/health-report"',
+        'doc_type: "knowledge_report"',
+        'doc_status: "active"',
+        'title: "Agent-Managed Health Report"',
+        'description: "Quick quality report for canonical agent-managed topic pages."',
+        "doc_tags:",
+        '  - "domain:agent-managed"',
+        '  - "visibility:private"',
+        '  - "type:knowledge_report"',
+        "memory_eligible: false",
+        'memory_priority: "low"',
+        "---",
+        "# Agent-Managed Health Report",
+        "",
+        "## Summary",
+        "",
+        f"- Total topic pages: {len(entries)}",
+        f"- Compiled summaries: {sum(1 for entry in entries if entry.summary_quality == 'compiled')}",
+        f"- Compiled current-understanding sections: {sum(1 for entry in entries if entry.current_understanding_quality == 'compiled')}",
+        "",
+        "## Page Health",
+        "",
+    ]
+    for entry in entries:
+        theme_text = ", ".join(entry.top_themes) if entry.top_themes else "no strong themes detected yet"
+        lines.append(
+            f"- `{entry.slug}` - evidence={entry.evidence_count}, seeds={entry.source_seed_count}, "
+            f"summary={entry.summary_quality}, current_understanding={entry.current_understanding_quality}, themes={theme_text}"
+        )
+    path = REPORTS_DIR / "health-report.md"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
 
 
 def summary_dates() -> list[str]:
@@ -694,6 +1067,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--refresh-seeds", action="store_true", help="Overwrite existing seeded topic pages with regenerated frontmatter and baseline content.")
     parser.add_argument("--rebuild-index", action="store_true", help="Rebuild the agent-managed knowledge index page.")
     parser.add_argument("--backfill-all", action="store_true", help="Replay all available historical summaries.")
+    parser.add_argument("--compile-synthesis", action="store_true", help="Rewrite `Summary` and `Current Understanding` for current topic pages.")
+    parser.add_argument("--compile-all", action="store_true", help="Compile synthesis for all topic pages after any refresh/backfill work.")
+    parser.add_argument("--health-report", action="store_true", help="Write a quality report for current topic pages.")
     return parser.parse_args()
 
 
@@ -775,6 +1151,18 @@ def main() -> int:
             f"backfill summary: dates={len(dates)} candidates={total_candidates} "
             f"applied_updates={total_applied}"
         )
+
+    topic_pages = load_topic_pages()
+    if args.compile_synthesis or args.compile_all:
+        compiled = 0
+        for topic in topic_pages:
+            if compile_topic_page(topic):
+                compiled += 1
+        print(f"compiled topic pages: {compiled}/{len(topic_pages)}")
+
+    if args.health_report or args.compile_all:
+        report_path = build_health_report(load_topic_pages())
+        print(f"wrote health report: {report_path.relative_to(PRIVATE_REPO_ROOT).as_posix()}")
     return 0
 
 

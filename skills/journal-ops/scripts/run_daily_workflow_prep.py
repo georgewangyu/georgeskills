@@ -748,7 +748,14 @@ def main() -> int:
             results.append(
                 run_step(
                     "Agent-managed knowledge refresh",
-                    ["python3", str(AGENT_MANAGED_REFRESH), "--date", args.date, "--apply-safe"],
+                    [
+                        "python3",
+                        str(AGENT_MANAGED_REFRESH),
+                        "--date",
+                        args.date,
+                        "--apply-safe",
+                        "--compile-all",
+                    ],
                 )
             )
         elif not AGENT_MANAGED_REFRESH.exists():
