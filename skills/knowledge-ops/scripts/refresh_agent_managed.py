@@ -430,8 +430,12 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    signals, summary_path = summary_signal(args.date)
-    changed_files = changed_files_for_date(args.date)
+    date_text = args.date
+    if date_text.strip().lower() == "today":
+        date_text = date.today().isoformat()
+
+    signals, summary_path = summary_signal(date_text)
+    changed_files = changed_files_for_date(date_text)
     topic_pages = load_topic_pages()
 
     candidates = []
@@ -441,18 +445,18 @@ def main() -> int:
             candidates.append(candidate)
 
     payload = {
-        "date": args.date,
+        "date": date_text,
         "summary_path": summary_path.relative_to(PRIVATE_REPO_ROOT).as_posix(),
         "signal_count": len(signals),
         "changed_file_count": len(changed_files),
         "candidates": candidates,
     }
-    candidate_path = write_candidates(args.date, payload)
+    candidate_path = write_candidates(date_text, payload)
 
     applied_pages: list[str] = []
     if args.apply_safe:
         for candidate in candidates:
-            if apply_safe_updates(candidate, date_text=args.date):
+            if apply_safe_updates(candidate, date_text=date_text):
                 applied_pages.append(str(candidate["page_path"]))
 
     print(f"agent-managed candidates: {len(candidates)} -> {candidate_path}")
