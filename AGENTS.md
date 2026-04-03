@@ -18,3 +18,14 @@ Priority:
 - Do not hardcode personal handles, emails, account ids, private URLs, or user-specific defaults into `skills/`.
 - Keep user-specific defaults, wrappers, credentials, and private overlays in the user's private repo instead.
 - When examples are needed, use generic placeholders like `examplecreator`, `exampleuser`, or `<target>`.
+
+## Public Publication Guard
+
+- Treat `georgeskills` as eventually public.
+- Before commit or push, staged changes must pass the repo's public-safety
+  validation in `.githooks/public-safety-check.py`.
+- That validation is meant to catch obvious publication mistakes in staged
+  additions: local identity strings derived from git/home config, non-placeholder
+  email addresses, absolute local filesystem paths, and common secret material.
+- If a change intentionally needs a real identifier, stop and get explicit human
+  confirmation before committing.

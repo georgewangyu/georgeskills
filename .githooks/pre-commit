@@ -23,4 +23,6 @@ if [[ -n "$check_out" ]]; then
   exit 1
 fi
 
+python3 .githooks/public-safety-check.py
+
 exit 0
