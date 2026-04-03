@@ -50,6 +50,7 @@ PRINT_EMAIL = JOURNAL_OPS_DIR / "print_email_interview_context.py"
 PRINT_LOCATION = JOURNAL_OPS_DIR / "print_location_interview_context.py"
 CHECK_COMPLETENESS = SCRIPTS_DIR / "check_daily_workflow_completeness.py"
 MEMORY_EXTRACT = ROOT / "scripts" / "memory" / "extract_daily_summary_candidates.py"
+AGENT_MANAGED_REFRESH = ROOT / "scripts" / "knowledge" / "refresh_agent_managed.py"
 NOTES_LAST_EXPORT_MARKER = ROOT / "notes-private" / "apple-notes" / "all-notes" / ".last_export"
 EMAIL_DIR = ROOT / "notes-private" / "email"
 CALENDAR_DIR = ROOT / "notes-private" / "calendar"
@@ -650,6 +651,11 @@ def main() -> int:
         help="When refreshing memory candidates, only use the daily summary source (skip other memory-eligible docs).",
     )
     parser.add_argument(
+        "--skip-agent-managed",
+        action="store_true",
+        help="Skip compiled knowledge refresh for the agent-managed middle layer.",
+    )
+    parser.add_argument(
         "--allow-health-miss",
         action="store_true",
         help="Return success even when no health source is available",
@@ -735,6 +741,21 @@ def main() -> int:
             )
         else:
             print("\n== Memory candidate refresh ==")
+            print("Skipped: summary file does not exist yet.")
+
+    if not args.skip_agent_managed:
+        if summary_path.exists() and AGENT_MANAGED_REFRESH.exists():
+            results.append(
+                run_step(
+                    "Agent-managed knowledge refresh",
+                    ["python3", str(AGENT_MANAGED_REFRESH), "--date", args.date, "--apply-safe"],
+                )
+            )
+        elif not AGENT_MANAGED_REFRESH.exists():
+            print("\n== Agent-managed knowledge refresh ==")
+            print("Skipped: refresh script is not available yet.")
+        else:
+            print("\n== Agent-managed knowledge refresh ==")
             print("Skipped: summary file does not exist yet.")
 
     print("\n== Context snapshot ==")
