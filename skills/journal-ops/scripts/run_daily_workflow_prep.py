@@ -10,6 +10,8 @@ report for the target date.
 from __future__ import annotations
 
 import argparse
+import csv
+import re
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -18,6 +20,17 @@ from datetime import date
 from pathlib import Path
 
 from health_paths import apple_health_export_xml, daily_health_metrics_csv, resolve_health_source_records_root
+from health_overnight_analysis import analyze_overnight, fmt_pct
+from print_location_interview_context import (
+    PLACES_FILE,
+    build_config as build_traccar_config,
+    fetch_positions as fetch_traccar_positions,
+    fetch_report_stops as fetch_traccar_report_stops,
+    haversine_km,
+    load_places as load_location_places,
+    summarize_report_stops as summarize_location_report_stops,
+    summarize_stop_clusters as summarize_location_stop_clusters,
+)
 from repo_paths import resolve_private_repo_root
 
 ROOT = resolve_private_repo_root()
@@ -56,6 +69,27 @@ SHORTCUT_HEALTH_SOURCE = (
 )
 APPLE_HEALTH_XML = apple_health_export_xml(ROOT)
 CANONICAL_HEALTH_CSV = daily_health_metrics_csv(ROOT)
+SECTION_ORDER = [
+    "Today at a Glance",
+    "Daily Metrics",
+    "Health Context",
+    "Location Context",
+    "Sprints Today",
+    "Deep Sprint Plan",
+    "Light Block Plan",
+    "Highlights",
+    "Challenges",
+    "Key Decisions",
+    "People / Relationships",
+    "Tomorrow Priorities",
+    "Purchases / Spending",
+    "Notes Highlights",
+    "Important Emails",
+    "Conversation Milestones",
+    "Narrator Notes",
+    "Reflections",
+]
+LEVEL2_HEADER_RE = re.compile(r"^##\s+(.+?)\s*$", flags=re.MULTILINE)
 
 
 @dataclass
@@ -196,6 +230,247 @@ def reflection_exists_for(day_text: str) -> bool:
     return (ROOT / "journal" / "reflections" / f"{day_text}_Thoughts.md").exists()
 
 
+def _parse_float(value: str | None) -> float | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
+def _fmt_num(value: float | None, *, decimals: int = 1, suffix: str = "") -> str:
+    if value is None:
+        return "missing"
+    return f"{value:.{decimals}f}{suffix}"
+
+
+def _fmt_steps(value: float | None) -> str:
+    if value is None:
+        return "missing"
+    if value >= 1000:
+        return f"~{value / 1000:.1f}k"
+    return f"{value:.0f}"
+
+
+def _load_health_row(day_text: str) -> dict[str, str] | None:
+    if not CANONICAL_HEALTH_CSV.exists():
+        return None
+    with CANONICAL_HEALTH_CSV.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if (row.get("date") or "").strip() == day_text:
+                return row
+    return None
+
+
+def build_health_section(day_text: str) -> str | None:
+    row = _load_health_row(day_text)
+    if row is None:
+        return None
+
+    sleep_hours = _parse_float(row.get("sleep_hours"))
+    resting_hr = _parse_float(row.get("resting_hr"))
+    exercise_minutes = _parse_float(row.get("exercise_minutes"))
+    steps = _parse_float(row.get("steps"))
+    active_energy = _parse_float(row.get("active_energy_kcal"))
+    hrv = _parse_float(row.get("hrv_ms"))
+    avg_hr = _parse_float(row.get("heart_rate_avg"))
+    min_hr = _parse_float(row.get("heart_rate_min"))
+    max_hr = _parse_float(row.get("heart_rate_max"))
+    blood_oxygen = _parse_float(row.get("blood_oxygen_pct"))
+
+    lines = [
+        "- Apple Health snapshot:"
+        f" `{_fmt_num(sleep_hours, decimals=2, suffix='h')}` sleep,"
+        f" `{_fmt_num(resting_hr, decimals=0, suffix=' bpm')}` resting HR,"
+        f" `{_fmt_num(exercise_minutes, decimals=0, suffix=' min')}` exercise,"
+        f" `{_fmt_steps(steps)}` steps,"
+        f" `{_fmt_num(active_energy, decimals=1, suffix=' kcal')}` active energy.",
+    ]
+
+    cardio_parts: list[str] = []
+    if hrv is not None:
+        cardio_parts.append(f"HRV `{_fmt_num(hrv, decimals=2, suffix=' ms')}`")
+    if avg_hr is not None:
+        cardio_parts.append(f"average HR `{_fmt_num(avg_hr, decimals=2, suffix=' bpm')}`")
+    if min_hr is not None or max_hr is not None:
+        cardio_parts.append(
+            "range"
+            f" `{_fmt_num(min_hr, decimals=0)}-{_fmt_num(max_hr, decimals=0)} bpm`"
+        )
+    if cardio_parts:
+        lines.append(f"- Cardiovascular context: {', '.join(cardio_parts)}.")
+
+    overnight = analyze_overnight(day_text)
+    oxygen_stats = overnight.get("oxygen_stats", {})
+    oxygen_count = oxygen_stats.get("count", 0) or 0
+    if blood_oxygen is not None or oxygen_count:
+        oxygen_sentence = (
+            "- Oxygen context"
+            f" looked {overnight.get('severity', 'unknown')} overnight:"
+            f" blood oxygen `{_fmt_num(blood_oxygen, decimals=2, suffix='%')}`"
+        )
+        if oxygen_count:
+            oxygen_sentence += (
+                ", overnight SpO2"
+                f" min `{fmt_pct(oxygen_stats.get('min'))}`,"
+                f" median `{fmt_pct(oxygen_stats.get('median'))}`,"
+                f" average `{fmt_pct(oxygen_stats.get('avg'))}`"
+            )
+        oxygen_sentence += "."
+        lines.append(oxygen_sentence)
+
+    missing_fields: list[str] = []
+    if _parse_float(row.get("blood_glucose_mmol_l")) is None:
+        missing_fields.append("blood glucose")
+    if _parse_float(row.get("weight_kg")) is None:
+        missing_fields.append("weight")
+    if missing_fields:
+        lines.append(f"- Missing data for this date: {', '.join(missing_fields)}.")
+
+    return "\n".join(lines)
+
+
+def build_location_section(day_text: str) -> str | None:
+    config = build_traccar_config()
+    if config is None:
+        return None
+    try:
+        positions = fetch_traccar_positions(config, day_text)
+    except Exception:
+        return None
+    if not positions:
+        return None
+
+    total_distance_km = 0.0
+    max_speed = 0.0
+    for prev, cur in zip(positions, positions[1:]):
+        total_distance_km += haversine_km(prev, cur)
+        max_speed = max(max_speed, cur.speed_kph)
+
+    places = load_location_places(PLACES_FILE)
+    stops: list[str] = []
+    try:
+        stops = summarize_location_report_stops(fetch_traccar_report_stops(config, day_text), places)
+    except Exception:
+        stops = []
+    if not stops:
+        stops = summarize_location_stop_clusters(positions, places)
+
+    first = positions[0]
+    last = positions[-1]
+    lines = [
+        "- First seen at"
+        f" `{first.timestamp.strftime('%H:%M')}` and last seen at"
+        f" `{last.timestamp.strftime('%H:%M')}`, with about"
+        f" `{total_distance_km:.1f} km` of total travel."
+    ]
+    if stops:
+        stop_text = "; ".join(f"`{stop}`" for stop in stops[:5])
+        lines.append(f"- Longer stops that defined the day: {stop_text}.")
+    lines.append(f"- Peak observed speed was `{max_speed:.1f} km/h`.")
+    return "\n".join(lines)
+
+
+def split_frontmatter(text: str) -> tuple[str, str]:
+    match = re.match(r"\A---\n.*?\n---\n", text, flags=re.DOTALL)
+    if not match:
+        return "", text
+    return text[:match.end()], text[match.end():]
+
+
+def extract_level2_headers(text: str) -> dict[str, tuple[int, int]]:
+    matches = list(LEVEL2_HEADER_RE.finditer(text))
+    sections: dict[str, tuple[int, int]] = {}
+    for idx, match in enumerate(matches):
+        title = re.sub(r"\s+\(Optional\)$", "", match.group(1).strip()).strip()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+        sections[title] = (match.start(), end)
+    return sections
+
+
+def upsert_level2_section(text: str, title: str, body: str) -> str:
+    frontmatter, markdown_body = split_frontmatter(text)
+    sections = extract_level2_headers(markdown_body)
+    block = f"## {title}\n\n{body.strip()}\n"
+
+    if title in sections:
+        start, end = sections[title]
+        updated_body = (
+            markdown_body[:start].rstrip("\n")
+            + "\n\n"
+            + block
+            + "\n"
+            + markdown_body[end:].lstrip("\n")
+        )
+        return frontmatter + updated_body.lstrip("\n")
+
+    insert_at = len(markdown_body)
+    if title in SECTION_ORDER:
+        current_idx = SECTION_ORDER.index(title)
+        for later_title in SECTION_ORDER[current_idx + 1:]:
+            if later_title in sections:
+                insert_at = sections[later_title][0]
+                break
+
+    if insert_at == len(markdown_body):
+        updated_body = markdown_body.rstrip("\n") + "\n\n" + block
+    else:
+        updated_body = (
+            markdown_body[:insert_at].rstrip("\n")
+            + "\n\n"
+            + block
+            + "\n"
+            + markdown_body[insert_at:].lstrip("\n")
+        )
+    return frontmatter + updated_body.lstrip("\n")
+
+
+def ensure_level2_section(text: str, title: str, body: str) -> str:
+    _, markdown_body = split_frontmatter(text)
+    if title in extract_level2_headers(markdown_body):
+        return text
+    return upsert_level2_section(text, title, body)
+
+
+def hydrate_summary_context(day_text: str) -> StepResult:
+    summary_path = summary_path_for(day_text)
+    if not summary_path.exists():
+        return StepResult("Summary context sync", True, "skipped (summary missing)")
+
+    original = summary_path.read_text(encoding="utf-8")
+    updated = original
+    changed_sections: list[str] = []
+
+    health_body = build_health_section(day_text)
+    if health_body:
+        updated = upsert_level2_section(updated, "Health Context", health_body)
+        changed_sections.append("Health Context")
+
+    location_body = build_location_section(day_text)
+    if location_body:
+        updated = upsert_level2_section(updated, "Location Context", location_body)
+        changed_sections.append("Location Context")
+
+    before = updated
+    updated = ensure_level2_section(updated, "Conversation Milestones", "- Not logged yet.")
+    if updated != before:
+        changed_sections.append("Conversation Milestones")
+
+    before = updated
+    updated = ensure_level2_section(updated, "Narrator Notes", "- Not logged yet.")
+    if updated != before:
+        changed_sections.append("Narrator Notes")
+
+    if updated == original:
+        return StepResult("Summary context sync", True, "no changes")
+
+    summary_path.write_text(updated, encoding="utf-8")
+    return StepResult("Summary context sync", True, f"updated {', '.join(changed_sections)}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Prepare daily workflow context with one command")
     parser.add_argument("--date", default=date.today().isoformat(), help="Target date YYYY-MM-DD (default: today)")
@@ -257,6 +532,7 @@ def main() -> int:
     if not args.skip_health and not health_missing:
         results.append(run_step("Health interview context", ["python3", str(PRINT_HEALTH), "--date", args.date]))
 
+    results.append(hydrate_summary_context(args.date))
     results.append(run_step("Workflow completeness", ["python3", str(CHECK_COMPLETENESS), "--date", args.date], ok_codes={0, 1}))
 
     summary_path = summary_path_for(args.date)
