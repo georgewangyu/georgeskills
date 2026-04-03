@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Refresh agent-managed compiled knowledge pages from daily-summary signal.
+Refresh and backfill agent-managed compiled knowledge pages.
 
 This script intentionally mirrors the existing journal/memory pattern:
 - use the daily summary as the stable chronological input
 - produce reviewable candidate output
 - auto-apply only low-risk page deltas
+- optionally seed canonical topic pages from existing organized docs
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ WORKSPACE_ROOT = PRIVATE_REPO_ROOT.parent
 AGENT_MANAGED_DIR = PRIVATE_REPO_ROOT / "knowledge" / "agent-managed"
 TOPICS_DIR = AGENT_MANAGED_DIR / "topics"
 CANDIDATES_DIR = AGENT_MANAGED_DIR / "_candidates"
+INDEXES_DIR = AGENT_MANAGED_DIR / "indexes"
 SUMMARY_DIR = PRIVATE_REPO_ROOT / "journal" / "summaries"
 SUMMARY_FILENAME_RE = re.compile(r"(\d{4}-\d{2}-\d{2})_Summary\.md$")
 LEVEL2_HEADER_RE = re.compile(r"^##\s+(.+?)\s*$", flags=re.MULTILINE)
@@ -39,6 +41,25 @@ INTERESTING_SECTIONS = {
     "Today at a Glance",
 }
 WORKSPACE_REPOS = ("georgerepo", "liferepo", "georgeskills")
+SEED_SCAN_ROOTS = (
+    PRIVATE_REPO_ROOT / "knowledge",
+    PRIVATE_REPO_ROOT / "deep-exploration" / "frameworks",
+)
+SEED_EXCLUDED_DIRS = {
+    "agent-managed",
+    "prompts",
+    "_archive",
+    ".git",
+    "__pycache__",
+}
+SEED_EXCLUDED_FILENAMES = {
+    "README.md",
+    "IMPROVEMENTS.md",
+    "PRIVATE-knowledge.md",
+    "PRIVATE-deep-exploration.md",
+    "EXPLORATION_QUEUE.md",
+    "OPENCLAW_EXPLORATION_QUEUE.md",
+}
 GENERIC_TOPIC_WORDS = {
     "agent",
     "managed",
@@ -50,6 +71,22 @@ GENERIC_TOPIC_WORDS = {
     "topic",
     "topics",
     "readme",
+    "research",
+    "results",
+    "summary",
+    "analysis",
+    "docs",
+    "design",
+    "paper",
+    "papers",
+    "history",
+    "concepts",
+    "other",
+    "findings",
+    "framework",
+    "frameworks",
+    "memory",
+    "current",
 }
 
 
@@ -68,6 +105,15 @@ class TopicPage:
     keywords: list[str]
 
 
+@dataclass
+class SeedTopic:
+    slug: str
+    title: str
+    description: str
+    source_paths: list[str]
+    keywords: list[str]
+
+
 def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
@@ -80,6 +126,10 @@ def slugify(value: str) -> str:
 
 def markdown_anchor(title: str) -> str:
     return slugify(title.replace("/", " ")) or "section"
+
+
+def titleize_slug(slug: str) -> str:
+    return " ".join(part.capitalize() for part in slug.split("-") if part)
 
 
 def summary_path_for_date(date_text: str) -> Path:
@@ -207,8 +257,18 @@ def frontmatter_scalar(header: str, key: str) -> str | None:
     return match.group(1).strip().strip('"')
 
 
+def frontmatter_block(key: str, values: list[str], *, indent: str = "") -> str:
+    if not values:
+        return f"{indent}{key}: []"
+    lines = [f"{indent}{key}:"]
+    for value in values:
+        lines.append(f'{indent}  - "{value}"')
+    return "\n".join(lines)
+
+
 def topic_keywords(path: Path, title: str, header: str) -> list[str]:
     keywords = frontmatter_list(header, "agent_managed_keywords")
+    seed_paths = frontmatter_list(header, "source_seed_paths")
     if not keywords:
         keywords.extend(
             part
@@ -220,6 +280,12 @@ def topic_keywords(path: Path, title: str, header: str) -> list[str]:
             for part in re.split(r"[^a-z0-9]+", title.lower())
             if len(part) > 3 and part not in GENERIC_TOPIC_WORDS
         )
+        for seed_path in seed_paths:
+            keywords.extend(
+                part
+                for part in re.split(r"[^a-z0-9]+", seed_path.lower())
+                if len(part) > 3 and part not in GENERIC_TOPIC_WORDS
+            )
     deduped: list[str] = []
     for keyword in keywords:
         normalized = keyword.strip().lower()
@@ -247,6 +313,193 @@ def load_topic_pages() -> list[TopicPage]:
             )
         )
     return pages
+
+
+def summary_dates() -> list[str]:
+    dates: list[str] = []
+    if not SUMMARY_DIR.exists():
+        return dates
+    for path in sorted(SUMMARY_DIR.rglob("*_Summary.md")):
+        match = SUMMARY_FILENAME_RE.search(path.name)
+        if match:
+            dates.append(match.group(1))
+    return dates
+
+
+def is_excluded_seed_path(path: Path) -> bool:
+    if path.name in SEED_EXCLUDED_FILENAMES:
+        return True
+    if not path.suffix.lower() == ".md":
+        return True
+    if path.name.startswith("PRIVATE-"):
+        return True
+    parts = set(path.parts)
+    return any(part in SEED_EXCLUDED_DIRS for part in parts)
+
+
+def collect_seed_groups() -> dict[str, list[Path]]:
+    groups: dict[str, list[Path]] = {}
+    for root in SEED_SCAN_ROOTS:
+        if not root.exists():
+            continue
+        for path in sorted(root.rglob("*.md")):
+            if is_excluded_seed_path(path):
+                continue
+            rel = path.relative_to(PRIVATE_REPO_ROOT).as_posix()
+            if rel.startswith("knowledge/"):
+                parts = rel.split("/")
+                if len(parts) >= 3:
+                    topic_key = parts[1]
+                else:
+                    topic_key = path.stem
+            else:
+                topic_key = path.stem
+            groups.setdefault(slugify(topic_key), []).append(path)
+    return groups
+
+
+def infer_seed_keywords(slug: str, title: str, source_paths: list[str]) -> list[str]:
+    keywords: list[str] = [slug.replace("-", " "), slug, title.lower()]
+    for source_path in source_paths:
+        parts = Path(source_path).parts
+        informative_parts = [
+            part.lower()
+            for part in parts
+            if len(part) > 3
+            and part.lower() not in GENERIC_TOPIC_WORDS
+            and part.lower() not in {"knowledge", "deep-exploration", "explorations"}
+        ]
+        if informative_parts:
+            keywords.append(informative_parts[0].replace("-", " "))
+    deduped: list[str] = []
+    for keyword in keywords:
+        normalized = re.sub(r"\s+", " ", keyword.strip().lower())
+        if len(normalized) < 4:
+            continue
+        if normalized not in deduped:
+            deduped.append(normalized)
+    return deduped[:20]
+
+
+def build_seed_topics() -> list[SeedTopic]:
+    seeds: list[SeedTopic] = []
+    for slug, paths in sorted(collect_seed_groups().items()):
+        unique_paths = [
+            p.relative_to(PRIVATE_REPO_ROOT).as_posix()
+            for p in sorted(paths)
+            if p.is_file()
+        ]
+        if not unique_paths:
+            continue
+        title = titleize_slug(slug)
+        if slug == "adhd-learnings":
+            title = "ADHD Learnings"
+        elif slug == "ai-agents":
+            title = "AI Agents"
+        elif slug == "ai-crash-course":
+            title = "AI Crash Course"
+        elif slug == "openclaw":
+            title = "OpenClaw"
+        description = (
+            f"Current best synthesis of the {title} topic, seeded from existing organized repo documents."
+        )
+        seeds.append(
+            SeedTopic(
+                slug=slug,
+                title=title,
+                description=description,
+                source_paths=unique_paths[:20],
+                keywords=infer_seed_keywords(slug, title, unique_paths),
+            )
+        )
+    return seeds
+
+
+def seed_page_content(seed: SeedTopic) -> str:
+    source_map = "\n".join(
+        f"- `{source_path}` - seeded from an existing organized document."
+        for source_path in seed.source_paths
+    )
+    return (
+        "---\n"
+        'doc_schema: "doc-frontmatter-v1"\n'
+        f'doc_id: "georgerepo/knowledge/agent-managed/topics/{seed.slug}"\n'
+        'doc_type: "knowledge_doc"\n'
+        'doc_status: "active"\n'
+        f'title: "{seed.title}"\n'
+        f'description: "{seed.description}"\n'
+        "memory_eligible: true\n"
+        'memory_priority: "medium"\n'
+        "doc_tags:\n"
+        '  - "domain:knowledge"\n'
+        '  - "visibility:private"\n'
+        '  - "type:knowledge_doc"\n'
+        f"{frontmatter_block('agent_managed_keywords', seed.keywords)}\n"
+        f"{frontmatter_block('source_seed_paths', seed.source_paths)}\n"
+        "---\n"
+        f"# {seed.title}\n\n"
+        "## Summary\n\n"
+        f"- This page is the canonical agent-managed synthesis for `{seed.title}`.\n"
+        f"- It was seeded from {len(seed.source_paths)} existing organized documents and should absorb future cross-session understanding.\n\n"
+        "## Current Understanding\n\n"
+        "- This topic already exists across prior knowledge and exploration artifacts, which makes it a good candidate for a maintained canonical page.\n"
+        "- Historical daily-summary replay should enrich the evidence trail while keeping the page readable and inspectable.\n"
+        "- Higher-risk rewrites to core synthesis should happen only when there is enough repeated signal to justify them.\n\n"
+        "## Important Evidence\n\n"
+        f"- Seeded from {len(seed.source_paths)} organized source documents already present in the repo.\n\n"
+        "## Open Questions\n\n"
+        "- What parts of this topic are stable enough to promote into tighter current-understanding bullets?\n"
+        "- Which recurring subtopics deserve their own canonical child pages later?\n\n"
+        "## Related Pages\n\n"
+        "- `knowledge/agent-managed/indexes/knowledge-map.md`\n\n"
+        "## Source Map\n\n"
+        f"{source_map}\n"
+    )
+
+
+def ensure_seed_topic_pages(*, overwrite: bool = False) -> list[Path]:
+    ensure_dir(TOPICS_DIR)
+    updated: list[Path] = []
+    for seed in build_seed_topics():
+        path = TOPICS_DIR / f"{seed.slug}.md"
+        if path.exists() and not overwrite:
+            continue
+        path.write_text(seed_page_content(seed), encoding="utf-8")
+        updated.append(path)
+    return updated
+
+
+def rebuild_index_page(topic_pages: list[TopicPage]) -> Path:
+    ensure_dir(INDEXES_DIR)
+    path = INDEXES_DIR / "knowledge-map.md"
+    entries = "\n".join(
+        f"- `{topic.path.relative_to(PRIVATE_REPO_ROOT).as_posix()}` - canonical page for {topic.title}."
+        for topic in sorted(topic_pages, key=lambda item: item.title.lower())
+    )
+    text = (
+        "---\n"
+        'doc_schema: "doc-frontmatter-v1"\n'
+        'doc_id: "georgerepo/knowledge/agent-managed/indexes/knowledge-map"\n'
+        'doc_type: "knowledge_index"\n'
+        'doc_status: "active"\n'
+        'title: "Knowledge Map"\n'
+        'description: "Index of canonical agent-managed topic pages."\n'
+        "memory_eligible: true\n"
+        'memory_priority: "medium"\n'
+        "doc_tags:\n"
+        '  - "domain:knowledge"\n'
+        '  - "visibility:private"\n'
+        '  - "type:knowledge_index"\n'
+        "---\n"
+        "# Knowledge Map\n\n"
+        "## Summary\n\n"
+        "- This index lists the canonical topic pages in `knowledge/agent-managed/topics/`.\n"
+        "- Topic pages should hold current-best synthesis, while day-by-day chronology remains in `journal/`.\n\n"
+        "## Topic Pages\n\n"
+        f"{entries}\n"
+    )
+    path.write_text(text, encoding="utf-8")
+    return path
 
 
 def summary_signal(date_text: str) -> tuple[list[dict[str, str]], Path]:
@@ -317,10 +570,16 @@ def changed_files_for_date(date_text: str) -> list[str]:
         for line in result.stdout.splitlines():
             rel = line.strip()
             if rel:
-                changed.append(f"{repo_name}/{rel}")
+                full_rel = f"{repo_name}/{rel}"
+                if full_rel.startswith("georgerepo/knowledge/agent-managed/"):
+                    continue
+                changed.append(full_rel)
         if target == date.today():
             for rel in current_workspace_changes(repo_dir):
-                changed.append(f"{repo_name}/{rel}")
+                full_rel = f"{repo_name}/{rel}"
+                if full_rel.startswith("georgerepo/knowledge/agent-managed/"):
+                    continue
+                changed.append(full_rel)
     deduped: list[str] = []
     for path in changed:
         if path not in deduped:
@@ -425,15 +684,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--date", default=date.today().isoformat(), help="Target date YYYY-MM-DD (default: today)")
     parser.add_argument("--apply-safe", action="store_true", help="Apply low-risk updates directly to matched topic pages.")
     parser.add_argument("--print", action="store_true", dest="print_payload", help="Print candidate payload to stdout.")
+    parser.add_argument("--seed-organized", action="store_true", help="Seed topic pages from organized knowledge and framework documents.")
+    parser.add_argument("--refresh-seeds", action="store_true", help="Overwrite existing seeded topic pages with regenerated frontmatter and baseline content.")
+    parser.add_argument("--rebuild-index", action="store_true", help="Rebuild the agent-managed knowledge index page.")
+    parser.add_argument("--backfill-all", action="store_true", help="Replay all available historical summaries.")
     return parser.parse_args()
 
 
-def main() -> int:
-    args = parse_args()
-    date_text = args.date
-    if date_text.strip().lower() == "today":
-        date_text = date.today().isoformat()
-
+def run_for_date(date_text: str, *, apply_safe: bool, print_payload: bool) -> tuple[int, list[str]]:
     signals, summary_path = summary_signal(date_text)
     changed_files = changed_files_for_date(date_text)
     topic_pages = load_topic_pages()
@@ -454,12 +712,12 @@ def main() -> int:
     candidate_path = write_candidates(date_text, payload)
 
     applied_pages: list[str] = []
-    if args.apply_safe:
+    if apply_safe:
         for candidate in candidates:
             if apply_safe_updates(candidate, date_text=date_text):
                 applied_pages.append(str(candidate["page_path"]))
 
-    print(f"agent-managed candidates: {len(candidates)} -> {candidate_path}")
+    print(f"agent-managed candidates [{date_text}]: {len(candidates)} -> {candidate_path}")
     if applied_pages:
         print("applied safe updates:")
         for page in applied_pages:
@@ -467,8 +725,50 @@ def main() -> int:
     else:
         print("applied safe updates: none")
 
-    if args.print_payload:
+    if print_payload:
         print(json.dumps(payload, indent=2))
+    return len(candidates), applied_pages
+
+
+def main() -> int:
+    args = parse_args()
+
+    if args.seed_organized or args.refresh_seeds:
+        created = ensure_seed_topic_pages(overwrite=args.refresh_seeds)
+        action_label = "refreshed topic pages" if args.refresh_seeds else "seeded topic pages"
+        print(f"{action_label}: {len(created)}")
+        for path in created:
+            print(f"- {path.relative_to(PRIVATE_REPO_ROOT).as_posix()}")
+
+    topic_pages = load_topic_pages()
+    if args.rebuild_index or args.seed_organized or args.refresh_seeds:
+        index_path = rebuild_index_page(topic_pages)
+        print(f"rebuilt knowledge index: {index_path.relative_to(PRIVATE_REPO_ROOT).as_posix()}")
+
+    if args.backfill_all:
+        dates = summary_dates()
+    else:
+        date_text = args.date
+        if date_text.strip().lower() == "today":
+            date_text = date.today().isoformat()
+        dates = [date_text]
+
+    total_candidates = 0
+    total_applied = 0
+    for date_text in dates:
+        candidate_count, applied_pages = run_for_date(
+            date_text,
+            apply_safe=args.apply_safe,
+            print_payload=args.print_payload and len(dates) == 1,
+        )
+        total_candidates += candidate_count
+        total_applied += len(applied_pages)
+
+    if len(dates) > 1:
+        print(
+            f"backfill summary: dates={len(dates)} candidates={total_candidates} "
+            f"applied_updates={total_applied}"
+        )
     return 0
 
 
