@@ -24,7 +24,7 @@ from repo_paths import resolve_private_repo_root
 
 PRIVATE_REPO_ROOT = resolve_private_repo_root()
 WORKSPACE_ROOT = PRIVATE_REPO_ROOT.parent
-AGENT_MANAGED_DIR = PRIVATE_REPO_ROOT / "knowledge" / "agent-managed"
+AGENT_MANAGED_DIR = PRIVATE_REPO_ROOT / "agent-managed"
 TOPICS_DIR = AGENT_MANAGED_DIR / "topics"
 CANDIDATES_DIR = AGENT_MANAGED_DIR / "_candidates"
 INDEXES_DIR = AGENT_MANAGED_DIR / "indexes"
@@ -423,7 +423,7 @@ def seed_page_content(seed: SeedTopic) -> str:
     return (
         "---\n"
         'doc_schema: "doc-frontmatter-v1"\n'
-        f'doc_id: "georgerepo/knowledge/agent-managed/topics/{seed.slug}"\n'
+        f'doc_id: "georgerepo/agent-managed/topics/{seed.slug}"\n'
         'doc_type: "knowledge_doc"\n'
         'doc_status: "active"\n'
         f'title: "{seed.title}"\n'
@@ -451,7 +451,7 @@ def seed_page_content(seed: SeedTopic) -> str:
         "- What parts of this topic are stable enough to promote into tighter current-understanding bullets?\n"
         "- Which recurring subtopics deserve their own canonical child pages later?\n\n"
         "## Related Pages\n\n"
-        "- `knowledge/agent-managed/indexes/knowledge-map.md`\n\n"
+        "- `agent-managed/indexes/knowledge-map.md`\n\n"
         "## Source Map\n\n"
         f"{source_map}\n"
     )
@@ -479,7 +479,7 @@ def rebuild_index_page(topic_pages: list[TopicPage]) -> Path:
     text = (
         "---\n"
         'doc_schema: "doc-frontmatter-v1"\n'
-        'doc_id: "georgerepo/knowledge/agent-managed/indexes/knowledge-map"\n'
+        'doc_id: "georgerepo/agent-managed/indexes/knowledge-map"\n'
         'doc_type: "knowledge_index"\n'
         'doc_status: "active"\n'
         'title: "Knowledge Map"\n'
@@ -493,7 +493,7 @@ def rebuild_index_page(topic_pages: list[TopicPage]) -> Path:
         "---\n"
         "# Knowledge Map\n\n"
         "## Summary\n\n"
-        "- This index lists the canonical topic pages in `knowledge/agent-managed/topics/`.\n"
+        "- This index lists the canonical topic pages in `agent-managed/topics/`.\n"
         "- Topic pages should hold current-best synthesis, while day-by-day chronology remains in `journal/`.\n\n"
         "## Topic Pages\n\n"
         f"{entries}\n"
@@ -571,13 +571,19 @@ def changed_files_for_date(date_text: str) -> list[str]:
             rel = line.strip()
             if rel:
                 full_rel = f"{repo_name}/{rel}"
-                if full_rel.startswith("georgerepo/knowledge/agent-managed/"):
+                if (
+                    full_rel.startswith("georgerepo/agent-managed/")
+                    or full_rel.startswith("georgerepo/knowledge/agent-managed/")
+                ):
                     continue
                 changed.append(full_rel)
         if target == date.today():
             for rel in current_workspace_changes(repo_dir):
                 full_rel = f"{repo_name}/{rel}"
-                if full_rel.startswith("georgerepo/knowledge/agent-managed/"):
+                if (
+                    full_rel.startswith("georgerepo/agent-managed/")
+                    or full_rel.startswith("georgerepo/knowledge/agent-managed/")
+                ):
                     continue
                 changed.append(full_rel)
     deduped: list[str] = []

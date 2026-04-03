@@ -22,7 +22,7 @@ Use when:
 ## Boundaries
 
 - Public specification source: `liferepo/knowledge/`
-- Private compiled pages: `<private-repo>/knowledge/agent-managed/`
+- Private compiled pages: `<private-repo>/agent-managed/`
 - Raw sources remain in repo docs, exports, and daily summaries
 
 ## Current Script Surface
