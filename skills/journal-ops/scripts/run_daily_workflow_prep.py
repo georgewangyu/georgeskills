@@ -11,12 +11,13 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import re
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from health_paths import apple_health_export_xml, daily_health_metrics_csv, resolve_health_source_records_root
@@ -49,6 +50,13 @@ PRINT_EMAIL = JOURNAL_OPS_DIR / "print_email_interview_context.py"
 PRINT_LOCATION = JOURNAL_OPS_DIR / "print_location_interview_context.py"
 CHECK_COMPLETENESS = SCRIPTS_DIR / "check_daily_workflow_completeness.py"
 MEMORY_EXTRACT = ROOT / "scripts" / "memory" / "extract_daily_summary_candidates.py"
+NOTES_LAST_EXPORT_MARKER = ROOT / "notes-private" / "apple-notes" / "all-notes" / ".last_export"
+EMAIL_DIR = ROOT / "notes-private" / "email"
+CALENDAR_DIR = ROOT / "notes-private" / "calendar"
+CALENDAR_LOG = CALENDAR_DIR / "export.log"
+CALENDAR_WEEKLY = CALENDAR_DIR / "weekly_calendar.md"
+PREP_MARKERS_DIR = ROOT / "journal" / ".workflow_prep_markers"
+DEFAULT_EXPORT_FRESHNESS_SECONDS = 300
 
 HEALTH_AUTO_EXPORTS_ROOT = resolve_health_source_records_root(ROOT)
 ICLOUD_HEALTH_EXPORT_ROOT = (
@@ -99,6 +107,150 @@ class StepResult:
     detail: str
 
 
+@dataclass(frozen=True)
+class ParallelStepSpec:
+    name: str
+    cmd: list[str]
+    ok_codes: set[int] | None = None
+
+
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _format_dt(dt: datetime) -> str:
+    return dt.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+
+
+def _format_age(seconds: float) -> str:
+    total = max(int(seconds), 0)
+    minutes, secs = divmod(total, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}h {minutes}m {secs}s"
+    if minutes:
+        return f"{minutes}m {secs}s"
+    return f"{secs}s"
+
+
+def _mtime_utc(path: Path) -> datetime | None:
+    if not path.exists():
+        return None
+    return datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+
+
+def _max_dt(*values: datetime | None) -> datetime | None:
+    present = [value for value in values if value is not None]
+    return max(present) if present else None
+
+
+def _prep_marker_path(name: str) -> Path:
+    return PREP_MARKERS_DIR / f"{name}.json"
+
+
+def read_prep_marker(name: str) -> tuple[str | None, datetime | None]:
+    path = _prep_marker_path(name)
+    if not path.exists():
+        return None, None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None, None
+
+    target_date = str(payload.get("target_date", "")).strip() or None
+    raw_completed_at = str(payload.get("completed_at", "")).strip()
+    if not raw_completed_at:
+        return target_date, None
+    try:
+        completed_at = datetime.fromisoformat(raw_completed_at)
+    except ValueError:
+        return target_date, None
+    if completed_at.tzinfo is None:
+        completed_at = completed_at.replace(tzinfo=timezone.utc)
+    return target_date, completed_at.astimezone(timezone.utc)
+
+
+def write_prep_marker(name: str, *, target_date: str) -> None:
+    PREP_MARKERS_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "target_date": target_date,
+        "completed_at": _now_utc().isoformat(),
+    }
+    _prep_marker_path(name).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def latest_apple_notes_activity() -> datetime | None:
+    _, prep_time = read_prep_marker("apple_notes")
+    return _max_dt(prep_time, _mtime_utc(NOTES_LAST_EXPORT_MARKER))
+
+
+def latest_email_activity() -> datetime | None:
+    _, prep_time = read_prep_marker("email")
+    email_markers = sorted(EMAIL_DIR.glob(".last_incremental_export_*"))
+    email_time = None
+    if email_markers:
+        email_time = max(_mtime_utc(marker) for marker in email_markers)
+    return _max_dt(prep_time, email_time)
+
+
+def latest_calendar_success() -> datetime | None:
+    _, prep_time = read_prep_marker("calendar")
+    success_time = None
+    if CALENDAR_LOG.exists():
+        text = CALENDAR_LOG.read_text(encoding="utf-8", errors="ignore")
+        lines = [line for line in text.splitlines() if "Calendar export completed successfully" in line]
+        if lines:
+            match = re.search(r"\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]", lines[-1])
+            if match:
+                parsed = datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
+                parsed = parsed.replace(tzinfo=datetime.now().astimezone().tzinfo)
+                success_time = parsed.astimezone(timezone.utc)
+    return _max_dt(prep_time, success_time, _mtime_utc(CALENDAR_WEEKLY))
+
+
+def maybe_skip_fresh_export(
+    *,
+    name: str,
+    freshness_key: str,
+    target_date: str,
+    freshness_seconds: int,
+    force_exports: bool,
+) -> StepResult | None:
+    if force_exports or freshness_seconds <= 0:
+        return None
+
+    target_date_seen, prep_time = read_prep_marker(freshness_key)
+    latest_activity = None
+    activity_source = ""
+
+    if prep_time is not None and target_date_seen == target_date:
+        latest_activity = prep_time
+        activity_source = "prep marker"
+    elif target_date == date.today().isoformat():
+        if freshness_key == "apple_notes":
+            latest_activity = latest_apple_notes_activity()
+        elif freshness_key == "email":
+            latest_activity = latest_email_activity()
+        elif freshness_key == "calendar":
+            latest_activity = latest_calendar_success()
+        activity_source = "export output"
+
+    if latest_activity is None:
+        return None
+
+    age_seconds = (_now_utc() - latest_activity).total_seconds()
+    if age_seconds > freshness_seconds:
+        return None
+
+    detail = (
+        "skipped (fresh export via "
+        f"{activity_source}; last success {_format_age(age_seconds)} ago at {_format_dt(latest_activity)})"
+    )
+    print(f"\n== {name} ==")
+    print(detail)
+    return StepResult(name=name, ok=True, detail=detail)
+
+
 def _print_proc_output(proc: subprocess.CompletedProcess[str]) -> None:
     if proc.stdout:
         print(proc.stdout, end="" if proc.stdout.endswith("\n") else "\n")
@@ -127,15 +279,15 @@ def run_step_captured(name: str, cmd: list[str], *, ok_codes: set[int] | None = 
     return StepResult(name=name, ok=False, detail=f"exit {proc.returncode}")
 
 
-def run_steps_parallel(step_specs: list[tuple[str, list[str], set[int] | None]]) -> list[StepResult]:
+def run_steps_parallel(step_specs: list[ParallelStepSpec]) -> list[StepResult]:
     if not step_specs:
         return []
 
     results_by_index: dict[int, StepResult] = {}
     with ThreadPoolExecutor(max_workers=len(step_specs)) as executor:
         futures = [
-            executor.submit(run_step_captured, name, cmd, ok_codes=ok_codes)
-            for name, cmd, ok_codes in step_specs
+            executor.submit(run_step_captured, spec.name, spec.cmd, ok_codes=spec.ok_codes)
+            for spec in step_specs
         ]
         for idx, future in enumerate(futures):
             results_by_index[idx] = future.result()
@@ -475,6 +627,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Prepare daily workflow context with one command")
     parser.add_argument("--date", default=date.today().isoformat(), help="Target date YYYY-MM-DD (default: today)")
     parser.add_argument("--skip-exports", action="store_true", help="Skip Apple Notes / email / calendar exports")
+    parser.add_argument(
+        "--force-exports",
+        action="store_true",
+        help="Run notes/email/calendar exports even when the prep runner already refreshed them recently.",
+    )
+    parser.add_argument(
+        "--export-freshness-seconds",
+        type=int,
+        default=DEFAULT_EXPORT_FRESHNESS_SECONDS,
+        help="Same-day export reruns inside this freshness window are skipped unless --force-exports is set (default: 300).",
+    )
     parser.add_argument("--skip-health", action="store_true", help="Skip health import attempts")
     parser.add_argument(
         "--skip-memory",
@@ -499,13 +662,36 @@ def main() -> int:
     print(f"Summary path: {summary_path_for(args.date)}")
 
     if not args.skip_exports:
-        results.append(run_step("Apple Notes export", ["python3", str(APPLE_NOTES_EXPORT)]))
-        results.append(run_step("Email export", ["python3", str(EMAIL_EXPORT)]))
-        results.append(run_step("Calendar export", ["python3", str(CALENDAR_EXPORT)]))
+        export_specs = [
+            ("Apple Notes export", ["python3", str(APPLE_NOTES_EXPORT)], "apple_notes"),
+            ("Email export", ["python3", str(EMAIL_EXPORT)], "email"),
+            ("Calendar export", ["python3", str(CALENDAR_EXPORT)], "calendar"),
+        ]
+        exports_to_run: list[ParallelStepSpec] = []
+        export_keys_to_update: list[str] = []
+        for name, cmd, freshness_key in export_specs:
+            skipped = maybe_skip_fresh_export(
+                name=name,
+                freshness_key=freshness_key,
+                target_date=args.date,
+                freshness_seconds=args.export_freshness_seconds,
+                force_exports=args.force_exports,
+            )
+            if skipped is not None:
+                results.append(skipped)
+                continue
+            exports_to_run.append(ParallelStepSpec(name=name, cmd=cmd))
+            export_keys_to_update.append(freshness_key)
+        if exports_to_run:
+            export_results = run_steps_parallel(exports_to_run)
+            results.extend(export_results)
+            for freshness_key, result in zip(export_keys_to_update, export_results):
+                if result.ok:
+                    write_prep_marker(freshness_key, target_date=args.date)
 
-    initial_parallel_steps: list[tuple[str, list[str], set[int] | None]] = [
-        ("Email interview context", ["python3", str(PRINT_EMAIL), "--date", args.date], None),
-        ("Location interview context", ["python3", str(PRINT_LOCATION), "--date", args.date], None),
+    initial_parallel_steps: list[ParallelStepSpec] = [
+        ParallelStepSpec("Email interview context", ["python3", str(PRINT_EMAIL), "--date", args.date]),
+        ParallelStepSpec("Location interview context", ["python3", str(PRINT_LOCATION), "--date", args.date]),
     ]
 
     health_missing = False
@@ -525,7 +711,7 @@ def main() -> int:
             print("\n== Health import source ==")
             print(source_label)
             for idx, cmd in enumerate(commands, start=1):
-                initial_parallel_steps.append((f"Health step {idx}", cmd, None))
+                initial_parallel_steps.append(ParallelStepSpec(f"Health step {idx}", cmd))
 
     results.extend(run_steps_parallel(initial_parallel_steps))
 

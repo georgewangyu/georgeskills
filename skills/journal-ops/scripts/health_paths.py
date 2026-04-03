@@ -33,16 +33,30 @@ def _legacy_health_family_records_root(private_repo_root: Path) -> Path | None:
     return None
 
 
+def _people_health_records_root(private_repo_root: Path) -> Path | None:
+    people_root = private_repo_root / "people"
+    if not people_root.exists():
+        return None
+    for child in sorted(people_root.iterdir()):
+        candidate = child / "health" / "records"
+        if child.is_dir() and candidate.exists():
+            return candidate
+    return None
+
+
 def resolve_health_source_records_root(private_repo_root: Path) -> Path:
     env_path = _env_path("LIFEREPO_HEALTH_SOURCE_ROOT")
     if env_path is not None:
         return env_path
 
+    people_candidate = _people_health_records_root(private_repo_root)
     candidates = [
+        people_candidate,
         private_repo_root / "health-data" / "source-records",
         private_repo_root / "personal-health" / "records",
     ]
-    return _first_existing(candidates) or candidates[0]
+    existing = _first_existing([candidate for candidate in candidates if candidate is not None])
+    return existing or private_repo_root / "health-data" / "source-records"
 
 
 def resolve_health_records_root(private_repo_root: Path) -> Path:
@@ -50,9 +64,14 @@ def resolve_health_records_root(private_repo_root: Path) -> Path:
     if env_path is not None:
         return env_path
 
-    candidates = [private_repo_root / "health-data" / "records"]
+    people_candidate = _people_health_records_root(private_repo_root)
+    candidates = [
+        people_candidate,
+        private_repo_root / "health-data" / "records",
+    ]
     legacy_candidate = _legacy_health_family_records_root(private_repo_root)
-    return _first_existing(candidates) or legacy_candidate or candidates[0]
+    existing = _first_existing([candidate for candidate in candidates if candidate is not None])
+    return existing or legacy_candidate or private_repo_root / "health-data" / "records"
 
 
 def daily_health_metrics_csv(private_repo_root: Path) -> Path:
