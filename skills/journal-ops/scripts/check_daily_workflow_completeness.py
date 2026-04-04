@@ -35,7 +35,6 @@ STABLE_HEADERS = {
     "Today at a Glance",
     "Daily Metrics",
     "Sprints Today",
-    "Deep Sprint Plan",
     "Highlights",
     "Challenges",
     "Key Decisions",
