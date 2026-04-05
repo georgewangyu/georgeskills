@@ -30,6 +30,7 @@ TOPICS_DIR = AGENT_MANAGED_DIR / "topics"
 CANDIDATES_DIR = AGENT_MANAGED_DIR / "_candidates"
 INDEXES_DIR = AGENT_MANAGED_DIR / "indexes"
 REPORTS_DIR = AGENT_MANAGED_DIR / "reports"
+CONVERSATION_NOTES_DIR = PRIVATE_REPO_ROOT / "notes-private" / "audio-conversations" / "notes"
 SUMMARY_DIR = PRIVATE_REPO_ROOT / "journal" / "summaries"
 SUMMARY_FILENAME_RE = re.compile(r"(\d{4}-\d{2}-\d{2})_Summary\.md$")
 LEVEL2_HEADER_RE = re.compile(r"^##\s+(.+?)\s*$", flags=re.MULTILINE)
@@ -42,6 +43,11 @@ INTERESTING_SECTIONS = {
     "Narrator Notes",
     "Reflections",
     "Today at a Glance",
+}
+CONVERSATION_NOTE_SECTIONS = {
+    "What Mattered",
+    "Concrete Takeaways",
+    "Relationship Signal",
 }
 WORKSPACE_REPOS = ("georgerepo", "liferepo", "georgeskills")
 SEED_SCAN_ROOTS = (
@@ -824,7 +830,7 @@ def seed_page_content(seed: SeedTopic) -> str:
         "- What parts of this topic are stable enough to promote into tighter current-understanding bullets?\n"
         "- Which recurring subtopics deserve their own canonical child pages later?\n\n"
         "## Related Pages\n\n"
-        "- `agent-managed/indexes/knowledge-map.md`\n\n"
+        "- `agent-managed/index.md`\n\n"
         "## Source Map\n\n"
         f"{source_map}\n"
     )
@@ -894,6 +900,36 @@ def summary_signal(date_text: str) -> tuple[list[dict[str, str]], Path]:
                 }
             )
     return signals, summary_path
+
+
+def conversation_note_paths_for_date(date_text: str) -> list[Path]:
+    year, month, _ = date_text.split("-")
+    month_dir = CONVERSATION_NOTES_DIR / year / month
+    if not month_dir.exists():
+        return []
+    return sorted(month_dir.glob(f"{date_text}-*.md"))
+
+
+def conversation_note_signal(date_text: str) -> tuple[list[dict[str, str]], list[Path]]:
+    note_paths = conversation_note_paths_for_date(date_text)
+    signals: list[dict[str, str]] = []
+    for note_path in note_paths:
+        text = note_path.read_text(encoding="utf-8")
+        rel = note_path.relative_to(PRIVATE_REPO_ROOT).as_posix()
+        title = frontmatter_scalar(parse_frontmatter_header(text), "title") or note_path.stem.replace("-", " ").title()
+        for section in parse_sections(text):
+            base_title = re.sub(r"\s+\(Optional\)$", "", section.title).strip()
+            if base_title not in CONVERSATION_NOTE_SECTIONS:
+                continue
+            for bullet in bullet_lines(section):
+                signals.append(
+                    {
+                        "section": f"Conversation Note / {base_title}",
+                        "text": f"{title}: {bullet}",
+                        "source_ref": f"{rel}#{section.anchor}",
+                    }
+                )
+    return signals, note_paths
 
 
 def current_workspace_changes(repo_dir: Path) -> list[str]:
@@ -1074,7 +1110,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def run_for_date(date_text: str, *, apply_safe: bool, print_payload: bool) -> tuple[int, list[str]]:
-    signals, summary_path = summary_signal(date_text)
+    summary_signals, summary_path = summary_signal(date_text)
+    note_signals, note_paths = conversation_note_signal(date_text)
+    signals = summary_signals + note_signals
     changed_files = changed_files_for_date(date_text)
     topic_pages = load_topic_pages()
 
@@ -1087,6 +1125,10 @@ def run_for_date(date_text: str, *, apply_safe: bool, print_payload: bool) -> tu
     payload = {
         "date": date_text,
         "summary_path": summary_path.relative_to(PRIVATE_REPO_ROOT).as_posix(),
+        "summary_signal_count": len(summary_signals),
+        "conversation_note_signal_count": len(note_signals),
+        "conversation_note_count": len(note_paths),
+        "conversation_note_paths": [path.relative_to(PRIVATE_REPO_ROOT).as_posix() for path in note_paths],
         "signal_count": len(signals),
         "changed_file_count": len(changed_files),
         "candidates": candidates,
@@ -1104,6 +1146,14 @@ def run_for_date(date_text: str, *, apply_safe: bool, print_payload: bool) -> tu
         print("applied safe updates:")
         for page in applied_pages:
             print(f"- {page}")
+
+        log_path = AGENT_MANAGED_DIR / "log.md"
+        if log_path.exists():
+            log_entry = [f"## [{date_text}] auto-apply | Refresh Agent Managed", f"- Applied safe updates to {len(applied_pages)} canonical pages."]
+            for page in applied_pages:
+                log_entry.append(f"  - `{Path(page).stem}`")
+            with log_path.open("a", encoding="utf-8") as f:
+                f.write("\n" + "\n".join(log_entry) + "\n")
     else:
         print("applied safe updates: none")
 
