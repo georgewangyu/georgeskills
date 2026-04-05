@@ -16,3 +16,9 @@ tokens/
 
 # Generated local state
 *.log
+
+# Media and audio files
+*.WAV
+*.wav
+*.mp3
+*.m4a
