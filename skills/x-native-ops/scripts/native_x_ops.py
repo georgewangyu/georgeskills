@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # Path to your native source repo
-NATIVE_BIRD_ROOT = Path(__file__).resolve().parents[3] / "georgerepo" / "xbot"
+NATIVE_BIRD_ROOT = Path(__file__).resolve().parents[3] / "xbot"
 CLI_PATH = NATIVE_BIRD_ROOT / "src" / "cli.js"
 
 def run_native_cli(args):
