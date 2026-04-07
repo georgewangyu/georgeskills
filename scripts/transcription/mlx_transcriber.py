@@ -58,11 +58,26 @@ def transcribe_mlx(audio_file, model_name="mlx-community/whisper-large-v3-mlx-4b
 
     return final_text
 
+def resolve_output_dir(audio_file, base_outdir):
+    """
+    If the audio filename contains a date in the DJI format (DJI_XX_YYYYMMDD_HHMMSS),
+    automatically resolve the output dir to base_outdir/YYYY/MM/.
+    Falls back to base_outdir unchanged if no date can be parsed.
+    """
+    import re
+    basename = os.path.basename(audio_file)
+    match = re.search(r'_(\d{4})(\d{2})\d{2}_', basename)
+    if match:
+        year, month = match.group(1), match.group(2)
+        return os.path.join(base_outdir, year, month)
+    return base_outdir
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transcribe an audio file using MLX (Super-Speed for Apple Silicon).")
     parser.add_argument("audio_file", help="Path to the audio file (.wav, .mp3, etc.)")
     parser.add_argument("--model", default="mlx-community/whisper-large-v3-mlx-4bit", help="MLX-compatible model repo on HuggingFace.")
-    parser.add_argument("--outdir", help="Directory to save the markdown transcript.")
+    parser.add_argument("--outdir", help="Base directory to save the markdown transcript. Date-based YYYY/MM subdir is created automatically from the filename.")
 
     args = parser.parse_args()
 
@@ -70,4 +85,5 @@ if __name__ == "__main__":
         logging.error(f"File not found: {args.audio_file}")
         exit(1)
 
-    transcribe_mlx(args.audio_file, model_name=args.model, output_dir=args.outdir)
+    output_dir = resolve_output_dir(args.audio_file, args.outdir) if args.outdir else None
+    transcribe_mlx(args.audio_file, model_name=args.model, output_dir=output_dir)
