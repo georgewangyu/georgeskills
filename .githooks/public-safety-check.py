@@ -15,14 +15,54 @@ ABSOLUTE_PATH_RES = [
     re.compile(r"[A-Za-z]:\\\\Users\\\\[^\\\s]+"),
 ]
 CONCRETE_PEOPLE_PATH_RE = re.compile(r"\bpeople/([a-z0-9][a-z0-9_-]{1,})/", re.IGNORECASE)
+
+# Filenames that should never be committed to a public repo.
+# Checked against the staged filename, not contents.
+BLOCKED_FILENAME_PATTERNS = [
+    re.compile(r"(^|/)\.env(\.|$)"),           # .env, .env.local, .env.production
+    re.compile(r"(^|/)\.env$"),                # plain .env
+    re.compile(r"(^|/)credentials\.json$"),
+    re.compile(r"(^|/)token(s)?\.json$"),
+    re.compile(r"(^|/)client_secret.*\.json$"),
+    re.compile(r"(^|/)service.account.*\.json$"),
+    re.compile(r"\.(pem|key|p12|pfx|crt|cer)$"),
+    re.compile(r"(^|/)id_rsa$"),
+    re.compile(r"(^|/)id_ed25519$"),
+    re.compile(r"(^|/)id_ecdsa$"),
+    re.compile(r"(^|/)\.netrc$"),
+    re.compile(r"(^|/)\.htpasswd$"),
+]
+
 SECRET_RES = [
+    # Private keys (RSA, EC, OPENSSH, etc.)
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+    # GitHub tokens
     re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
     re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b"),
-    re.compile(r"\bsk-[A-Za-z0-9]{20,}\b"),
+    # OpenAI and compatible (sk- prefix, alphanumeric + hyphens)
+    re.compile(r"\bsk-[A-Za-z0-9\-]{20,}\b"),
+    # Anthropic API keys (explicit pattern as belt-and-suspenders)
+    re.compile(r"\bsk-ant-[A-Za-z0-9\-]{20,}\b"),
+    # Slack tokens
     re.compile(r"\bxox[baprs]-[A-Za-z0-9\-]{10,}\b"),
+    # Google API keys
     re.compile(r"\bAIza[0-9A-Za-z\-_]{35}\b"),
+    # AWS access key IDs
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+    # AWS secret access keys (40-char base64-ish, only flag when near AWS context)
+    re.compile(r"(?i)aws.{0,30}secret.{0,30}['\"][A-Za-z0-9/+]{40}['\"]"),
+    # HuggingFace tokens
+    re.compile(r"\bhf_[A-Za-z0-9]{30,}\b"),
+    # Stripe live keys
+    re.compile(r"\b(sk|pk)_live_[A-Za-z0-9]{20,}\b"),
+    # SendGrid API keys
+    re.compile(r"\bSG\.[A-Za-z0-9\-_]{22,}\.[A-Za-z0-9\-_]{43,}\b"),
+    # Bearer tokens assigned to common variable names
+    re.compile(r"(?i)\b(auth_token|bearer_token|access_token|api_secret|secret_key)\s*[=:]\s*['\"]?[A-Za-z0-9\-_]{30,}['\"]?"),
+    # Long hex strings assigned to cookie/token variable names (covers X/Twitter auth_token, ct0 etc.)
+    re.compile(r"(?i)\b(auth_token|ct0|x_auth_token)\s*[=:]\s*['\"]?[0-9a-f]{20,}['\"]?"),
 ]
+
 ALLOWLIST_EMAIL_DOMAINS = {
     "example.com",
     "example.org",
@@ -32,6 +72,7 @@ ALLOWLIST_EMAIL_DOMAINS = {
     "test",
     "invalid",
     "users.noreply.github.com",
+    "anthropic.com",    # co-authored-by lines from Claude
 }
 GENERIC_IDENTIFIER_ALLOWLIST = {
     "root",
@@ -137,10 +178,19 @@ def find_issues() -> list[str]:
     issues: list[str] = []
     identities = identity_patterns()
     files = staged_files()
+
     for path in files:
+        # Filename-level block — reject sensitive filenames outright
+        for pattern in BLOCKED_FILENAME_PATTERNS:
+            if pattern.search(path):
+                issues.append(f"{path}: blocked filename — sensitive file type should not be committed to a public repo")
+                break
+
         if is_binary(path):
             continue
+
         is_validator_file = path == ".githooks/public-safety-check.py"
+
         for line_number, text in added_lines(path):
             for label, pattern in identities:
                 if pattern.search(text):
@@ -165,8 +215,9 @@ def find_issues() -> list[str]:
             for pattern in SECRET_RES:
                 match = pattern.search(text)
                 if match:
-                    issues.append(f"{path}:{line_number}: found potential secret material '{match.group(0)[:32]}'")
+                    issues.append(f"{path}:{line_number}: found potential secret material '{match.group(0)[:40]}'")
                     break
+
     return issues
 
 
