@@ -92,45 +92,21 @@ def build_bird_env(cfg: dict[str, Any]) -> dict[str, str]:
     return env
 
 
-def bird_base_command(cfg: dict[str, Any]) -> list[str]:
+def bird_npx_base_command(cfg: dict[str, Any]) -> list[str]:
     npx_path = shutil.which("npx")
     if not npx_path:
         print("Error: npx not found. Install Node.js/npm first.", file=sys.stderr)
         sys.exit(1)
 
     cmd = [npx_path, "--yes", "@steipete/bird"]
-
-    chrome_profile = str(cfg.get("chrome_profile", "")).strip()
-    chrome_profile_dir = str(cfg.get("chrome_profile_dir", "")).strip()
-    firefox_profile = str(cfg.get("firefox_profile", "")).strip()
-    cookie_timeout_ms = cfg.get("cookie_timeout_ms")
-    timeout_ms = cfg.get("timeout_ms")
-    cookie_sources = cfg.get("cookie_source", [])
-
-    if chrome_profile:
-      cmd.extend(["--chrome-profile", chrome_profile])
-    if chrome_profile_dir:
-      cmd.extend(["--chrome-profile-dir", chrome_profile_dir])
-    if firefox_profile:
-      cmd.extend(["--firefox-profile", firefox_profile])
-    if isinstance(cookie_timeout_ms, int) and cookie_timeout_ms > 0:
-      cmd.extend(["--cookie-timeout", str(cookie_timeout_ms)])
-    if isinstance(timeout_ms, int) and timeout_ms > 0:
-      cmd.extend(["--timeout", str(timeout_ms)])
-    if isinstance(cookie_sources, list):
-      for source in cookie_sources:
-        source_text = str(source).strip()
-        if source_text:
-          cmd.extend(["--cookie-source", source_text])
-
     return cmd
 
 
 def run_bird_json(cfg: dict[str, Any], args: list[str]) -> Any:
-    cmd = bird_base_command(cfg) + args
+    cmd = bird_npx_base_command(cfg) + args
     result = subprocess.run(cmd, capture_output=True, text=True, env=build_bird_env(cfg))
     if result.returncode != 0:
-        stderr = result.stderr.strip() or result.stdout.strip() or "bird command failed"
+        stderr = result.stderr.strip() or result.stdout.strip() or "npx bird command failed"
         raise RuntimeError(stderr)
     output = result.stdout.strip()
     if not output:
@@ -139,10 +115,10 @@ def run_bird_json(cfg: dict[str, Any], args: list[str]) -> Any:
 
 
 def run_bird_plain(cfg: dict[str, Any], args: list[str]) -> str:
-    cmd = bird_base_command(cfg) + args
+    cmd = bird_npx_base_command(cfg) + args
     result = subprocess.run(cmd, capture_output=True, text=True, env=build_bird_env(cfg))
     if result.returncode != 0:
-        stderr = result.stderr.strip() or result.stdout.strip() or "bird command failed"
+        stderr = result.stderr.strip() or result.stdout.strip() or "npx bird command failed"
         raise RuntimeError(stderr)
     return result.stdout.strip()
 
