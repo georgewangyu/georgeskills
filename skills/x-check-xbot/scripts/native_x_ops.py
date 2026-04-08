@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # Path to your native source repo
-NATIVE_BIRD_ROOT = Path(__file__).resolve().parents[3] / "xbot"
+NATIVE_BIRD_ROOT = Path(__file__).resolve().parents[4] / "xbot"
 CLI_PATH = NATIVE_BIRD_ROOT / "src" / "cli.js"
 
 def run_native_cli(args):
@@ -26,6 +26,7 @@ def main():
     parser = argparse.ArgumentParser(description="Native X-Agent Skills")
     parser.add_argument("--post", help="Post a tweet using the browser stealth mode.")
     parser.add_argument("--fetch", choices=["home", "bookmarks"], help="Fetch a feed using the active browser session.")
+    parser.add_argument("--user", help="Fetch a specific user's timeline (e.g. your own handle).")
     parser.add_argument("--count", type=int, default=10, help="Number of items to fetch.")
 
     args = parser.parse_args()
@@ -46,6 +47,15 @@ def main():
             print(res.stdout)
         else:
             print(f"Failed to fetch {args.fetch}.")
+            if res: print(res.stderr)
+
+    if args.user:
+        print(f"Fetching posts for @{args.user} (Native Session)...")
+        res = run_native_cli(["user", args.user, "--count", str(args.count)])
+        if res and res.returncode == 0:
+            print(res.stdout)
+        else:
+            print(f"Failed to fetch @{args.user}.")
             if res: print(res.stderr)
 
 if __name__ == "__main__":
