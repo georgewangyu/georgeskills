@@ -248,7 +248,9 @@ def iter_metric_objects(payload: Any) -> list[dict[str, Any]]:
 
     def walk(node: Any) -> None:
         if isinstance(node, dict):
-            if "metric" in node and any(k in node for k in ("data", "qty", "value", "values")):
+            if any(k in node for k in ("metric", "name")) and any(
+                k in node for k in ("data", "qty", "value", "values")
+            ):
                 found.append(node)
             for value in node.values():
                 walk(value)

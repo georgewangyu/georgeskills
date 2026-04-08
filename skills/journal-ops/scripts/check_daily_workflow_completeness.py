@@ -34,6 +34,8 @@ class DayCheck:
 STABLE_HEADERS = {
     "Today at a Glance",
     "Daily Metrics",
+    "Health Context",
+    "Location Context",
     "Sprints Today",
     "Highlights",
     "Challenges",
@@ -88,7 +90,8 @@ def detect_summary_state(text: str) -> str:
     has_plan_section = "## Deep Sprint Plan" in text
 
     metric_rows = re.findall(r"^\|\s*(Energy|Mood|Focus|Productivity).*?\|\s*(.*?)\s*\|$", text, flags=re.MULTILINE)
-    non_blank_metrics = any(val.strip() for _, val in metric_rows)
+    placeholder_values = {"", "not logged yet", "unknown", "n/a", "na", "-", "tbd"}
+    non_blank_metrics = any(val.strip().lower() not in placeholder_values for _, val in metric_rows)
 
     if has_plan_section and not has_metrics_section and not has_sprints_section:
         return "planned_only"
