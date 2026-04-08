@@ -25,6 +25,8 @@ PRINT_HEALTH = JOURNAL_OPS_DIR / "print_health_interview_context.py"
 CHECK_COMPLETENESS = ROOT / "scripts" / "journal" / "check_daily_workflow_completeness.py"
 RUN_PREP = JOURNAL_OPS_DIR / "run_daily_workflow_prep.py"
 HEALTH_CSV = daily_health_metrics_csv(ROOT)
+GITHUB_TRENDS_SCRIPT = JOURNAL_OPS_DIR.parents[1] / "github-trends-ops" / "scripts" / "fetch_github_trends.py"
+
 
 
 def summary_path_for(day_text: str) -> Path:
@@ -62,6 +64,27 @@ def completeness_exit(day_text: str) -> int:
         capture_output=True,
     )
     return proc.returncode
+
+
+def print_github_trends():
+    if not GITHUB_TRENDS_SCRIPT.exists():
+        return
+
+    print("\n--- GitHub Trending ---")
+    for period in ["daily", "weekly"]:
+        proc = subprocess.run(
+            ["python3", str(GITHUB_TRENDS_SCRIPT), "--since", period, "--limit", "3"],
+            text=True,
+            capture_output=True,
+        )
+        if proc.returncode == 0:
+            print(proc.stdout.strip())
+        else:
+            print(f"  (Error fetching {period} trends)")
+
+    # Simple signal analysis based on trends
+    # In a real scenario, this could be more sophisticated (e.g., matching keywords against user projects)
+    print("\n- Planning note: Open-source activity is a key proxy for market attention. Look for overlaps with your current stack (ADA, BitePath) or emerging AI agent patterns.")
 
 
 def main() -> int:
@@ -131,6 +154,8 @@ def main() -> int:
 
     print("\nSuggested next command:")
     print(f"python3 {PRINT_HEALTH} --date {day_text}")
+
+    print_github_trends()
     return 0
 
 
