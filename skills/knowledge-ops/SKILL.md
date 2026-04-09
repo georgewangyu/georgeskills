@@ -29,3 +29,5 @@ Use when:
 
 Implementations currently live in:
 - `skills/knowledge-ops/scripts/`
+- `refresh_agent_managed.py` for deterministic candidate extraction and low-risk auto-apply
+- `llm_refresh_agent_managed.py` for headless semantic routing and topic-page rewrites via an LLM provider
