@@ -29,15 +29,20 @@ You have two modes depending on your recording length and hardware:
 ```bash
 source georgeskills/scripts/transcription/venv/bin/activate
 source georgerepo/.tokens/huggingface.env
-python georgeskills/scripts/transcription/whisperx_transcriber.py /path/to/file.wav --device cpu --outdir /georgerepo/journal/inbox/
+python georgeskills/scripts/transcription/whisperx_transcriber.py /path/to/file.wav --device cpu --outdir /georgerepo/journal/audio/transcripts/
 ```
 
 ### Option B: Hyper-Speed Mode (MLX)
 *Best for long files (hours long). Uses Mac GPU/Neural Engine. 5x-10x faster.*
 ```bash
 source georgeskills/scripts/transcription/venv/bin/activate
-python georgeskills/scripts/transcription/mlx_transcriber.py /path/to/file.wav --outdir /georgerepo/journal/inbox/
+python georgeskills/scripts/transcription/mlx_transcriber.py /path/to/file.wav --outdir /georgerepo/journal/audio/transcripts/
 ```
+
+Storage rule:
+- Keep `Workspace/dji-audio/` raw-only.
+- Put generated transcripts under `<private-repo>/journal/audio/transcripts/YYYY/MM/`.
+- The MLX transcriber now defaults to `<private-repo>/journal/audio/transcripts/` and auto-redirects the legacy `dji-audio/transcripts/` and `journal/inbox/` targets back into the canonical journal audio tree.
 
 ## AI Processing & Export
 

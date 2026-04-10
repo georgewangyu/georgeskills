@@ -1,10 +1,22 @@
 import os
+import sys
 import argparse
 import logging
 import time
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+WORKSPACE_ROOT = Path(__file__).resolve().parents[3]
+JOURNAL_OPS_SCRIPTS = WORKSPACE_ROOT / "georgeskills" / "skills" / "journal-ops" / "scripts"
+if JOURNAL_OPS_SCRIPTS.exists():
+    sys.path.insert(0, str(JOURNAL_OPS_SCRIPTS))
+
+try:
+    from repo_paths import resolve_private_repo_root
+except Exception:
+    resolve_private_repo_root = None
 
 def transcribe_mlx(audio_file, model_name="mlx-community/whisper-large-v3-mlx-4bit", output_dir=None):
     try:
@@ -65,6 +77,10 @@ def resolve_output_dir(audio_file, base_outdir):
     Falls back to base_outdir unchanged if no date can be parsed.
     """
     import re
+    if base_outdir is None:
+        base_outdir = default_output_dir()
+    else:
+        base_outdir = normalize_output_dir(base_outdir)
     basename = os.path.basename(audio_file)
     match = re.search(r'_(\d{4})(\d{2})\d{2}_', basename)
     if match:
@@ -73,11 +89,51 @@ def resolve_output_dir(audio_file, base_outdir):
     return base_outdir
 
 
+def default_output_dir():
+    if resolve_private_repo_root is not None:
+        try:
+            return str(resolve_private_repo_root() / "journal" / "audio" / "transcripts")
+        except Exception:
+            pass
+    return None
+
+
+def normalize_output_dir(base_outdir):
+    raw_path = Path(base_outdir).expanduser()
+    normalized = raw_path.resolve(strict=False)
+    parts = normalized.parts
+    if len(parts) >= 2 and parts[-2:] == ("dji-audio", "transcripts"):
+        journal_dir = default_output_dir()
+        if journal_dir is not None:
+            logging.warning(
+                "Redirecting legacy transcript destination %s to %s so dji-audio stays raw-only.",
+                normalized,
+                journal_dir,
+            )
+            return journal_dir
+    if len(parts) >= 2 and parts[-2:] == ("journal", "inbox"):
+        journal_dir = default_output_dir()
+        if journal_dir is not None:
+            logging.warning(
+                "Redirecting legacy transcript destination %s to %s so journal audio transcripts stay in one canonical tree.",
+                normalized,
+                journal_dir,
+            )
+            return journal_dir
+    return str(normalized)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transcribe an audio file using MLX (Super-Speed for Apple Silicon).")
     parser.add_argument("audio_file", help="Path to the audio file (.wav, .mp3, etc.)")
     parser.add_argument("--model", default="mlx-community/whisper-large-v3-mlx-4bit", help="MLX-compatible model repo on HuggingFace.")
-    parser.add_argument("--outdir", help="Base directory to save the markdown transcript. Date-based YYYY/MM subdir is created automatically from the filename.")
+    parser.add_argument(
+        "--outdir",
+        help=(
+            "Base directory to save the markdown transcript. Defaults to "
+            "<private-repo>/journal/audio/transcripts/. Date-based YYYY/MM subdir is created automatically from the filename."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -85,5 +141,5 @@ if __name__ == "__main__":
         logging.error(f"File not found: {args.audio_file}")
         exit(1)
 
-    output_dir = resolve_output_dir(args.audio_file, args.outdir) if args.outdir else None
+    output_dir = resolve_output_dir(args.audio_file, args.outdir)
     transcribe_mlx(args.audio_file, model_name=args.model, output_dir=output_dir)
