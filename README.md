@@ -91,6 +91,7 @@ georgeskills/
 | `saas-template-fit-ops` | Map a chosen SaaS idea to the right template shape: account model, billing, architecture constraints. |
 | `naming-ops` | Generate and screen brandable company, product, and SaaS names with domain and trademark checks. |
 | `sales-discovery-email-ops` | Write respectful first-touch outbound emails for sales discovery and consulting outreach. |
+| `stripe-ops` | Reusable local Stripe setup workflow using shared private credentials, Stripe CLI, and the installed upstream Stripe skills. |
 
 ### Design
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import re
 import subprocess
 import sys
@@ -58,6 +59,15 @@ CALENDAR_LOG = CALENDAR_DIR / "export.log"
 CALENDAR_WEEKLY = CALENDAR_DIR / "weekly_calendar.md"
 PREP_MARKERS_DIR = ROOT / "journal" / ".workflow_prep_markers"
 DEFAULT_EXPORT_FRESHNESS_SECONDS = 300
+DJI_TRANSCRIPTS_ROOT = ROOT / "journal" / "audio" / "transcripts"
+SNACKVOICE_APP_SUPPORT_ID = os.environ.get("SNACKVOICE_APP_SUPPORT_ID", "com.example.snackvoice")
+SNACKVOICE_AMBIENT_CAPTURE_DIR = (
+    Path.home()
+    / "Library"
+    / "Application Support"
+    / SNACKVOICE_APP_SUPPORT_ID
+    / "ambient-capture"
+)
 
 HEALTH_AUTO_EXPORTS_ROOT = resolve_health_source_records_root(ROOT)
 ICLOUD_HEALTH_EXPORT_ROOT = (
@@ -113,6 +123,13 @@ class ParallelStepSpec:
     name: str
     cmd: list[str]
     ok_codes: set[int] | None = None
+
+
+@dataclass(frozen=True)
+class AudioSourceSnapshot:
+    dji_transcripts: list[Path]
+    ambient_capture_file: Path | None
+    ambient_capture_segments: int
 
 
 def _now_utc() -> datetime:
@@ -381,6 +398,73 @@ def email_count_for(day_text: str) -> int:
 
 def reflection_exists_for(day_text: str) -> bool:
     return (ROOT / "journal" / "reflections" / f"{day_text}_Thoughts.md").exists()
+
+
+def dji_transcripts_for(day_text: str) -> list[Path]:
+    year, month, _ = day_text.split("-")
+    day_token = day_text.replace("-", "")
+    month_dir = DJI_TRANSCRIPTS_ROOT / year / month
+    if not month_dir.exists():
+        return []
+    return sorted(month_dir.glob(f"*{day_token}*_transcript.md"))
+
+
+def ambient_capture_file_for(day_text: str) -> Path | None:
+    candidate = SNACKVOICE_AMBIENT_CAPTURE_DIR / f"{day_text}.md"
+    if candidate.exists():
+        return candidate
+    return None
+
+
+def ambient_capture_segment_count(path: Path) -> int:
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return 0
+    return len(re.findall(r"^##\s+\d", text, flags=re.MULTILINE))
+
+
+def audio_source_snapshot(day_text: str) -> AudioSourceSnapshot:
+    ambient_file = ambient_capture_file_for(day_text)
+    return AudioSourceSnapshot(
+        dji_transcripts=dji_transcripts_for(day_text),
+        ambient_capture_file=ambient_file,
+        ambient_capture_segments=ambient_capture_segment_count(ambient_file) if ambient_file else 0,
+    )
+
+
+def print_audio_sources(day_text: str) -> AudioSourceSnapshot:
+    snapshot = audio_source_snapshot(day_text)
+    print("\n== Audio sources ==")
+    if snapshot.dji_transcripts:
+        print(
+            "- DJI transcripts:"
+            f" {len(snapshot.dji_transcripts)} file(s) under"
+            f" {snapshot.dji_transcripts[0].parent}"
+        )
+        for path in snapshot.dji_transcripts[:5]:
+            print(f"  - {path.name}")
+        remaining = len(snapshot.dji_transcripts) - 5
+        if remaining > 0:
+            print(f"  - … {remaining} more")
+    else:
+        print(f"- DJI transcripts: none found under {DJI_TRANSCRIPTS_ROOT}")
+
+    if snapshot.ambient_capture_file is not None:
+        size_kb = snapshot.ambient_capture_file.stat().st_size / 1024
+        print(
+            "- SnackVoice ambient capture:"
+            f" {snapshot.ambient_capture_segments} segment(s),"
+            f" {size_kb:.1f} KB,"
+            f" {snapshot.ambient_capture_file}"
+        )
+    else:
+        print(
+            "- SnackVoice ambient capture:"
+            f" none found at {SNACKVOICE_AMBIENT_CAPTURE_DIR / f'{day_text}.md'}"
+        )
+
+    return snapshot
 
 
 def _parse_float(value: str | None) -> float | None:
@@ -770,6 +854,7 @@ def main() -> int:
     print(f"- Apple Notes for date: {note_count_for(args.date)}")
     print(f"- Emails for date: {email_count_for(args.date)}")
     print(f"- Reflection exists: {'yes' if reflection_exists_for(args.date) else 'no'}")
+    print_audio_sources(args.date)
 
     failed = [r for r in results if not r.ok]
     print("\n== Result summary ==")
