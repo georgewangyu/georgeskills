@@ -92,7 +92,8 @@ def print_morning_publishing_loop():
     print("- Pick one to three candidate ideas from current work, the latest summary, or the GitHub trends signal.")
     print("- Ask George which one he wants to post about.")
     print("- After he chooses, draft or refine one public-safe markdown note in liferepo/writing/shareable/.")
-    print("- If the note is worth shipping, publish it as a gist and convert it into a hook-first X thread via xbot.")
+    print("- If the note is worth shipping, create the gist first and then convert it into a hook-first X thread via xbot.")
+    print("- Keep the gist link in the final reply, not the opener.")
     print("- Log the gist URL and tweet IDs under Conversation Milestones in today's summary.")
 
 

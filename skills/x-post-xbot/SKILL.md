@@ -33,10 +33,10 @@ Use when:
    - Preferred location for public-safe shareable drafts:
      `liferepo/writing/shareable/`
    - Keep one clear argument per file and avoid private paths or identifiers.
-5. If the longer piece should be public, publish it as a gist:
+5. If the longer piece should be public, create the gist first:
    - `gh gist create <markdown-file> --public --desc "<title>"`
    - Put the gist link in the final reply of the thread, not the opener.
-6. Post to X using the local CLI:
+6. Then post to X using the local CLI:
    - `node xbot/src/cli.js post "<text>"`
    - `node xbot/src/cli.js post --reply-to <tweet_id> "<text>"`
 7. Prefer a hook-first thread over a single long post when:
@@ -49,9 +49,11 @@ Use when:
 
 ## Preferred X Pattern
 
+- Standard format after topic selection: `gist first -> thread second -> gist
+  link in final reply`
 - Opener: sharp claim, no link, no throat-clearing
 - Reply 2-4: unpack the system or argument in compact chunks
-- Final reply: optional gist link or deeper reference
+- Final reply: gist link or deeper reference
 - Default bias: 3-5 posts, one idea, one obvious takeaway
 
 ## Guardrails
