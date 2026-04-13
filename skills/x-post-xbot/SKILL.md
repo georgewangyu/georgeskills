@@ -34,6 +34,8 @@ Use when:
      `liferepo/writing/shareable/`
    - Keep one clear argument per file and avoid private paths or identifiers.
 5. If the longer piece should be public, create the gist first:
+   - Strip repo frontmatter before gist publication. The public gist should
+     start at the title/body, not with YAML metadata.
    - `gh gist create <markdown-file> --public --desc "<title>"`
    - Put the gist link in the final reply of the thread, not the opener.
 6. Then post to X using the local CLI:
@@ -51,6 +53,7 @@ Use when:
 
 - Standard format after topic selection: `gist first -> thread second -> gist
   link in final reply`
+- Gist body should not include YAML frontmatter from the repo draft
 - Opener: sharp claim, no link, no throat-clearing
 - Reply 2-4: unpack the system or argument in compact chunks
 - Final reply: gist link or deeper reference
