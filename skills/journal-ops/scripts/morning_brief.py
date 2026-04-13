@@ -88,11 +88,11 @@ def print_github_trends():
 
 
 def print_morning_publishing_loop():
-    print("\n--- Morning Publishing Loop ---")
-    print("- Pick one idea from current work, the latest summary, or the GitHub trends signal.")
-    print("- Draft or refine one public-safe markdown note in liferepo/writing/shareable/.")
-    print("- If the note is worth shipping, publish it as a gist.")
-    print("- Convert it into a hook-first X thread via xbot; keep the link in the final reply when possible.")
+    print("\n--- Morning Publishing Prompt ---")
+    print("- Pick one to three candidate ideas from current work, the latest summary, or the GitHub trends signal.")
+    print("- Ask George which one he wants to post about.")
+    print("- After he chooses, draft or refine one public-safe markdown note in liferepo/writing/shareable/.")
+    print("- If the note is worth shipping, publish it as a gist and convert it into a hook-first X thread via xbot.")
     print("- Log the gist URL and tweet IDs under Conversation Milestones in today's summary.")
 
 
