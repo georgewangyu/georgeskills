@@ -58,6 +58,7 @@ CALENDAR_DIR = ROOT / "notes-private" / "calendar"
 CALENDAR_LOG = CALENDAR_DIR / "export.log"
 CALENDAR_WEEKLY = CALENDAR_DIR / "weekly_calendar.md"
 PREP_MARKERS_DIR = ROOT / "journal" / ".workflow_prep_markers"
+CONVERSATION_NOTES_DIR = ROOT / "notes-private" / "audio-conversations" / "notes"
 DEFAULT_EXPORT_FRESHNESS_SECONDS = 300
 DJI_TRANSCRIPTS_ROOT = ROOT / "journal" / "audio" / "transcripts"
 SNACKVOICE_APP_SUPPORT_ID = os.environ.get("SNACKVOICE_APP_SUPPORT_ID", "com.example.snackvoice")
@@ -197,6 +198,24 @@ def write_prep_marker(name: str, *, target_date: str) -> None:
     _prep_marker_path(name).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def read_marker_payload(name: str) -> dict[str, object] | None:
+    path = _prep_marker_path(name)
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def write_marker_payload(name: str, payload: dict[str, object]) -> None:
+    PREP_MARKERS_DIR.mkdir(parents=True, exist_ok=True)
+    enriched = dict(payload)
+    enriched["completed_at"] = _now_utc().isoformat()
+    _prep_marker_path(name).write_text(json.dumps(enriched, indent=2) + "\n", encoding="utf-8")
+
+
 def latest_apple_notes_activity() -> datetime | None:
     _, prep_time = read_prep_marker("apple_notes")
     return _max_dt(prep_time, _mtime_utc(NOTES_LAST_EXPORT_MARKER))
@@ -313,6 +332,19 @@ def run_steps_parallel(step_specs: list[ParallelStepSpec]) -> list[StepResult]:
     return [results_by_index[idx] for idx in range(len(step_specs))]
 
 
+def git_head_sha() -> str | None:
+    proc = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return None
+    sha = proc.stdout.strip()
+    return sha or None
+
+
 def latest_health_auto_export_csv() -> Path | None:
     candidates = sorted(
         HEALTH_AUTO_EXPORTS_ROOT.glob("HealthAutoExport_*/HealthAutoExport-*.csv"),
@@ -398,6 +430,14 @@ def email_count_for(day_text: str) -> int:
 
 def reflection_exists_for(day_text: str) -> bool:
     return (ROOT / "journal" / "reflections" / f"{day_text}_Thoughts.md").exists()
+
+
+def conversation_note_paths_for(day_text: str) -> list[Path]:
+    year, month, _ = day_text.split("-")
+    month_dir = CONVERSATION_NOTES_DIR / year / month
+    if not month_dir.exists():
+        return []
+    return sorted(month_dir.glob(f"{day_text}-*.md"))
 
 
 def dji_transcripts_for(day_text: str) -> list[Path]:
@@ -500,6 +540,48 @@ def _load_health_row(day_text: str) -> dict[str, str] | None:
             if (row.get("date") or "").strip() == day_text:
                 return row
     return None
+
+
+def build_post_step_state(
+    *,
+    target_date: str,
+    summary_path: Path,
+    include_git_head: bool = False,
+    extra_paths: list[Path] | None = None,
+) -> dict[str, object] | None:
+    if not summary_path.exists():
+        return None
+
+    state: dict[str, object] = {
+        "target_date": target_date,
+        "summary_path": str(summary_path),
+        "summary_mtime_ns": summary_path.stat().st_mtime_ns,
+    }
+
+    if include_git_head:
+        state["git_head_sha"] = git_head_sha()
+
+    paths = [path for path in (extra_paths or []) if path.exists()]
+    state["extra_path_count"] = len(paths)
+    state["extra_path_max_mtime_ns"] = max((path.stat().st_mtime_ns for path in paths), default=None)
+    return state
+
+
+def maybe_skip_cached_post_step(name: str, marker_name: str, state: dict[str, object] | None) -> StepResult | None:
+    if state is None:
+        return None
+
+    previous = read_marker_payload(marker_name)
+    if previous is None:
+        return None
+
+    comparable_keys = tuple(state.keys())
+    if any(previous.get(key) != state.get(key) for key in comparable_keys):
+        return None
+
+    print(f"\n== {name} ==")
+    print("skipped (inputs unchanged since last successful run)")
+    return StepResult(name=name, ok=True, detail="skipped (inputs unchanged)")
 
 
 def build_health_section(day_text: str) -> str | None:
@@ -812,42 +894,81 @@ def main() -> int:
     results.append(run_step("Workflow completeness", ["python3", str(CHECK_COMPLETENESS), "--date", args.date], ok_codes={0, 1}))
 
     summary_path = summary_path_for(args.date)
+    post_summary_specs: list[ParallelStepSpec] = []
+    post_summary_states: list[tuple[str, dict[str, object]]] = []
+
     if not args.skip_memory:
         if summary_path.exists():
             memory_cmd = ["python3", str(MEMORY_EXTRACT), "--date", args.date]
             if not args.skip_doc_memory:
                 memory_cmd.append("--also-docs")
-            results.append(
-                run_step(
-                    "Memory candidate refresh",
-                    memory_cmd,
-                )
+
+            memory_state = build_post_step_state(
+                target_date=args.date,
+                summary_path=summary_path,
+                include_git_head=not args.skip_doc_memory,
             )
+            skipped = maybe_skip_cached_post_step("Memory candidate refresh", "memory_refresh", memory_state)
+            if skipped is not None:
+                results.append(skipped)
+            else:
+                post_summary_specs.append(
+                    ParallelStepSpec(
+                        "Memory candidate refresh",
+                        memory_cmd,
+                    )
+                )
+                if memory_state is not None:
+                    post_summary_states.append(("memory_refresh", memory_state))
         else:
             print("\n== Memory candidate refresh ==")
             print("Skipped: summary file does not exist yet.")
 
     if not args.skip_agent_managed:
         if summary_path.exists() and AGENT_MANAGED_REFRESH.exists():
-            results.append(
-                run_step(
-                    "Agent-managed knowledge refresh",
-                    [
-                        "python3",
-                        str(AGENT_MANAGED_REFRESH),
-                        "--date",
-                        args.date,
-                        "--apply-safe",
-                        "--compile-all",
-                    ],
-                )
+            note_paths = conversation_note_paths_for(args.date)
+            agent_managed_state = build_post_step_state(
+                target_date=args.date,
+                summary_path=summary_path,
+                include_git_head=True,
+                extra_paths=note_paths,
             )
+            skipped = maybe_skip_cached_post_step(
+                "Agent-managed knowledge refresh",
+                "agent_managed_refresh",
+                agent_managed_state,
+            )
+            if skipped is not None:
+                results.append(skipped)
+            else:
+                post_summary_specs.append(
+                    ParallelStepSpec(
+                        "Agent-managed knowledge refresh",
+                        [
+                            "python3",
+                            str(AGENT_MANAGED_REFRESH),
+                            "--date",
+                            args.date,
+                            "--apply-safe",
+                            "--compile-all",
+                        ],
+                    )
+                )
+                if agent_managed_state is not None:
+                    post_summary_states.append(("agent_managed_refresh", agent_managed_state))
         elif not AGENT_MANAGED_REFRESH.exists():
             print("\n== Agent-managed knowledge refresh ==")
             print("Skipped: refresh script is not available yet.")
         else:
             print("\n== Agent-managed knowledge refresh ==")
             print("Skipped: summary file does not exist yet.")
+
+    if post_summary_specs:
+        post_summary_results = run_steps_parallel(post_summary_specs)
+        results.extend(post_summary_results)
+        for (marker_name, state), result in zip(post_summary_states, post_summary_results):
+            if result.ok:
+                write_marker_payload(marker_name, state)
 
     print("\n== Context snapshot ==")
     print(f"- Summary exists: {'yes' if summary_path.exists() else 'no'}")
