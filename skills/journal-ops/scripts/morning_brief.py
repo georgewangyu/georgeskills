@@ -87,6 +87,15 @@ def print_github_trends():
     print("\n- Planning note: Open-source activity is a key proxy for market attention. Look for overlaps with your current stack (ADA, BitePath) or emerging AI agent patterns.")
 
 
+def print_morning_publishing_loop():
+    print("\n--- Morning Publishing Loop ---")
+    print("- Pick one idea from current work, the latest summary, or the GitHub trends signal.")
+    print("- Draft or refine one public-safe markdown note in liferepo/writing/shareable/.")
+    print("- If the note is worth shipping, publish it as a gist.")
+    print("- Convert it into a hook-first X thread via xbot; keep the link in the final reply when possible.")
+    print("- Log the gist URL and tweet IDs under Conversation Milestones in today's summary.")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Print a morning brief for the current day.")
     parser.add_argument("--date", default=date.today().isoformat(), help="Target date YYYY-MM-DD (default: today)")
@@ -156,6 +165,7 @@ def main() -> int:
     print(f"python3 {PRINT_HEALTH} --date {day_text}")
 
     print_github_trends()
+    print_morning_publishing_loop()
     return 0
 
 
