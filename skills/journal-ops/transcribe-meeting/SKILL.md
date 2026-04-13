@@ -39,6 +39,11 @@ source georgeskills/scripts/transcription/venv/bin/activate
 python georgeskills/scripts/transcription/mlx_transcriber.py /path/to/file.wav --outdir /georgerepo/journal/audio/transcripts/
 ```
 
+Current defaults for the MLX path:
+- model: `mlx-community/whisper-large-v3-turbo`
+- preprocessing: built-in silence trimming / energy-based VAD before transcription
+- fallback: if the turbo model fails to load or run, the script retries `mlx-community/whisper-large-v3-mlx-4bit`
+
 Storage rule:
 - Keep `Workspace/dji-audio/` raw-only.
 - Put generated transcripts under `<private-repo>/journal/audio/transcripts/YYYY/MM/`.
