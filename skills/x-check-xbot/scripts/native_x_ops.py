@@ -24,7 +24,8 @@ def run_native_cli(args):
 
 def main():
     parser = argparse.ArgumentParser(description="Native X-Agent Skills")
-    parser.add_argument("--post", help="Post a tweet using the browser stealth mode.")
+    parser.add_argument("--post", help="Post a tweet using xbot's official API path.")
+    parser.add_argument("--reply-to", help="Optional tweet ID to reply to when used with --post.")
     parser.add_argument("--fetch", choices=["home", "bookmarks"], help="Fetch a feed using the active browser session.")
     parser.add_argument("--user", help="Fetch a specific user's timeline (e.g. your own handle).")
     parser.add_argument("--count", type=int, default=10, help="Number of items to fetch.")
@@ -32,8 +33,12 @@ def main():
     args = parser.parse_args()
 
     if args.post:
-        print(f"Posting to X (Stealth Mode): {args.post[:50]}...")
-        res = run_native_cli(["post", args.post])
+        print(f"Posting to X (Official API): {args.post[:50]}...")
+        post_args = ["post"]
+        if args.reply_to:
+            post_args.extend(["--reply-to", args.reply_to])
+        post_args.append(args.post)
+        res = run_native_cli(post_args)
         if res and res.returncode == 0:
             print("Successfully posted!")
         else:
