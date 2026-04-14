@@ -16,10 +16,12 @@ import os
 import re
 import subprocess
 import sys
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from health_paths import apple_health_export_xml, daily_health_metrics_csv, resolve_health_source_records_root
 from health_overnight_analysis import analyze_overnight, fmt_pct
@@ -51,7 +53,9 @@ PRINT_EMAIL = JOURNAL_OPS_DIR / "print_email_interview_context.py"
 PRINT_LOCATION = JOURNAL_OPS_DIR / "print_location_interview_context.py"
 CHECK_COMPLETENESS = SCRIPTS_DIR / "check_daily_workflow_completeness.py"
 MEMORY_EXTRACT = ROOT / "scripts" / "memory" / "extract_daily_summary_candidates.py"
-AGENT_MANAGED_REFRESH = ROOT / "scripts" / "knowledge" / "refresh_agent_managed.py"
+WORKSPACE_ROOT = ROOT.parent
+GEORGE_LLM_WIKI_ROOT = WORKSPACE_ROOT / "GeorgeLLMWiki"
+GEORGE_LLM_WIKI_INGEST = GEORGE_LLM_WIKI_ROOT / "scripts" / "ingest_workspace_docs.py"
 NOTES_LAST_EXPORT_MARKER = ROOT / "notes-private" / "apple-notes" / "all-notes" / ".last_export"
 EMAIL_DIR = ROOT / "notes-private" / "email"
 CALENDAR_DIR = ROOT / "notes-private" / "calendar"
@@ -105,6 +109,7 @@ SECTION_ORDER = [
     "Purchases / Spending",
     "Notes Highlights",
     "Important Emails",
+    "Audio Log",
     "Conversation Milestones",
     "Narrator Notes",
     "Reflections",
@@ -131,6 +136,14 @@ class AudioSourceSnapshot:
     dji_transcripts: list[Path]
     ambient_capture_file: Path | None
     ambient_capture_segments: int
+
+
+@dataclass(frozen=True)
+class AudioSegment:
+    source_type: str
+    source_label: str
+    time_range: str
+    text: str
 
 
 def _now_utc() -> datetime:
@@ -507,6 +520,352 @@ def print_audio_sources(day_text: str) -> AudioSourceSnapshot:
     return snapshot
 
 
+def normalize_transcript_text(text: str) -> str:
+    lines = [line.strip() for line in text.splitlines()]
+    cleaned = " ".join(line for line in lines if line)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
+def transcript_tokens(text: str) -> list[str]:
+    return re.findall(r"[A-Za-z0-9']+", text.lower())
+
+
+def looks_low_signal_transcript(text: str) -> bool:
+    normalized = normalize_transcript_text(text)
+    if not normalized:
+        return True
+
+    tokens = transcript_tokens(normalized)
+    if len(tokens) < 12:
+        return True
+
+    unique_ratio = len(set(tokens)) / max(len(tokens), 1)
+    if unique_ratio < 0.22:
+        return True
+
+    repeated_thanks = normalized.lower().count("thank you")
+    if repeated_thanks >= 3:
+        return True
+
+    low_signal_markers = (
+        "beadaholique",
+        "subscribe to my channel",
+        "thanks for watching",
+        "foreign foreign foreign",
+        "grandpa grandpa",
+    )
+    if any(marker in normalized.lower() for marker in low_signal_markers):
+        return True
+
+    return False
+
+
+def parse_ambient_capture_segments(path: Path) -> list[AudioSegment]:
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return []
+
+    pattern = re.compile(
+        r"^##\s+(?P<start>.+?)\s*-\s*(?P<end>.+?)\s*$\n(?P<body>.*?)(?=^##\s+.+?\s*-\s*.+?\s*$|\Z)",
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    segments: list[AudioSegment] = []
+    for match in pattern.finditer(text):
+        start = match.group("start").strip()
+        end = match.group("end").strip()
+        body = normalize_transcript_text(match.group("body"))
+        if looks_low_signal_transcript(body):
+            continue
+        segments.append(
+            AudioSegment(
+                source_type="ambient",
+                source_label="Ambient capture",
+                time_range=f"{start}-{end}",
+                text=body,
+            )
+        )
+    return segments
+
+
+def parse_dji_transcript_segments(paths: list[Path]) -> list[AudioSegment]:
+    segments: list[AudioSegment] = []
+    for path in paths:
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        body = normalize_transcript_text(text)
+        if looks_low_signal_transcript(body):
+            continue
+        segments.append(
+            AudioSegment(
+                source_type="dji",
+                source_label=path.stem,
+                time_range=path.stem,
+                text=body,
+            )
+        )
+    return segments
+
+
+def _clock_to_minutes(raw: str) -> int | None:
+    cleaned = raw.strip().upper()
+    try:
+        parsed = datetime.strptime(cleaned, "%I:%M %p")
+    except ValueError:
+        try:
+            parsed = datetime.strptime(cleaned, "%H:%M")
+        except ValueError:
+            return None
+    return parsed.hour * 60 + parsed.minute
+
+
+def merge_audio_segments(segments: list[AudioSegment]) -> list[AudioSegment]:
+    if not segments:
+        return []
+
+    merged: list[AudioSegment] = []
+    current = segments[0]
+    if current.source_type == "ambient" and "-" in current.time_range:
+        current_start, current_end = [part.strip() for part in current.time_range.split("-", 1)]
+        current_end_min = _clock_to_minutes(current_end)
+    else:
+        current_start = current.time_range
+        current_end_min = None
+
+    for segment in segments[1:]:
+        seg_start = segment.time_range
+        seg_end = segment.time_range
+        seg_start_min = None
+        seg_end_min = None
+        if segment.source_type == "ambient" and "-" in segment.time_range:
+            seg_start, seg_end = [part.strip() for part in segment.time_range.split("-", 1)]
+            seg_start_min = _clock_to_minutes(seg_start)
+            seg_end_min = _clock_to_minutes(seg_end)
+        can_merge = (
+            current.source_type == "ambient"
+            and segment.source_type == "ambient"
+            and current_end_min is not None
+            and seg_start_min is not None
+            and 0 <= seg_start_min - current_end_min <= 3
+            and len(current.text) + len(segment.text) <= 2200
+        )
+        if can_merge:
+            current = AudioSegment(
+                source_type="ambient",
+                source_label="Ambient capture",
+                time_range=f"{current_start}-{seg_end}",
+                text=f"{current.text} {segment.text}".strip(),
+            )
+            current_end_min = seg_end_min
+            continue
+
+        merged.append(current)
+        current = segment
+        current_start = seg_start
+        current_end_min = seg_end_min
+
+    merged.append(current)
+    return merged
+
+
+def build_audio_segments(day_text: str) -> list[AudioSegment]:
+    snapshot = audio_source_snapshot(day_text)
+    segments = parse_dji_transcript_segments(snapshot.dji_transcripts)
+    if snapshot.ambient_capture_file is not None:
+        segments.extend(parse_ambient_capture_segments(snapshot.ambient_capture_file))
+    return merge_audio_segments(segments)
+
+
+def fallback_tag_guess(text: str) -> list[str]:
+    lowered = text.lower()
+    tags: list[str] = []
+    keyword_map = {
+        "work": ("work", "databricks", "team", "s3", "bucket"),
+        "workflow": ("workflow", "process", "automation", "memory"),
+        "product": ("product", "feature", "app", "shipping", "posting"),
+        "marketing": ("marketing", "linkedin", "x ", "twitter", "social", "post"),
+        "people": ("people", "friend", "teresa", "someone"),
+        "meta": ("meta", "philosophy", "thinking"),
+        "career": ("career", "job", "interview"),
+    }
+    for tag, markers in keyword_map.items():
+        if any(marker in lowered for marker in markers):
+            tags.append(tag)
+    return tags[:3] or ["work"]
+
+
+def score_segment_priority(segment: AudioSegment) -> tuple[int, int]:
+    text = segment.text
+    tags = fallback_tag_guess(text)
+    score = 0
+    if segment.source_type == "ambient":
+        score += 2
+    if "workflow" in tags:
+        score += 3
+    if "product" in tags or "marketing" in tags:
+        score += 2
+    if "people" in tags:
+        score += 1
+    score += min(len(text) // 180, 4)
+    return score, len(text)
+
+
+def summarize_segment_text(text: str, *, max_words: int = 40, max_chars: int = 260) -> str:
+    normalized = normalize_transcript_text(text)
+    if not normalized:
+        return ""
+
+    sentences = re.split(r"(?<=[.!?。！？])\s+", normalized)
+    meaningful = [sentence.strip() for sentence in sentences if sentence.strip()]
+    if meaningful:
+        summary = " ".join(meaningful[:2]).strip()
+    else:
+        summary = normalized
+
+    words = summary.split()
+    if len(words) > max_words:
+        summary = " ".join(words[:max_words]).rstrip(",;:") + "..."
+    if len(summary) > max_chars:
+        summary = summary[: max_chars - 3].rstrip(",;: ") + "..."
+    return summary
+
+
+def normalized_dedup_key(text: str) -> str:
+    lowered = text.lower().strip()
+    lowered = re.sub(r"\s+", " ", lowered)
+    return lowered
+
+
+def promoted_bullets_from_items(items: list[dict[str, Any]]) -> dict[str, list[str]]:
+    milestones: list[str] = []
+    decisions: list[str] = []
+    people: list[str] = []
+    seen: set[str] = set()
+
+    for item in items:
+        summary = str(item.get("summary", "")).strip()
+        if not summary:
+            continue
+        if len(summary) > 180:
+            continue
+        tags = {tag.strip("[] ").strip().lower() for tag in item.get("tags", []) if str(tag).strip()}
+        time_range = str(item.get("time_range", "")).strip()
+        time_prefix = f"`{time_range}` " if time_range else ""
+        lowered = summary.lower()
+        if lowered.startswith("hey, how are you") or lowered.startswith("i'm good, how are you"):
+            continue
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+
+        if "people" in tags and len(summary.split()) >= 10 and "product" not in tags:
+            people.append(f"{time_prefix}{summary}")
+        if {"workflow", "work", "product", "career"} & tags and len(summary.split()) >= 8:
+            milestones.append(f"{time_prefix}{summary}")
+        if (
+            "decision" in lowered
+            or "plan" in lowered
+            or "next" in lowered
+            or "onboarding" in lowered
+            or "architecture" in lowered
+            or "databricks" in lowered
+        ):
+            decisions.append(f"{time_prefix}{summary}")
+
+    return {
+        "Conversation Milestones": milestones[:4],
+        "Key Decisions": decisions[:3],
+        "People / Relationships": people[:3],
+    }
+
+
+def fallback_audio_summary(segments: list[AudioSegment]) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    seen_keys: set[str] = set()
+    scored_segments = sorted(segments, key=score_segment_priority, reverse=True)
+    for segment in scored_segments[:14]:
+        summary_text = summarize_segment_text(segment.text)
+        if not summary_text:
+            continue
+        dedup_key = normalized_dedup_key(summary_text)
+        if dedup_key in seen_keys:
+            continue
+        seen_keys.add(dedup_key)
+        items.append(
+            {
+                "time_range": segment.time_range,
+                "source_label": segment.source_label,
+                "summary": summary_text,
+                "tags": fallback_tag_guess(segment.text),
+            }
+        )
+    items.sort(key=lambda item: _clock_to_minutes(str(item.get("time_range", "")).split("-", 1)[0].strip()) or 0)
+    promoted = promoted_bullets_from_items(items)
+    return {
+        "audio_log_items": items,
+        "key_decisions": promoted["Key Decisions"],
+        "people_relationships": promoted["People / Relationships"],
+        "conversation_milestones": promoted["Conversation Milestones"],
+        "overall_takeaway": "Audio sources were ingested directly from the transcript artifacts and condensed into a cleaned deterministic pass for the daily log.",
+    }
+
+
+def summarize_audio_segments(day_text: str, segments: list[AudioSegment]) -> tuple[dict[str, Any], str]:
+    del day_text
+    return fallback_audio_summary(segments), "deterministic"
+
+
+def _format_tags(tags: list[str]) -> str:
+    cleaned = [tag.strip("[] ").strip() for tag in tags if tag.strip("[] ").strip()]
+    return "".join(f"[{tag}]" for tag in cleaned)
+
+
+def render_audio_log(day_text: str, payload: dict[str, Any]) -> str:
+    items = list(payload.get("audio_log_items", []))
+    if not items:
+        return "- No meaningful audio artifacts were ingested for this date."
+
+    lines: list[str] = []
+    for item in items:
+        time_range = str(item.get("time_range", "")).strip() or day_text
+        source_label = str(item.get("source_label", "")).strip()
+        summary = str(item.get("summary", "")).strip()
+        tags = _format_tags(list(item.get("tags", [])))
+        prefix = f"- `{time_range}`"
+        if source_label and source_label != "Ambient capture":
+            prefix += f" — `{source_label}`"
+        prefix += " — "
+        line = prefix + summary
+        if tags:
+            line += f" {tags}"
+        lines.append(line)
+
+    overall_takeaway = str(payload.get("overall_takeaway", "")).strip()
+    if overall_takeaway:
+        lines.append(f"- Best overall interpretation: {overall_takeaway}")
+    return "\n".join(lines)
+
+
+def build_wiki_ingest_state(*, target_date: str, summary_path: Path) -> dict[str, object] | None:
+    if not summary_path.exists() or not GEORGE_LLM_WIKI_ROOT.exists():
+        return None
+
+    wiki_files = [
+        path
+        for path in GEORGE_LLM_WIKI_ROOT.rglob("*.md")
+        if ".git" not in path.parts and "__pycache__" not in path.parts
+    ]
+    state = build_post_step_state(target_date=target_date, summary_path=summary_path, include_git_head=True)
+    if state is None:
+        return None
+    state["wiki_markdown_count"] = len(wiki_files)
+    state["wiki_markdown_max_mtime_ns"] = max((path.stat().st_mtime_ns for path in wiki_files), default=None)
+    return state
+
+
 def _parse_float(value: str | None) -> float | None:
     raw = (value or "").strip()
     if not raw:
@@ -754,6 +1113,50 @@ def ensure_level2_section(text: str, title: str, body: str) -> str:
     return upsert_level2_section(text, title, body)
 
 
+def append_unique_bullets_to_section(text: str, title: str, bullets: list[str]) -> str:
+    normalized_new = [bullet.strip() for bullet in bullets if bullet.strip()]
+    if not normalized_new:
+        return text
+
+    frontmatter, markdown_body = split_frontmatter(text)
+    sections = extract_level2_headers(markdown_body)
+    existing_bullets: list[str] = []
+    if title in sections:
+        start, end = sections[title]
+        section_body = markdown_body[start:end]
+        existing_bullets = re.findall(r"^- (.+)$", section_body, flags=re.MULTILINE)
+
+    merged = list(existing_bullets)
+    existing_norm = {bullet.strip().lower() for bullet in existing_bullets}
+    for bullet in normalized_new:
+        candidate = bullet.removeprefix("- ").strip()
+        if candidate.lower() in existing_norm:
+            continue
+        merged.append(candidate)
+        existing_norm.add(candidate.lower())
+
+    body = "\n".join(f"- {bullet}" for bullet in merged) if merged else "- Not logged yet."
+    return upsert_level2_section(text, title, body)
+
+
+def build_audio_sections(day_text: str) -> tuple[str | None, dict[str, list[str]], str | None]:
+    segments = build_audio_segments(day_text)
+    if not segments:
+        return None, {}, None
+
+    payload, mode = summarize_audio_segments(day_text, segments)
+    promoted = {
+        "Key Decisions": [str(item).strip() for item in payload.get("key_decisions", []) if str(item).strip()],
+        "People / Relationships": [
+            str(item).strip() for item in payload.get("people_relationships", []) if str(item).strip()
+        ],
+        "Conversation Milestones": [
+            str(item).strip() for item in payload.get("conversation_milestones", []) if str(item).strip()
+        ],
+    }
+    return render_audio_log(day_text, payload), promoted, mode
+
+
 def hydrate_summary_context(day_text: str) -> StepResult:
     summary_path = summary_path_for(day_text)
     if not summary_path.exists():
@@ -772,6 +1175,16 @@ def hydrate_summary_context(day_text: str) -> StepResult:
     if location_body:
         updated = upsert_level2_section(updated, "Location Context", location_body)
         changed_sections.append("Location Context")
+
+    audio_body, promoted_audio, audio_mode = build_audio_sections(day_text)
+    if audio_body:
+        updated = upsert_level2_section(updated, f"Audio Log — {day_text}", audio_body)
+        changed_sections.append(f"Audio Log ({audio_mode or 'generated'})")
+        for section_title, bullets in promoted_audio.items():
+            before_section = updated
+            updated = append_unique_bullets_to_section(updated, section_title, bullets)
+            if updated != before_section:
+                changed_sections.append(section_title)
 
     before = updated
     updated = ensure_level2_section(updated, "Conversation Milestones", "- Not logged yet.")
@@ -819,7 +1232,7 @@ def main() -> int:
     parser.add_argument(
         "--skip-agent-managed",
         action="store_true",
-        help="Skip compiled knowledge refresh for the agent-managed middle layer.",
+        help="Skip derived wiki refresh for the GeorgeLLMWiki layer.",
     )
     parser.add_argument(
         "--allow-health-miss",
@@ -925,42 +1338,32 @@ def main() -> int:
             print("Skipped: summary file does not exist yet.")
 
     if not args.skip_agent_managed:
-        if summary_path.exists() and AGENT_MANAGED_REFRESH.exists():
-            note_paths = conversation_note_paths_for(args.date)
-            agent_managed_state = build_post_step_state(
-                target_date=args.date,
-                summary_path=summary_path,
-                include_git_head=True,
-                extra_paths=note_paths,
-            )
+        if summary_path.exists() and GEORGE_LLM_WIKI_INGEST.exists():
+            wiki_state = build_wiki_ingest_state(target_date=args.date, summary_path=summary_path)
             skipped = maybe_skip_cached_post_step(
-                "Agent-managed knowledge refresh",
-                "agent_managed_refresh",
-                agent_managed_state,
+                "GeorgeLLMWiki ingest refresh",
+                "george_llm_wiki_refresh",
+                wiki_state,
             )
             if skipped is not None:
                 results.append(skipped)
             else:
                 post_summary_specs.append(
                     ParallelStepSpec(
-                        "Agent-managed knowledge refresh",
+                        "GeorgeLLMWiki ingest refresh",
                         [
                             "python3",
-                            str(AGENT_MANAGED_REFRESH),
-                            "--date",
-                            args.date,
-                            "--apply-safe",
-                            "--compile-all",
+                            str(GEORGE_LLM_WIKI_INGEST),
                         ],
                     )
                 )
-                if agent_managed_state is not None:
-                    post_summary_states.append(("agent_managed_refresh", agent_managed_state))
-        elif not AGENT_MANAGED_REFRESH.exists():
-            print("\n== Agent-managed knowledge refresh ==")
-            print("Skipped: refresh script is not available yet.")
+                if wiki_state is not None:
+                    post_summary_states.append(("george_llm_wiki_refresh", wiki_state))
+        elif not GEORGE_LLM_WIKI_INGEST.exists():
+            print("\n== GeorgeLLMWiki ingest refresh ==")
+            print("Skipped: GeorgeLLMWiki ingest script is not available yet.")
         else:
-            print("\n== Agent-managed knowledge refresh ==")
+            print("\n== GeorgeLLMWiki ingest refresh ==")
             print("Skipped: summary file does not exist yet.")
 
     if post_summary_specs:
