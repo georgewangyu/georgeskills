@@ -40,7 +40,7 @@ GMAIL_READONLY_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
 GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send'
 
 PRIVATE_REPO_ROOT = resolve_private_repo_root()
-EMAIL_DIR = PRIVATE_REPO_ROOT / "notes-private" / "email"
+EMAIL_DIR = PRIVATE_REPO_ROOT / "captures" / "email"
 
 # Credentials and token file paths
 SCRIPT_DIR = PRIVATE_REPO_ROOT / "scripts" / "exports" / "email"

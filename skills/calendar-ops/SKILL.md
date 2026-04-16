@@ -18,7 +18,7 @@ memory_tags:
 Use when:
 - the user wants calendar export or schedule context
 - the task needs a day view before planning, journaling, or interview prep
-- the workflow depends on fresh Google Calendar data under `<private-repo>/notes-private/calendar/`
+- the workflow depends on fresh Google Calendar data under `<private-repo>/captures/calendar/`
 
 Do not use when:
 - the task is broad export prep across several sources; use `exports-ops`
@@ -29,7 +29,7 @@ Do not use when:
 1. Run the stable private wrapper:
    - `python3 scripts/exports/calendar/export_calendar_google.py`
 2. Read the newest artifacts under:
-   - `notes-private/calendar/`
+   - `captures/calendar/`
 3. Distill the result into time constraints, meetings, travel/admin load, and open blocks.
 
 ## Output Contract

@@ -4,7 +4,7 @@ Incremental X/Twitter import using the bird CLI.
 
 This mirrors the LifeRepo email export model:
 - script lives under scripts/exports/
-- imported private source data lives under notes-private/
+- imported private source data lives under captures/
 - downstream research/content workflows read exported files
 """
 
@@ -26,7 +26,7 @@ PRIVATE_REPO_ROOT = resolve_private_repo_root()
 SCRIPT_DIR = PRIVATE_REPO_ROOT / "scripts" / "exports" / "social-media"
 CONFIG_FILE = SCRIPT_DIR / "config.json"
 EXAMPLE_CONFIG_FILE = SCRIPT_DIR / "config.json.example"
-X_DIR = PRIVATE_REPO_ROOT / "notes-private" / "social-media" / "x"
+X_DIR = PRIVATE_REPO_ROOT / "captures" / "social-media" / "x"
 STATE_DIR = X_DIR / "state"
 DEFAULT_TOKEN_FILE = PRIVATE_REPO_ROOT / ".tokens" / "x-twitter.env"
 
@@ -428,7 +428,7 @@ def export_read(cfg: dict[str, Any], source: str) -> tuple[int, Path]:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Import X/Twitter data into notes-private using bird.")
+    parser = argparse.ArgumentParser(description="Import X/Twitter data into captures using bird.")
     parser.add_argument("--only", choices=["home", "bookmarks", "likes"], help="Export only one feed type.")
     parser.add_argument("--home-count", type=int, help="Override home feed count.")
     parser.add_argument("--bookmarks-count", type=int, help="Override bookmarks count.")

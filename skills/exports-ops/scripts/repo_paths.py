@@ -13,6 +13,7 @@ EXCLUDED_SIBLINGS = {"liferepo", "georgeskills", ".git", ".github"}
 LEGACY_HINTS = (
     "journal",
     "memory",
+    "captures",
     "notes-private",
     "health-family",
     "personal-health",

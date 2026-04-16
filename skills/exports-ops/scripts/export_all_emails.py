@@ -24,7 +24,7 @@ from html import unescape
 from repo_paths import resolve_private_repo_root
 
 PRIVATE_REPO_ROOT = resolve_private_repo_root()
-EMAIL_DIR = PRIVATE_REPO_ROOT / "notes-private" / "email"
+EMAIL_DIR = PRIVATE_REPO_ROOT / "captures" / "email"
 SENT_DIR = EMAIL_DIR / "sent"
 RECEIVED_DIR = EMAIL_DIR / "received"
 LAST_EXPORT_FILE = EMAIL_DIR / ".last_export"
@@ -60,7 +60,7 @@ def html_to_markdown(html_content):
     """Convert HTML from email to clean markdown."""
     if not html_content:
         return ""
-    
+
     text = unescape(html_content)
     text = re.sub(r'<strong>(.*?)</strong>', r'**\1**', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<b>(.*?)</b>', r'**\1**', text, flags=re.DOTALL | re.IGNORECASE)
@@ -68,17 +68,17 @@ def html_to_markdown(html_content):
     text = re.sub(r'<i>(.*?)</i>', r'*\1*', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<p[^>]*>(.*?)</p>', r'\1\n\n', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<br[^>]*>', '\n', text, flags=re.IGNORECASE)
-    
+
     def replace_link(match):
         url = match.group(1) if match.group(1) else match.group(2)
         link_text = match.group(3) if match.group(3) else url
         return f"[{link_text}]({url})"
-    
+
     text = re.sub(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', replace_link, text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<[^>]+>', '', text)
     text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
     text = text.strip()
-    
+
     return text
 
 def escape_applescript_string(value):
@@ -93,7 +93,7 @@ def format_date_for_filename(date_str):
             month_name = date_match.group(2)
             day = date_match.group(3)
             year = date_match.group(4)
-            
+
             month_map = {
                 'January': '01', 'February': '02', 'March': '03', 'April': '04',
                 'May': '05', 'June': '06', 'July': '07', 'August': '08',
@@ -103,7 +103,7 @@ def format_date_for_filename(date_str):
             return f"{year}-{month}-{day.zfill(2)}"
     except:
         pass
-    
+
     return datetime.now().strftime("%Y-%m-%d")
 
 def get_single_sent_email(account_index, mailbox_name, message_index):
@@ -136,7 +136,7 @@ def get_single_sent_email(account_index, mailbox_name, message_index):
             return ""
         end try
     end join_addresses
-    
+
     tell application "Mail"
         try
             set anAccount to account {account_index}
@@ -152,36 +152,36 @@ def get_single_sent_email(account_index, mailbox_name, message_index):
                 return ""
             end if
             set aMessage to message {message_index} of sentMailbox
-            
+
             set msgSubject to subject of aMessage
             if msgSubject is missing value then set msgSubject to "(No Subject)"
-            
+
             set msgFrom to ""
             try
                 set msgFrom to sender of aMessage
             end try
             if msgFrom is missing value then set msgFrom to "(unknown)"
-            
+
             set msgTo to my join_addresses(recipients of aMessage)
             set msgCc to my join_addresses(cc recipients of aMessage)
             set msgBcc to my join_addresses(bcc recipients of aMessage)
-            
+
             set msgDateSent to date sent of aMessage
             set msgDate to msgDateSent as string
-            
+
             set msgContent to ""
             try
                 set msgContent to content of aMessage
                 if msgContent is missing value then set msgContent to ""
             end try
-            
+
             return msgSubject & "|||" & msgFrom & "|||" & msgTo & "|||" & msgCc & "|||" & msgBcc & "|||" & msgDate & "|||" & msgContent
         on error
             return ""
         end try
     end tell
     '''
-    
+
     try:
         result = subprocess.run(
             ['osascript', '-e', applescript],
@@ -230,7 +230,7 @@ def get_single_received_email(account_index, mailbox_name, message_index):
             return ""
         end try
     end join_addresses
-    
+
     tell application "Mail"
         try
             set anAccount to account {account_index}
@@ -246,36 +246,36 @@ def get_single_received_email(account_index, mailbox_name, message_index):
                 return ""
             end if
             set aMessage to message {message_index} of inboxMailbox
-            
+
             set msgSubject to subject of aMessage
             if msgSubject is missing value then set msgSubject to "(No Subject)"
-            
+
             set msgFrom to ""
             try
                 set msgFrom to sender of aMessage
                 if msgFrom is missing value then set msgFrom to "(unknown)"
             end try
-            
+
             set msgTo to my join_addresses(recipients of aMessage)
             set msgCc to my join_addresses(cc recipients of aMessage)
             set msgBcc to my join_addresses(bcc recipients of aMessage)
-            
+
             set msgDateReceived to date received of aMessage
             set msgDate to msgDateReceived as string
-            
+
             set msgContent to ""
             try
                 set msgContent to content of aMessage
                 if msgContent is missing value then set msgContent to ""
             end try
-            
+
             return msgSubject & "|||" & msgFrom & "|||" & msgTo & "|||" & msgCc & "|||" & msgBcc & "|||" & msgDate & "|||" & msgContent
         on error
             return ""
         end try
     end tell
     '''
-    
+
     try:
         result = subprocess.run(
             ['osascript', '-e', applescript],
@@ -323,7 +323,7 @@ def build_existing_files_map(directory):
     existing_map = {}
     if not directory.exists():
         return existing_map
-    
+
     for file_path in directory.glob("*.md"):
         try:
             # Extract date and subject from filename: YYYY-MM-DD_Subject.md
@@ -336,7 +336,7 @@ def build_existing_files_map(directory):
                 existing_map[(date_part, subject_part)] = file_path
         except:
             pass
-    
+
     return existing_map
 
 def get_mailbox_config_fallback():
@@ -347,7 +347,7 @@ def get_mailbox_config_fallback():
     set inboxList to ""
     set sentNames to {"Sent Mail", "Sent", "Sent Messages", "Sent Items"}
     set inboxNames to {"INBOX", "Inbox"}
-    
+
     try
         set allAccounts to accounts
         repeat with i from 1 to (count of allAccounts)
@@ -370,11 +370,11 @@ def get_mailbox_config_fallback():
             end repeat
         end repeat
     end try
-    
+
     return sentList & "###" & inboxList
     end tell
     '''
-    
+
     try:
         result = subprocess.run(
             ['osascript', '-e', applescript],
@@ -386,12 +386,12 @@ def get_mailbox_config_fallback():
         output = result.stdout.strip()
     except:
         return [], []
-    
+
     if "###" in output:
         raw_sent, raw_inbox = output.split("###")
     else:
         raw_sent, raw_inbox = output, ""
-    
+
     def parse_list(raw):
         seen = set()
         entries = []
@@ -413,7 +413,7 @@ def get_mailbox_config_fallback():
                 seen.add(key)
                 entries.append({"account": account, "mailbox": mailbox, "count": count})
         return entries
-    
+
     return parse_list(raw_sent), parse_list(raw_inbox)
 
 def get_mailbox_config():
@@ -427,17 +427,17 @@ def get_mailbox_config():
     tell application "Mail"
     set sentNames to {"Sent", "Sent Mail", "Sent Messages", "Sent Items", "[Gmail]/Sent Mail", "[Gmail]/Sent Messages", "INBOX.Sent", "INBOX.Sent Messages"}
     set inboxNames to {"Inbox", "INBOX"}
-    
+
     set sentList to ""
     set inboxList to ""
     set seenSent to {}
     set seenInbox to {}
-    
+
     try
         set allAccounts to accounts
         repeat with i from 1 to (count of allAccounts)
             set anAccount to account i
-            
+
             -- Use special mailbox properties only (iterating through mailboxes is too slow)
             try
                 set sentMailbox to sent mailbox of anAccount
@@ -458,7 +458,7 @@ def get_mailbox_config():
                     end try
                 end try
             end try
-            
+
             try
                 set inboxMailbox to inbox of anAccount
                 set boxName to name of inboxMailbox as string
@@ -479,11 +479,11 @@ def get_mailbox_config():
             end try
         end repeat
     end try
-    
+
     return sentList & "###" & inboxList
     end tell
     '''
-    
+
     try:
         result = subprocess.run(
             ['osascript', '-e', applescript],
@@ -498,12 +498,12 @@ def get_mailbox_config():
         print("[email migration] Using fallback: trying known mailbox names directly...", file=sys.stderr)
         # Fallback: try known mailbox names directly for each account
         return get_mailbox_config_fallback()
-    
+
     if "###" in output:
         raw_sent, raw_inbox = output.split("###")
     else:
         raw_sent, raw_inbox = output, ""
-    
+
     def parse_list(raw):
         seen = set()
         entries = []
@@ -525,18 +525,18 @@ def get_mailbox_config():
                 seen.add(key)
                 entries.append({"account": account, "mailbox": mailbox, "count": count})
         return entries
-    
+
     return parse_list(raw_sent), parse_list(raw_inbox)
 
 def process_email(email_info, output_dir, email_type="sent", existing_map=None):
     """Process and save a single email. Returns True if saved, False if skipped."""
     if not email_info or email_info == "":
         return False
-    
+
     parts = email_info.split("|||")
     if len(parts) < 7:
         return False
-    
+
     email_subject = parts[0]
     email_from = parts[1]
     email_to = parts[2]
@@ -544,40 +544,40 @@ def process_email(email_info, output_dir, email_type="sent", existing_map=None):
     email_bcc = parts[4]
     email_date = parts[5]
     email_content = parts[6]
-    
+
     # Format date for filename
     date_str = format_date_for_filename(email_date)
-    
+
     # Sanitize subject for filename
     safe_subject = sanitize_filename(email_subject)
-    
+
     # Check if already exists
     if existing_map:
         key = (date_str, safe_subject)
         if key in existing_map:
             return False  # Already exported, skip
-    
+
     # Create filename
     filename = f"{date_str}_{safe_subject}.md"
     file_path = output_dir / filename
-    
+
     # Handle duplicate filenames
     counter = 1
     while file_path.exists():
         filename = f"{date_str}_{safe_subject}_{counter}.md"
         file_path = output_dir / filename
         counter += 1
-    
+
     # Convert HTML to markdown
     markdown_content = html_to_markdown(email_content)
-    
+
     # Save file
     def display_line(label, value):
         value = value.strip() if value else ""
         if not value:
             value = "(none)"
         return f"**{label}:** {value}\n\n"
-    
+
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(f"# {email_subject}\n\n")
         f.write(display_line("From", email_from))
@@ -591,17 +591,17 @@ def process_email(email_info, output_dir, email_type="sent", existing_map=None):
         f.write("---\n\n")
         f.write(markdown_content)
         f.write("\n")
-    
+
     return True
 
 def migrate_all_emails():
     """Migrate all emails (sent and received) to markdown files."""
     global interrupt_requested
-    
+
     # Create directories
     SENT_DIR.mkdir(parents=True, exist_ok=True)
     RECEIVED_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     # Load last export progress
     print("Loading last export progress...")
     last_progress = get_last_export_progress()
@@ -611,7 +611,7 @@ def migrate_all_emails():
     else:
         print("  - No previous progress found, starting from beginning")
     print()
-    
+
     # Build existing files maps to skip duplicates
     print("Building index of existing files...")
     sent_existing = build_existing_files_map(SENT_DIR)
@@ -619,23 +619,23 @@ def migrate_all_emails():
     print(f"  - Found {len(sent_existing)} existing sent emails")
     print(f"  - Found {len(received_existing)} existing received emails")
     print()
-    
+
     # Track current progress
     current_progress = {}
     total_exported = 0
     total_skipped = 0
     total_errors = 0
-    
+
     # Discover mailboxes
     sent_mailboxes, inbox_mailboxes = get_mailbox_config()
     if not sent_mailboxes:
         print("Warning: Could not find any sent mailboxes. Check Mail preferences or add more name patterns.")
     if not inbox_mailboxes:
         print("Warning: Could not find any inbox mailboxes.")
-    
+
     total_sent = sum(m["count"] for m in sent_mailboxes)
     total_received = sum(m["count"] for m in inbox_mailboxes)
-    
+
     print(f"Total messages to process:")
     print(f"  - Sent: {total_sent:,}")
     print(f"  - Received: {total_received:,}")
@@ -644,50 +644,50 @@ def migrate_all_emails():
     print("Starting migration (this will take many hours)...")
     print("Press Ctrl+C to stop gracefully (will save progress)")
     print()
-    
+
     start_time = datetime.now()
-    
+
     # Process sent emails
     print("=" * 60)
     print("Processing SENT emails...")
     print("=" * 60)
-    
+
     processed_sent = 0
     sent_skipped_total = 0
-    
+
     for mailbox in sent_mailboxes:
         if interrupt_requested:
             break
-        
+
         account_index = mailbox["account"]
         mailbox_name = mailbox["mailbox"]
         mailbox_count = mailbox["count"]
-        
+
         # Skip mailboxes with 0 messages
         if mailbox_count == 0:
             print(f"Account {account_index} mailbox '{mailbox_name}': 0 messages, skipping")
             continue
-        
+
         processed = 0
         skipped = 0
         errors = 0
-        
+
         progress_key = f"{account_index}|||sent|||{mailbox_name}"
         start_index = last_progress.get(progress_key, 1)
         if start_index > 1:
             print(f"  Resuming account {account_index} mailbox '{mailbox_name}' from message {start_index}/{mailbox_count}")
         else:
             print(f"  Processing account {account_index} mailbox '{mailbox_name}' ({mailbox_count:,} messages)")
-        
+
         msg_index = start_index
         consecutive_errors = 0
         max_consecutive_errors = 50  # Only stop after many consecutive errors
         last_success_index = start_index - 1
-        
+
         while msg_index <= max_index:
             if interrupt_requested:
                 break
-            
+
             email_info = get_single_sent_email(account_index, mailbox_name, msg_index)
             if email_info is None or email_info == "":
                 consecutive_errors += 1
@@ -700,10 +700,10 @@ def migrate_all_emails():
                     break
                 msg_index += 1
                 continue
-            
+
             consecutive_errors = 0  # Reset error counter on success
             last_success_index = msg_index  # Track last successful message
-            
+
             if process_email(email_info, SENT_DIR, "sent", sent_existing):
                 processed += 1
                 processed_sent += 1
@@ -721,60 +721,60 @@ def migrate_all_emails():
                 skipped += 1
                 total_skipped += 1
                 sent_skipped_total += 1
-            
+
             current_progress[progress_key] = msg_index
             msg_index += 1
             if processed % 20 == 0:
                 save_last_export_progress(current_progress)
-        
+
         print(f"Account {account_index} mailbox '{mailbox_name}': {processed:,} exported, {skipped:,} skipped, {errors:,} errors")
         current_progress[progress_key] = msg_index
         save_last_export_progress(current_progress)
-    
+
     print(f"\nSent emails: {processed_sent:,} exported, {sent_skipped_total:,} skipped")
     print()
-    
+
     # Process received emails
     print("=" * 60)
     print("Processing RECEIVED emails...")
     print("=" * 60)
-    
+
     processed_received = 0
     received_skipped = 0
-    
+
     for mailbox in inbox_mailboxes:
         if interrupt_requested:
             break
-        
+
         account_index = mailbox["account"]
         mailbox_name = mailbox["mailbox"]
         mailbox_count = mailbox["count"]
-        
+
         # Skip mailboxes with 0 messages
         if mailbox_count == 0:
             print(f"Account {account_index} mailbox '{mailbox_name}': 0 messages, skipping")
             continue
-        
+
         processed = 0
         skipped = 0
         errors = 0
-        
+
         progress_key = f"{account_index}|||inbox|||{mailbox_name}"
         start_index = last_progress.get(progress_key, 1)
         if start_index > 1:
             print(f"  Resuming account {account_index} mailbox '{mailbox_name}' from message {start_index}/{mailbox_count}")
         else:
             print(f"  Processing account {account_index} mailbox '{mailbox_name}' ({mailbox_count:,} messages)")
-        
+
         msg_index = start_index
         consecutive_errors = 0
         max_consecutive_errors = 50  # Only stop after many consecutive errors
         last_success_index = start_index - 1
-        
+
         while msg_index <= max_index:
             if interrupt_requested:
                 break
-            
+
             email_info = get_single_received_email(account_index, mailbox_name, msg_index)
             if email_info is None or email_info == "":
                 consecutive_errors += 1
@@ -787,10 +787,10 @@ def migrate_all_emails():
                     break
                 msg_index += 1
                 continue
-            
+
             consecutive_errors = 0  # Reset error counter on success
             last_success_index = msg_index  # Track last successful message
-            
+
             if process_email(email_info, RECEIVED_DIR, "received", received_existing):
                 processed_received += 1
                 processed += 1
@@ -808,24 +808,24 @@ def migrate_all_emails():
                 skipped += 1
                 received_skipped += 1
                 total_skipped += 1
-            
+
             current_progress[progress_key] = msg_index
             msg_index += 1
             if processed_received % 20 == 0:
                 save_last_export_progress(current_progress)
-        
+
         print(f"Account {account_index} mailbox '{mailbox_name}': {processed:,} exported, {skipped:,} skipped, {errors:,} errors")
         current_progress[progress_key] = msg_index
         save_last_export_progress(current_progress)
-    
+
     print(f"\nReceived emails: {processed_received:,} exported, {received_skipped:,} skipped")
     print()
-    
+
     # Summary
     elapsed = datetime.now() - start_time
     hours = int(elapsed.total_seconds() / 3600)
     minutes = int((elapsed.total_seconds() % 3600) / 60)
-    
+
     print("=" * 60)
     print("MIGRATION SUMMARY")
     print("=" * 60)
@@ -834,10 +834,10 @@ def migrate_all_emails():
     print(f"Total errors: {total_errors:,}")
     print(f"Time elapsed: {hours}h {minutes}m")
     print()
-    
+
     # Save final progress
     save_last_export_progress(current_progress)
-    
+
     if interrupt_requested:
         print("Migration interrupted by user. Progress has been saved.")
         print("Run the script again to resume from where it left off.")
@@ -857,7 +857,7 @@ def main():
     """Main entry point"""
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
+
     print("=" * 60)
     print("EMAIL MIGRATION SCRIPT")
     print("=" * 60)
@@ -868,7 +868,7 @@ def main():
     print("This script will migrate ALL emails (not just today's).")
     print("It will skip emails that have already been exported.")
     print()
-    
+
     migrate_all_emails()
 
 if __name__ == "__main__":

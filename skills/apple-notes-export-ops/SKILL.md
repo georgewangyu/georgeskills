@@ -25,7 +25,7 @@ Use when:
 1. Run the stable private wrapper:
    - `python3 scripts/exports/apple-notes/export_apple_notes.py`
 2. Read the resulting files under:
-   - `notes-private/apple-notes/`
+   - `captures/apple-notes/`
 3. Pull only the notes relevant to the target date or topic.
 
 ## Output Contract

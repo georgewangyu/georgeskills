@@ -18,7 +18,7 @@ memory_tags:
 Use when:
 - the user wants email export or inbox context
 - the task is email triage, reply drafting support, or Gmail scope verification
-- the workflow needs fresh email artifacts under `<private-repo>/notes-private/email/`
+- the workflow needs fresh email artifacts under `<private-repo>/captures/email/`
 
 Do not use when:
 - the task is broad multi-source export prep across email, calendar, and notes; use `exports-ops`
@@ -32,7 +32,7 @@ Do not use when:
 2. When the task explicitly needs send/reply support, use:
    - `python3 scripts/exports/email/send_email_gmail_api.py`
 3. Read the exported markdown under:
-   - `notes-private/email/`
+   - `captures/email/`
 4. Summarize actionable threads, waiting-on-reply threads, and admin noise separately.
 
 ## Output Contract

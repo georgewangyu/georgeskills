@@ -29,7 +29,7 @@ Prefer the narrower skills when the intent is clear:
 ## Boundaries
 
 - Specification source: `liferepo` workflow docs
-- Private state source: `<private-repo>/notes-private/` and `<private-repo>/scripts/exports/*` config/token files
+- Private state source: `<private-repo>/captures/` and `<private-repo>/scripts/exports/*` config/token files
 
 ## Current Script Surface
 

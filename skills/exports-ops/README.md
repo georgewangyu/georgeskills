@@ -8,5 +8,5 @@ Modular export implementations for:
 - X/Twitter feed snapshots
 
 The scripts run against private data/config in `<private-repo>`:
-- `notes-private/*`
+- `captures/*`
 - `scripts/exports/*` credentials/config/tokens
