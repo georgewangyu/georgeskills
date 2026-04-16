@@ -34,13 +34,17 @@ def _legacy_health_family_records_root(private_repo_root: Path) -> Path | None:
 
 
 def _people_health_records_root(private_repo_root: Path) -> Path | None:
-    people_root = private_repo_root / "people"
-    if not people_root.exists():
-        return None
-    for child in sorted(people_root.iterdir()):
-        candidate = child / "health" / "records"
-        if child.is_dir() and candidate.exists():
-            return candidate
+    candidate_roots = [
+        private_repo_root / "areas" / "people",
+        private_repo_root / "people",
+    ]
+    for people_root in candidate_roots:
+        if not people_root.exists():
+            continue
+        for child in sorted(people_root.iterdir()):
+            candidate = child / "health" / "records"
+            if child.is_dir() and candidate.exists():
+                return candidate
     return None
 
 
