@@ -56,13 +56,14 @@ MEMORY_EXTRACT = ROOT / "scripts" / "memory" / "extract_daily_summary_candidates
 WORKSPACE_ROOT = ROOT.parent
 GEORGE_LLM_WIKI_ROOT = WORKSPACE_ROOT / "GeorgeLLMWiki"
 GEORGE_LLM_WIKI_INGEST = GEORGE_LLM_WIKI_ROOT / "scripts" / "ingest_workspace_docs.py"
-NOTES_LAST_EXPORT_MARKER = ROOT / "notes-private" / "apple-notes" / "all-notes" / ".last_export"
-EMAIL_DIR = ROOT / "notes-private" / "email"
-CALENDAR_DIR = ROOT / "notes-private" / "calendar"
+CAPTURES_DIR = ROOT / "captures"
+NOTES_LAST_EXPORT_MARKER = CAPTURES_DIR / "apple-notes" / "all-notes" / ".last_export"
+EMAIL_DIR = CAPTURES_DIR / "email"
+CALENDAR_DIR = CAPTURES_DIR / "calendar"
 CALENDAR_LOG = CALENDAR_DIR / "export.log"
 CALENDAR_WEEKLY = CALENDAR_DIR / "weekly_calendar.md"
 PREP_MARKERS_DIR = ROOT / "journal" / ".workflow_prep_markers"
-CONVERSATION_NOTES_DIR = ROOT / "notes-private" / "audio-conversations" / "notes"
+CONVERSATION_NOTES_DIR = CAPTURES_DIR / "audio-conversations" / "notes"
 DEFAULT_EXPORT_FRESHNESS_SECONDS = 300
 DJI_TRANSCRIPTS_ROOT = ROOT / "journal" / "audio" / "transcripts"
 SNACKVOICE_APP_SUPPORT_ID = os.environ.get("SNACKVOICE_APP_SUPPORT_ID", "com.example.snackvoice")
@@ -432,12 +433,12 @@ def summary_path_for(day_text: str) -> Path:
 
 
 def note_count_for(day_text: str) -> int:
-    notes_dir = ROOT / "notes-private" / "apple-notes" / "all-notes"
+    notes_dir = CAPTURES_DIR / "apple-notes" / "all-notes"
     return len(list(notes_dir.glob(f"{day_text}_*")))
 
 
 def email_count_for(day_text: str) -> int:
-    email_dir = ROOT / "notes-private" / "email"
+    email_dir = CAPTURES_DIR / "email"
     return len(list(email_dir.glob(f"**/{day_text}_*")))
 
 

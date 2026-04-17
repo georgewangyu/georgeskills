@@ -19,7 +19,7 @@ from pathlib import Path
 from repo_paths import resolve_private_repo_root
 
 ROOT = resolve_private_repo_root()
-EMAIL_ROOT = ROOT / "notes-private" / "email"
+EMAIL_ROOT = ROOT / "captures" / "email"
 LOCAL_TZ = datetime.now().astimezone().tzinfo
 
 INTERVIEW_KEYWORDS = (

@@ -18,8 +18,8 @@ from repo_paths import resolve_private_repo_root
 ROOT = resolve_private_repo_root()
 SUMMARIES_DIR = ROOT / "journal" / "summaries"
 METRICS_CSV = ROOT / "journal" / "daily_metrics.csv"
-EMAIL_DIR = ROOT / "notes-private" / "email"
-CALENDAR_LOG = ROOT / "notes-private" / "calendar" / "export.log"
+EMAIL_DIR = ROOT / "captures" / "email"
+CALENDAR_LOG = ROOT / "captures" / "calendar" / "export.log"
 
 
 @dataclass
