@@ -161,6 +161,14 @@ def parse_timestamp(value: Any) -> datetime | None:
         try:
             return datetime.fromisoformat(raw)
         except ValueError:
+            # Health Auto Export commonly emits timestamps like
+            # "2026-04-17 08:04:46 -0700", which Python 3.9 does not accept via
+            # fromisoformat because of the space-separated offset.
+            for fmt in ("%Y-%m-%d %H:%M:%S %z", "%Y-%m-%dT%H:%M:%S %z"):
+                try:
+                    return datetime.strptime(raw, fmt)
+                except ValueError:
+                    continue
             return None
     return None
 
