@@ -82,7 +82,7 @@ def _legacy_sibling_candidate(here: Path) -> Path | None:
             for child in parent.iterdir():
                 if not child.is_dir() or child.name in EXCLUDED_SIBLINGS:
                     continue
-                if (child / MARKER_FILE).exists() or (child / "PRIVATE_BOOTSTRAP.md").exists():
+                if (child / MARKER_FILE).exists():
                     return child
         except Exception:
             continue
@@ -91,8 +91,8 @@ def _legacy_sibling_candidate(here: Path) -> Path | None:
 
 def _legacy_workspace_candidate(here: Path) -> Path | None:
     for parent in [here.parent, *here.parents]:
-        has_bootstrap = (parent / "AGENTS.md").exists() or (parent / "PRIVATE_BOOTSTRAP.md").exists()
-        if has_bootstrap and any((parent / hint).exists() for hint in LEGACY_HINTS):
+        has_startup_router = (parent / "AGENTS.md").exists()
+        if has_startup_router and any((parent / hint).exists() for hint in LEGACY_HINTS):
             return parent
     return None
 

@@ -19,14 +19,23 @@ from health_auto_export_rest_receiver import DEFAULT_DEST, DEFAULT_RAW_DIR, inge
 
 
 DEFAULT_FOLDER_NAME = "LifeRepo Health"
-DEFAULT_ICLOUD_MANUAL_DIR = (
-    Path.home()
-    / "Library"
-    / "Mobile Documents"
-    / "iCloud~com~ifunography~HealthExport"
-    / "Documents"
-    / "iCloud drive"
-)
+def default_icloud_manual_dir() -> Path:
+    documents_root = (
+        Path.home()
+        / "Library"
+        / "Mobile Documents"
+        / "iCloud~com~ifunography~HealthExport"
+        / "Documents"
+    )
+    candidates = [
+        documents_root / "iCloud Drive",
+        documents_root / "iCloud drive",
+        documents_root / "iCloud drive 2",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
 
 
 def default_drive_root() -> Path:
@@ -62,7 +71,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--icloud-manual-dir",
-        default=str(DEFAULT_ICLOUD_MANUAL_DIR),
+        default=str(default_icloud_manual_dir()),
         help="Fallback iCloud app Documents folder to scan for JSON exports",
     )
     parser.add_argument(

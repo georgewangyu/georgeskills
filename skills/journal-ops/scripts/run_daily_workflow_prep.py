@@ -16,6 +16,9 @@ import os
 import re
 import subprocess
 import sys
+import time
+import urllib.error
+import urllib.request
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -65,6 +68,9 @@ CALENDAR_WEEKLY = CALENDAR_DIR / "weekly_calendar.md"
 PREP_MARKERS_DIR = ROOT / "journal" / ".workflow_prep_markers"
 CONVERSATION_NOTES_DIR = CAPTURES_DIR / "audio-conversations" / "notes"
 DEFAULT_EXPORT_FRESHNESS_SECONDS = 300
+DEFAULT_AUDIO_LLM_PROVIDER = "gemini"
+DEFAULT_AUDIO_LLM_MODEL = "gemini-2.5-flash"
+RETRYABLE_HTTP_CODES = {429, 500, 503}
 DJI_TRANSCRIPTS_ROOT = ROOT / "journal" / "audio" / "transcripts"
 SNACKVOICE_APP_SUPPORT_ID = os.environ.get("SNACKVOICE_APP_SUPPORT_ID", "com.example.snackvoice")
 SNACKVOICE_AMBIENT_CAPTURE_DIR = (
@@ -145,6 +151,13 @@ class AudioSegment:
     source_label: str
     time_range: str
     text: str
+
+
+@dataclass(frozen=True)
+class AudioSummaryConfig:
+    provider: str
+    model: str
+    allow_fallback: bool
 
 
 def _now_utc() -> datetime:
@@ -740,6 +753,252 @@ def normalized_dedup_key(text: str) -> str:
     return lowered
 
 
+def gemini_api_key() -> str | None:
+    for key in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"):
+        value = os.environ.get(key, "").strip()
+        if value:
+            return value
+    return None
+
+
+def audio_summary_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "overall_takeaway": {"type": "string"},
+            "audio_log_items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "time_range": {"type": "string"},
+                        "source_label": {"type": "string"},
+                        "summary": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                    },
+                    "required": ["time_range", "source_label", "summary", "tags"],
+                },
+            },
+            "key_decisions": {"type": "array", "items": {"type": "string"}},
+            "people_relationships": {"type": "array", "items": {"type": "string"}},
+            "conversation_milestones": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": [
+            "overall_takeaway",
+            "audio_log_items",
+            "key_decisions",
+            "people_relationships",
+            "conversation_milestones",
+        ],
+    }
+
+
+def audio_summary_system_instruction() -> str:
+    return (
+        "You are interpreting same-day personal audio transcripts for a daily journal workflow. "
+        "Your job is to convert noisy ambient or DJI transcript segments into a compact, useful day-level synthesis. "
+        "Repair obvious ASR mistakes when the meaning is clear, but do not invent details. "
+        "Prefer thematic summaries over transcript snippets. "
+        "Call out uncertainty plainly when needed. "
+        "If content is mostly background media, say that directly instead of pretending it is a conversation. "
+        "If a segment is personal logistics or care for family, preserve that human context. "
+        "Return concise JSON that matches the schema exactly."
+    )
+
+
+def _trim_audio_text(text: str, *, limit: int = 900) -> str:
+    compact = " ".join(text.split())
+    if len(compact) <= limit:
+        return compact
+    return compact[: limit - 3].rstrip() + "..."
+
+
+def build_audio_model_prompt(day_text: str, segments: list[AudioSegment]) -> str:
+    prompt = {
+        "date": day_text,
+        "task": [
+            "Summarize the audio properly.",
+            "Use thematic interpretation, not transcript passthrough.",
+            "Group nearby snippets into a few meaningful items.",
+            "Pull up decisions, people context, and work milestones when they are actually supported.",
+            "If a segment is too noisy, say what is still inferable instead of copying gibberish.",
+        ],
+        "tag_vocabulary": [
+            "workflow",
+            "people",
+            "health",
+            "travel",
+            "work",
+            "personal",
+            "meta",
+            "career",
+            "product",
+            "content",
+        ],
+        "output_rules": [
+            "Return at most 6 audio_log_items.",
+            "Each item summary should be concrete and readable, usually 1-3 sentences.",
+            "Do not quote long raw transcript fragments unless a short phrase is necessary.",
+            "Prefer best-guess interpretation with uncertainty markers over nonsense text.",
+            "key_decisions, people_relationships, and conversation_milestones should be bullets ready to insert into markdown sections without a leading '- '.",
+        ],
+        "segments": [
+            {
+                "time_range": segment.time_range,
+                "source_label": segment.source_label,
+                "source_type": segment.source_type,
+                "text": _trim_audio_text(segment.text),
+            }
+            for segment in segments[:18]
+        ],
+    }
+    return json.dumps(prompt, indent=2, ensure_ascii=False)
+
+
+def gemini_generate_json(
+    *,
+    api_key: str,
+    model: str,
+    prompt: str,
+    schema: dict[str, Any],
+    max_attempts: int = 4,
+) -> dict[str, Any]:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    payload = {
+        "system_instruction": {
+            "parts": [{"text": audio_summary_system_instruction()}],
+        },
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": prompt}],
+            }
+        ],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseJsonSchema": schema,
+            "temperature": 0.2,
+        },
+    }
+    request = urllib.request.Request(
+        url=url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "x-goog-api-key": api_key,
+            "x-goog-api-client": "georgeskills-journal-ops/0.1",
+        },
+        method="POST",
+    )
+    body = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=120) as response:
+                body = response.read().decode("utf-8")
+                break
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            if exc.code in RETRYABLE_HTTP_CODES and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 8))
+                continue
+            raise RuntimeError(f"Gemini API error {exc.code}: {detail}") from exc
+        except urllib.error.URLError as exc:
+            if attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 8))
+                continue
+            raise RuntimeError(f"Gemini API request failed: {exc}") from exc
+
+    if body is None:
+        raise RuntimeError("Gemini API request failed after retries.")
+
+    parsed = json.loads(body)
+    candidates = parsed.get("candidates") or []
+    if not candidates:
+        raise RuntimeError(f"Gemini API returned no candidates: {body}")
+    parts = candidates[0].get("content", {}).get("parts", [])
+    text = "".join(part.get("text", "") for part in parts if isinstance(part, dict))
+    if not text.strip():
+        raise RuntimeError(f"Gemini API returned empty text: {body}")
+    return json.loads(text)
+
+
+def run_audio_summary_model(*, provider: str, model: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
+    if provider != "gemini":
+        raise RuntimeError(f"Unsupported audio summary provider: {provider}")
+    api_key = gemini_api_key()
+    if not api_key:
+        raise RuntimeError(
+            "Missing Gemini API key for audio interpretation. Set GEMINI_API_KEY, GOOGLE_API_KEY, or GOOGLE_GENERATIVE_AI_API_KEY."
+        )
+    return gemini_generate_json(api_key=api_key, model=model, prompt=prompt, schema=schema)
+
+
+def _normalize_audio_tags(tags: list[Any]) -> list[str]:
+    allowed = {"workflow", "people", "health", "travel", "work", "personal", "meta", "career", "product", "content"}
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for tag in tags:
+        normalized = str(tag).strip().lower().strip("[]")
+        if normalized not in allowed or normalized in seen:
+            continue
+        cleaned.append(normalized)
+        seen.add(normalized)
+    return cleaned[:3]
+
+
+def normalize_audio_payload(payload: dict[str, Any], *, segments: list[AudioSegment]) -> dict[str, Any]:
+    segment_lookup = {(segment.time_range, segment.source_label): segment for segment in segments}
+    items: list[dict[str, Any]] = []
+    for raw_item in list(payload.get("audio_log_items", []))[:6]:
+        if not isinstance(raw_item, dict):
+            continue
+        time_range = str(raw_item.get("time_range", "")).strip()
+        source_label = str(raw_item.get("source_label", "")).strip()
+        summary = " ".join(str(raw_item.get("summary", "")).split()).strip()
+        if not summary:
+            continue
+        if not time_range or not source_label:
+            matched = next(iter(segment_lookup.values()), None)
+            if matched is not None:
+                time_range = time_range or matched.time_range
+                source_label = source_label or matched.source_label
+        if not time_range:
+            continue
+        items.append(
+            {
+                "time_range": time_range,
+                "source_label": source_label or "Ambient capture",
+                "summary": summary,
+                "tags": _normalize_audio_tags(list(raw_item.get("tags", []))),
+            }
+        )
+
+    if not items:
+        raise RuntimeError("Audio summary model returned no usable audio_log_items.")
+
+    def _normalize_lines(value: Any, *, limit: int) -> list[str]:
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for item in list(value or [])[:limit]:
+            text = " ".join(str(item).split()).strip()
+            if not text:
+                continue
+            key = text.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            normalized.append(text.removeprefix("- ").strip())
+        return normalized
+
+    return {
+        "audio_log_items": items,
+        "key_decisions": _normalize_lines(payload.get("key_decisions"), limit=4),
+        "people_relationships": _normalize_lines(payload.get("people_relationships"), limit=4),
+        "conversation_milestones": _normalize_lines(payload.get("conversation_milestones"), limit=5),
+        "overall_takeaway": " ".join(str(payload.get("overall_takeaway", "")).split()).strip(),
+    }
+
+
 def promoted_bullets_from_items(items: list[dict[str, Any]]) -> dict[str, list[str]]:
     milestones: list[str] = []
     decisions: list[str] = []
@@ -814,9 +1073,25 @@ def fallback_audio_summary(segments: list[AudioSegment]) -> dict[str, Any]:
     }
 
 
-def summarize_audio_segments(day_text: str, segments: list[AudioSegment]) -> tuple[dict[str, Any], str]:
-    del day_text
-    return fallback_audio_summary(segments), "deterministic"
+def summarize_audio_segments(
+    day_text: str,
+    segments: list[AudioSegment],
+    *,
+    config: AudioSummaryConfig,
+) -> tuple[dict[str, Any], str]:
+    prompt = build_audio_model_prompt(day_text, segments)
+    try:
+        payload = run_audio_summary_model(
+            provider=config.provider,
+            model=config.model,
+            prompt=prompt,
+            schema=audio_summary_schema(),
+        )
+        return normalize_audio_payload(payload, segments=segments), "llm"
+    except Exception:
+        if not config.allow_fallback:
+            raise
+        return fallback_audio_summary(segments), "deterministic"
 
 
 def _format_tags(tags: list[str]) -> str:
@@ -1140,12 +1415,12 @@ def append_unique_bullets_to_section(text: str, title: str, bullets: list[str]) 
     return upsert_level2_section(text, title, body)
 
 
-def build_audio_sections(day_text: str) -> tuple[str | None, dict[str, list[str]], str | None]:
+def build_audio_sections(day_text: str, *, config: AudioSummaryConfig) -> tuple[str | None, dict[str, list[str]], str | None]:
     segments = build_audio_segments(day_text)
     if not segments:
         return None, {}, None
 
-    payload, mode = summarize_audio_segments(day_text, segments)
+    payload, mode = summarize_audio_segments(day_text, segments, config=config)
     promoted = {
         "Key Decisions": [str(item).strip() for item in payload.get("key_decisions", []) if str(item).strip()],
         "People / Relationships": [
@@ -1158,7 +1433,7 @@ def build_audio_sections(day_text: str) -> tuple[str | None, dict[str, list[str]
     return render_audio_log(day_text, payload), promoted, mode
 
 
-def hydrate_summary_context(day_text: str) -> StepResult:
+def hydrate_summary_context(day_text: str, *, audio_config: AudioSummaryConfig) -> StepResult:
     summary_path = summary_path_for(day_text)
     if not summary_path.exists():
         return StepResult("Summary context sync", True, "skipped (summary missing)")
@@ -1177,7 +1452,10 @@ def hydrate_summary_context(day_text: str) -> StepResult:
         updated = upsert_level2_section(updated, "Location Context", location_body)
         changed_sections.append("Location Context")
 
-    audio_body, promoted_audio, audio_mode = build_audio_sections(day_text)
+    try:
+        audio_body, promoted_audio, audio_mode = build_audio_sections(day_text, config=audio_config)
+    except Exception as exc:
+        return StepResult("Summary context sync", False, f"audio interpretation required: {exc}")
     if audio_body:
         updated = upsert_level2_section(updated, f"Audio Log — {day_text}", audio_body)
         changed_sections.append(f"Audio Log ({audio_mode or 'generated'})")
@@ -1240,7 +1518,29 @@ def main() -> int:
         action="store_true",
         help="Return success even when no health source is available",
     )
+    parser.add_argument(
+        "--audio-llm-provider",
+        default=DEFAULT_AUDIO_LLM_PROVIDER,
+        choices=["gemini"],
+        help="Provider used for required audio interpretation when audio artifacts exist.",
+    )
+    parser.add_argument(
+        "--audio-llm-model",
+        default=os.environ.get("JOURNAL_AUDIO_LLM_MODEL", DEFAULT_AUDIO_LLM_MODEL),
+        help="Model used for audio interpretation.",
+    )
+    parser.add_argument(
+        "--allow-audio-fallback",
+        action="store_true",
+        help="Allow deterministic audio fallback instead of failing when model-based audio interpretation is unavailable.",
+    )
     args = parser.parse_args()
+
+    audio_config = AudioSummaryConfig(
+        provider=args.audio_llm_provider,
+        model=args.audio_llm_model,
+        allow_fallback=args.allow_audio_fallback,
+    )
 
     results: list[StepResult] = []
 
@@ -1304,7 +1604,7 @@ def main() -> int:
     if not args.skip_health and not health_missing:
         results.append(run_step("Health interview context", ["python3", str(PRINT_HEALTH), "--date", args.date]))
 
-    results.append(hydrate_summary_context(args.date))
+    results.append(hydrate_summary_context(args.date, audio_config=audio_config))
     results.append(run_step("Workflow completeness", ["python3", str(CHECK_COMPLETENESS), "--date", args.date], ok_codes={0, 1}))
 
     summary_path = summary_path_for(args.date)
