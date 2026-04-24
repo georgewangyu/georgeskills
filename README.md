@@ -102,6 +102,7 @@ georgeskills/
 | `frontend-art-direction-ops` | Build visual direction for a product UI: style references, typography, color tokens, layout and motion rules. |
 | `frontend-polish-pass-ops` | Final polish pass: responsiveness, accessibility, hierarchy, interaction quality, and perceived performance. |
 | `pencil-design-orchestration-ops` | Run a repeatable Pencil MCP design workflow from the coding agent through to frontend handoff. |
+| `disk-space-ops` | Inspect disk usage, highlight large folders/files, and suggest conservative cleanup targets with risk framing. |
 
 ### Journal and Workflow
 
