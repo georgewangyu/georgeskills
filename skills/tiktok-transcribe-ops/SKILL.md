@@ -1,4 +1,16 @@
-# tiktok-transcribe-ops
+---
+name: tiktok-transcribe-ops
+description: Transcribe a TikTok video to text when the user provides a TikTok URL. Prefer caption and subtitle extraction first, then fall back to local audio transcription when needed.
+memory_tags:
+  - domain:social-media
+  - workflow:transcription
+  - repo_boundary:tools
+  - inputs:web
+  - outputs:transcript
+  - risk:medium
+---
+
+# TikTok Transcribe Ops
 
 Use when the user wants a transcript of a TikTok video.
 
