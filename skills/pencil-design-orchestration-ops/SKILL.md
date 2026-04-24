@@ -1,6 +1,6 @@
 ---
 name: pencil-design-orchestration-ops
-description: Run a repeatable Pencil MCP design workflow from the coding agent. Use when the user wants to generate, refine, and hand off editable Pencil designs to frontend code using UI kits, style guides, and structured Pencil tool usage.
+description: Run a repeatable Pencil MCP workflow to generate, refine, and hand off editable designs to frontend code.
 memory_tags:
   - domain:frontend-design
   - workflow:pencil-orchestration

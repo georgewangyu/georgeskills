@@ -1,6 +1,6 @@
 ---
 name: revenue-signal-research-ops
-description: Estimate which apps or SaaS products are likely making meaningful revenue by combining rankings, pricing, review volume, traffic, filings, hiring, and other public commercial signals. Use when the user wants a money map rather than just a competitor list. This skill is for absolute revenue strength, not breakout-from-small-base patterns.
+description: Estimate which apps or SaaS products are making meaningful revenue from public commercial signals. Use for money maps, not breakout-from-small-base analysis.
 memory_tags:
   - domain:market-research
   - workflow:revenue-signal-estimation

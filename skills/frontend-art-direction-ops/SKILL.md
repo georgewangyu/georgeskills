@@ -1,6 +1,6 @@
 ---
 name: frontend-art-direction-ops
-description: Build a clear visual direction for a product UI or landing page by locking style references, typography, color tokens, layout rules, and motion intent before implementation. Use when a frontend looks generic or inconsistent and needs a premium direction.
+description: Build a clear visual direction for a UI or landing page before implementation: references, typography, color, layout, and motion.
 memory_tags:
   - domain:frontend-design
   - workflow:art-direction

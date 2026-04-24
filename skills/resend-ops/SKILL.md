@@ -1,6 +1,6 @@
 ---
 name: resend-ops
-description: Use when a repo needs Resend email setup or maintenance through shared private credentials, project-local env wiring, or deployment-secret configuration.
+description: Set up or maintain Resend email integration, env wiring, and deployment-secret configuration.
 memory_tags:
   - domain:email
   - workflow:resend-setup

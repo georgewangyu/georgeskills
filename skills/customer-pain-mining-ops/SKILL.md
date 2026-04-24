@@ -1,6 +1,6 @@
 ---
 name: customer-pain-mining-ops
-description: Mine reviews, forums, Reddit, App Store comments, support threads, and public discussion for repeated user pain points, unmet needs, and switching triggers. Use when the user wants to understand what customers still hate about existing products.
+description: Mine reviews and public discussions for repeated user pain points, unmet needs, and switching triggers.
 memory_tags:
   - domain:market-research
   - workflow:pain-mining

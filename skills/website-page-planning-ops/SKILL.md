@@ -1,6 +1,6 @@
 ---
 name: website-page-planning-ops
-description: Turn a rough website or marketing-site idea into a concrete page plan before design or coding starts. Use when the user has a vague site concept and needs the page set, section responsibilities, CTA structure, and a compact design brief for tools like Pencil.
+description: Turn a rough website or marketing-site idea into a concrete page plan with section roles, CTA structure, and a compact design brief.
 memory_tags:
   - domain:frontend-design
   - workflow:page-planning

@@ -1,6 +1,6 @@
 ---
 name: naming-ops
-description: Generate and screen brandable company, product, and SaaS names with a structured brief, distinctiveness heuristics, and preliminary domain and trademark checks.
+description: Generate and screen brandable company, product, and SaaS names with domain and trademark checks.
 memory_tags:
   - domain:naming
   - workflow:brand-naming

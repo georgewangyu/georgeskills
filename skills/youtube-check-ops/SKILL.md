@@ -1,6 +1,6 @@
 ---
 name: youtube-check-ops
-description: Check a YouTube channel or video, especially public channel metadata. Prefer the official YouTube Data API when credentials already exist; otherwise use lightweight public probes and route interactive viewing to the existing `playwright` browser skill only when needed.
+description: Check a YouTube channel or video for public metadata, preferring lightweight probes before browser viewing.
 memory_tags:
   - domain:social-media
   - workflow:account-check

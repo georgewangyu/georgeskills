@@ -1,6 +1,6 @@
 ---
 name: instagram-check-ops
-description: Check an Instagram account or post, especially public status and high-level profile metadata. Prefer official Meta APIs only when the required app access already exists; otherwise use lightweight public probes and route interactive viewing to the existing `playwright` browser skill.
+description: Check an Instagram account or post for public status and basic metadata, preferring lightweight probes before browser viewing.
 memory_tags:
   - domain:social-media
   - workflow:account-check

@@ -1,6 +1,6 @@
 ---
 name: market-landscape-research-ops
-description: Research a software or app market by identifying the main categories, leading products, pricing models, user segments, visible competitors, and smaller breakout upstarts. Use when comparing iPhone apps, SaaS websites, or adjacent product spaces before choosing what to build.
+description: Research a software or app market: major categories, leaders, pricing, user segments, competitors, and smaller upstarts.
 memory_tags:
   - domain:market-research
   - workflow:landscape-mapping

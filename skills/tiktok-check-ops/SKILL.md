@@ -1,6 +1,6 @@
 ---
 name: tiktok-check-ops
-description: Check a TikTok account or video, especially public status and recent viewable content. Prefer official TikTok APIs only when appropriate access already exists; otherwise use lightweight public probes and route interactive viewing to the existing `playwright` browser skill.
+description: Check a TikTok account or video for public status and recent viewable content, preferring lightweight probes before browser viewing.
 memory_tags:
   - domain:social-media
   - workflow:account-check

@@ -1,6 +1,6 @@
 ---
 name: youtube-transcribe-ops
-description: Transcribe a YouTube video to text when the user provides a YouTube link or asks for a transcript. Prefer existing subtitles or auto-captions first, then fall back to local Whisper transcription when captions are unavailable.
+description: Transcribe a YouTube video to text, preferring subtitles or auto-captions before local Whisper fallback.
 memory_tags:
   - domain:media
   - workflow:transcription

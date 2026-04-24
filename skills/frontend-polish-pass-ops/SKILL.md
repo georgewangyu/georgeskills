@@ -1,6 +1,6 @@
 ---
 name: frontend-polish-pass-ops
-description: Run a final frontend polish pass for responsiveness, accessibility, hierarchy, copy clarity, interaction quality, and perceived performance before launch. Use when the UI is functional but not yet production-grade.
+description: Run a final frontend polish pass for responsiveness, accessibility, hierarchy, copy clarity, interaction quality, and perceived performance.
 memory_tags:
   - domain:frontend-design
   - workflow:ui-polish

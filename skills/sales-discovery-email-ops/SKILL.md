@@ -1,6 +1,6 @@
 ---
 name: sales-discovery-email-ops
-description: Write respectful first-touch outbound emails for sales discovery, especially when the goal is to start a conversation rather than close in the first message. Use when Codex needs to draft cold or warm outreach for consulting, services, website redesigns, workflow automation, or similar offers where the email should be short, personalized, non-aggressive, and end with a soft discovery-call CTA.
+description: Write short, respectful first-touch sales discovery emails for consulting, services, or workflow offers, with a soft CTA and no aggressive close.
 ---
 
 # Sales Discovery Email Ops

@@ -1,6 +1,6 @@
 ---
 name: video-breakout-research-ops
-description: Sweep TikTok, Instagram, and YouTube Shorts for low-base, high-traction video patterns, then score follower-to-view asymmetry and cluster portable concepts into a research shortlist.
+description: Sweep TikTok, Instagram, and YouTube Shorts for low-base, high-traction video patterns and portable breakout concepts.
 memory_tags:
   - domain:social-media
   - workflow:breakout-concept-research

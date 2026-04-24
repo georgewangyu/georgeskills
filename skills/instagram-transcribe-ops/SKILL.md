@@ -1,6 +1,6 @@
 ---
 name: instagram-transcribe-ops
-description: Transcribe an Instagram Reel or video post to text when the user provides an Instagram URL. Prefer subtitle extraction first, then fall back to local audio transcription when captions are unavailable.
+description: Transcribe an Instagram Reel or video post to text, preferring subtitles before local audio fallback.
 memory_tags:
   - domain:social-media
   - workflow:transcription

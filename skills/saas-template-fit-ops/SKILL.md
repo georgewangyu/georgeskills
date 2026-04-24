@@ -1,6 +1,6 @@
 ---
 name: saas-template-fit-ops
-description: Translate a chosen SaaS idea into the right template shape by deciding account model, billing model, core workflow, required integrations, and day-1 architecture constraints. Use when the opportunity is chosen and the user needs to map it into a buildable SaaS template.
+description: Map a chosen SaaS idea to the right template shape: account model, billing, workflow, integrations, and day-1 architecture.
 memory_tags:
   - domain:product-strategy
   - workflow:template-fit

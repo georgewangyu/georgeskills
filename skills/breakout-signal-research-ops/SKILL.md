@@ -1,6 +1,6 @@
 ---
 name: breakout-signal-research-ops
-description: Find products with asymmetric traction relative to their apparent starting base, such as simple apps or SaaS tools that achieved unusual revenue, growth, or attention without already being dominant incumbents. Use when the user wants the SaaS equivalent of a low-follower account that suddenly has a breakout hit.
+description: Find apps or SaaS tools with breakout traction relative to a small apparent starting base.
 memory_tags:
   - domain:market-research
   - workflow:breakout-signal-detection

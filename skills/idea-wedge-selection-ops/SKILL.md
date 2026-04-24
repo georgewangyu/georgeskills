@@ -1,6 +1,6 @@
 ---
 name: idea-wedge-selection-ops
-description: Turn market, revenue, breakout, and pain research into a concrete product direction by selecting a sharp initial wedge, target user, and why-now thesis. Use when the user wants a shortlist of what not to build, what might work, and what to pursue first.
+description: Turn market, revenue, breakout, and pain research into a concrete product wedge, target user, and why-now thesis.
 memory_tags:
   - domain:product-strategy
   - workflow:wedge-selection
