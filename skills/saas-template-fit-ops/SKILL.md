@@ -1,6 +1,6 @@
 ---
 name: saas-template-fit-ops
-description: Map a chosen SaaS idea to the right template shape: account model, billing, workflow, integrations, and day-1 architecture.
+description: "Map a chosen SaaS idea to the right template shape: account model, billing, workflow, integrations, and day-1 architecture."
 memory_tags:
   - domain:product-strategy
   - workflow:template-fit

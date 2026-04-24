@@ -1,6 +1,6 @@
 ---
 name: market-landscape-research-ops
-description: Research a software or app market: major categories, leaders, pricing, user segments, competitors, and smaller upstarts.
+description: "Research a software or app market: major categories, leaders, pricing, user segments, competitors, and smaller upstarts."
 memory_tags:
   - domain:market-research
   - workflow:landscape-mapping

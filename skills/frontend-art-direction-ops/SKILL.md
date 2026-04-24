@@ -1,6 +1,6 @@
 ---
 name: frontend-art-direction-ops
-description: Build a clear visual direction for a UI or landing page before implementation: references, typography, color, layout, and motion.
+description: "Build a clear visual direction for a UI or landing page before implementation: references, typography, color, layout, and motion."
 memory_tags:
   - domain:frontend-design
   - workflow:art-direction
