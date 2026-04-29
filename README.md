@@ -111,6 +111,7 @@ georgeskills/
 | Skill | Description |
 |---|---|
 | `journal-ops` | Reusable journal ingestion, prep, and derived-context generation logic. |
+| `skill-forge-ops` | Mine journals, transcripts, PRs, commits, scripts, and agent notes for workflows worth turning into reusable skills. |
 | `health-ops` | Health data ingestion and derived analytics workflows (Apple Health pipeline). |
 | `memory-ops` | Structured memory extraction, validation, promotion, and document salience indexing. |
 | `knowledge-ops` | Maintain compiled knowledge pages between raw source artifacts and compact structured memory. |
