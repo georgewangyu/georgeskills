@@ -27,4 +27,4 @@ Use when:
     -   Look for clusters of technology (e.g., "many new AI agents", "rise in Rust-based infra").
     -   Check if any top repos align with the user's current projects (`ADA`, `BitePath`, etc.).
 3.  **Log**:
-    -   Summary is logged to `notes-private/social-media/github/trends/YYYY-MM-DD.md`.
+    -   Summary is logged to `<private-repo>/captures/social-media/github/trends/YYYY-MM-DD.md`.

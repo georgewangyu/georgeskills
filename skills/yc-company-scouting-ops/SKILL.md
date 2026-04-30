@@ -58,7 +58,7 @@ Do not use when:
    - ideas worth studying or adapting
    - companies to follow on X/HN/Product Hunt if public signals matter
 6. If the user asks for durable tracking, save a dated note in the private repo, for example:
-   - `<private-repo>/notes-private/startups/yc/trends/YYYY-MM-DD.md`
+   - `<private-repo>/captures/startups/yc/trends/YYYY-MM-DD.md`
 
 ## Outputs
 

@@ -47,7 +47,7 @@ Do not use when:
    - outbound or content angles
    - weak signals that should not drive decisions yet
 6. If the user asks for durable tracking, save a dated note in the private repo, for example:
-   - `<private-repo>/notes-private/social-media/product-hunt/trends/YYYY-MM-DD.md`
+   - `<private-repo>/captures/social-media/product-hunt/trends/YYYY-MM-DD.md`
 
 ## Outputs
 
