@@ -36,6 +36,10 @@ XBOT_CLI = WORKSPACE_ROOT / "xbot" / "src" / "cli.js"
 X_ENV = ROOT / ".tokens" / "x-twitter.env"
 PRODUCT_HUNT_BASE = "https://www.producthunt.com"
 HN_LAUNCHES_URL = "https://news.ycombinator.com/launches"
+PAUL_GRAHAM_ESSAYS_URL = "https://paulgraham.com/articles.html"
+PAUL_GRAHAM_BASE = "https://paulgraham.com/"
+READING_CACHE_DIR = ROOT / ".cache" / "morning-radar"
+PAUL_GRAHAM_CACHE = READING_CACHE_DIR / "paulgraham_essays.json"
 
 
 class TextExtractor(HTMLParser):
@@ -50,6 +54,34 @@ class TextExtractor(HTMLParser):
 
     def text(self) -> str:
         return "\n".join(self.parts)
+
+
+class LinkExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.links: list[dict[str, str]] = []
+        self._active_href: str | None = None
+        self._active_text: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag.lower() != "a":
+            return
+        attr_map = {key.lower(): value for key, value in attrs if value is not None}
+        self._active_href = attr_map.get("href")
+        self._active_text = []
+
+    def handle_data(self, data: str) -> None:
+        if self._active_href is not None:
+            self._active_text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() != "a" or self._active_href is None:
+            return
+        title = " ".join("".join(self._active_text).split())
+        if title:
+            self.links.append({"title": title, "href": self._active_href})
+        self._active_href = None
+        self._active_text = []
 
 
 def summary_path_for(day_text: str) -> Path:
@@ -112,7 +144,7 @@ def load_env_file(path: Path) -> dict[str, str]:
     return values
 
 
-def fetch_text(url: str, timeout: int = 12) -> str:
+def fetch_html(url: str, timeout: int = 12) -> str:
     request = Request(
         url,
         headers={
@@ -146,6 +178,11 @@ def fetch_text(url: str, timeout: int = 12) -> str:
         html = proc.stdout
     if "Just a moment..." in html and "challenge-platform" in html:
         raise RuntimeError("blocked by browser challenge")
+    return html
+
+
+def fetch_text(url: str, timeout: int = 12) -> str:
+    html = fetch_html(url, timeout=timeout)
     parser = TextExtractor()
     parser.feed(html)
     return parser.text()
@@ -269,6 +306,102 @@ def print_product_hunt_scan(day_text: str, limit: int = 5) -> None:
         print(f"  - {name}{detail}{metrics}")
 
 
+def normalize_paul_graham_href(href: str) -> str:
+    if href.startswith("http://") or href.startswith("https://"):
+        return href
+    return PAUL_GRAHAM_BASE + href.lstrip("/")
+
+
+def load_json_file(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+
+
+def write_json_file(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def fetch_paul_graham_essays(limit: int = 8) -> list[dict[str, str]]:
+    html = fetch_html(PAUL_GRAHAM_ESSAYS_URL)
+    parser = LinkExtractor()
+    parser.feed(html)
+
+    essays: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for link in parser.links:
+        href = link["href"]
+        title = link["title"]
+        if not href.endswith(".html"):
+            continue
+        if title.lower() in {"essays"}:
+            continue
+        url = normalize_paul_graham_href(href)
+        if url in seen:
+            continue
+        seen.add(url)
+        essays.append({"title": title, "url": url})
+
+    # The page starts with three recommendation links before the newest-first
+    # essay list. Drop that intro block when it is present.
+    recommendation_titles = {"How to Do Great Work", "Having Kids", "How to Lose Time and Money"}
+    if len(essays) > 3 and {item["title"] for item in essays[:3]} == recommendation_titles:
+        essays = essays[3:]
+
+    return essays[:limit]
+
+
+def print_paul_graham_scan(day_text: str, limit: int, update_cache: bool) -> None:
+    print("\n--- Paul Graham Reading Radar ---")
+    try:
+        essays = fetch_paul_graham_essays(limit=limit)
+    except Exception as exc:  # noqa: BLE001 - reading radar should not break morning prep.
+        print(f"- Paul Graham essays unavailable: {shorten(str(exc), 180)}")
+        return
+
+    if not essays:
+        print("- No essays parsed from Paul Graham essays page.")
+        return
+
+    previous = load_json_file(PAUL_GRAHAM_CACHE)
+    previous_urls = {item.get("url") for item in previous.get("essays", []) if item.get("url")}
+    current_urls = {item["url"] for item in essays}
+    new_items = [item for item in essays if item["url"] not in previous_urls]
+
+    print(f"- Source: {PAUL_GRAHAM_ESSAYS_URL}")
+    if previous_urls:
+        if new_items:
+            print(f"- New since last cached check: {len(new_items)}")
+            for item in new_items[:3]:
+                print(f"  - {item['title']} — {item['url']}")
+        elif previous_urls == current_urls:
+            print("- No change in the top essay set since the last cached check.")
+        else:
+            print("- Top essay set changed since the last cached check.")
+    else:
+        print("- No previous cache found; seeding from the current top essay list.")
+
+    print("- Current top essays:")
+    for item in essays[:5]:
+        print(f"  - {item['title']} — {item['url']}")
+
+    print("- Reading note: pick one essay only if it sharpens today's build, writing, or founder judgment. Otherwise this becomes noble procrastination in vintage HTML clothing.")
+
+    if update_cache:
+        write_json_file(
+            PAUL_GRAHAM_CACHE,
+            {
+                "checked_date": day_text,
+                "source": PAUL_GRAHAM_ESSAYS_URL,
+                "essays": essays,
+            },
+        )
+
+
 def print_yc_scan(limit: int = 5) -> None:
     print("\n--- YC / Launch HN Radar ---")
     try:
@@ -308,6 +441,10 @@ def print_market_radar(day_text: str, x_count: int) -> None:
     print_product_hunt_scan(day_text)
 
 
+def print_reading_radar(day_text: str, paul_graham_limit: int, update_cache: bool) -> None:
+    print_paul_graham_scan(day_text, limit=paul_graham_limit, update_cache=update_cache)
+
+
 def print_morning_publishing_loop():
     print("\n--- Morning Publishing Prompt ---")
     print("- Pick one to three candidate ideas from current work, the latest summary, or the GitHub trends signal.")
@@ -341,6 +478,22 @@ def main() -> int:
         type=int,
         default=8,
         help="Number of X items to request from each timeline during the market radar scan.",
+    )
+    parser.add_argument(
+        "--skip-reading-radar",
+        action="store_true",
+        help="Skip morning reading scans such as Paul Graham essays.",
+    )
+    parser.add_argument(
+        "--paul-graham-limit",
+        type=int,
+        default=8,
+        help="Number of Paul Graham essays to inspect from the top of the essays page.",
+    )
+    parser.add_argument(
+        "--no-update-reading-cache",
+        action="store_true",
+        help="Do not update local reading-radar cache after checking reading sources.",
     )
     args = parser.parse_args()
 
@@ -399,6 +552,12 @@ def main() -> int:
 
     if not args.skip_market_radar:
         print_market_radar(day_text, args.market_radar_x_count)
+    if not args.skip_reading_radar:
+        print_reading_radar(
+            day_text,
+            paul_graham_limit=args.paul_graham_limit,
+            update_cache=not args.no_update_reading_cache,
+        )
     print_morning_publishing_loop()
     return 0
 
