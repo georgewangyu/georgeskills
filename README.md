@@ -71,6 +71,7 @@ georgeskills/
 | `instagram-check-ops` | Check Instagram account or post public status and profile metadata. |
 | `youtube-check-ops` | Check YouTube channel or video public metadata. Falls back to lightweight public probes. |
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
+| `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |
 | `video-breakout-research-ops` | Sweep TikTok, Instagram, and YouTube Shorts for low-follower, high-traction video patterns. |
 
 ### Research
@@ -79,6 +80,7 @@ georgeskills/
 |---|---|
 | `market-landscape-research-ops` | Map a software or app market: categories, leading products, pricing, user segments, upstarts. |
 | `revenue-signal-research-ops` | Estimate which apps or SaaS products are likely making meaningful revenue from public signals. |
+| `asymmetric-revenue-case-study-ops` | Produce single-company case studies for small-team or under-the-radar products with disproportionate revenue signals. |
 | `breakout-signal-research-ops` | Find products with asymmetric traction relative to their starting base — the low-follower breakout pattern. |
 | `customer-pain-mining-ops` | Mine reviews, forums, and App Store comments for repeated user pain points and unmet needs. |
 | `product-hunt-trends-ops` | Scout Product Hunt launches for interesting products, breakout signals, positioning patterns, and market ideas. |
@@ -90,6 +92,7 @@ georgeskills/
 | Skill | Description |
 |---|---|
 | `idea-wedge-selection-ops` | Turn market and pain research into a concrete product direction: wedge, target user, why-now thesis. |
+| `product-ignition-critique-ops` | Critique product ideas for pain legibility, ignition events, capture loops, and post-spike survival. |
 | `saas-template-fit-ops` | Map a chosen SaaS idea to the right template shape: account model, billing, architecture constraints. |
 | `naming-ops` | Generate and screen brandable company, product, and SaaS names with domain and trademark checks. |
 | `sales-discovery-email-ops` | Write respectful first-touch outbound emails for sales discovery and consulting outreach. |
@@ -112,6 +115,8 @@ georgeskills/
 |---|---|
 | `journal-ops` | Reusable journal ingestion, prep, and derived-context generation logic. |
 | `skill-forge-ops` | Mine journals, transcripts, PRs, commits, scripts, and agent notes for workflows worth turning into reusable skills. |
+| `agent-eval-harness-ops` | Design lightweight eval harnesses for coding or workflow agents, including rubrics and failure taxonomies. |
+| `rental-search-due-diligence-ops` | Run bounded rental-search due diligence with ranked shortlists, tour questions, risk checks, and stop conditions. |
 | `health-ops` | Health data ingestion and derived analytics workflows (Apple Health pipeline). |
 | `memory-ops` | Structured memory extraction, validation, promotion, and document salience indexing. |
 | `knowledge-ops` | Maintain compiled knowledge pages between raw source artifacts and compact structured memory. |
