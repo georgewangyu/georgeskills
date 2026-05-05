@@ -86,6 +86,7 @@ georgeskills/
 | `product-hunt-trends-ops` | Scout Product Hunt launches for interesting products, breakout signals, positioning patterns, and market ideas. |
 | `yc-company-scouting-ops` | Scout YC companies, batches, and Launch YC posts for standout startups, batch themes, and useful product ideas. |
 | `deep-exploration-ops` | Exploration artifact processing and framework distillation support. |
+| `closed-source-product-reconstruction-ops` | Inspect public closed-source products to infer stack, frontend/API/backend patterns, open-source analogues, and rebuild plans. |
 
 ### Product / Business
 
