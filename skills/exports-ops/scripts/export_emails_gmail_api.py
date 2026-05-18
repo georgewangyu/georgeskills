@@ -384,7 +384,10 @@ def parse_gmail_date(date_str):
     if not date_str:
         return None
     try:
-        return parsedate_to_datetime(date_str)
+        parsed = parsedate_to_datetime(date_str)
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
     except Exception:
         return None
 
@@ -407,7 +410,7 @@ def fetch_message_details(service, message_id):
         # Parse date
         email_datetime = parse_gmail_date(date_str)
         if not email_datetime:
-            email_datetime = datetime.now()
+            email_datetime = datetime.now(timezone.utc)
 
         # Decode body
         parts = payload.get('parts', [])
