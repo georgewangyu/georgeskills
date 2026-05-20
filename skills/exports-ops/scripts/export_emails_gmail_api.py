@@ -41,6 +41,7 @@ GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send'
 
 PRIVATE_REPO_ROOT = resolve_private_repo_root()
 EMAIL_DIR = PRIVATE_REPO_ROOT / "captures" / "email"
+MAX_FUTURE_SKEW = timedelta(days=2)
 
 # Credentials and token file paths
 SCRIPT_DIR = PRIVATE_REPO_ROOT / "scripts" / "exports" / "email"
@@ -178,6 +179,8 @@ class EmailAccount:
 
     def get_last_export_time(self):
         """Load the last incremental export time for this account (defaults to start of today)."""
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         if self.last_export_file.exists():
             try:
                 content = self.last_export_file.read_text().strip()
@@ -186,19 +189,37 @@ class EmailAccount:
                     # Make timezone-aware if it's naive
                     if last_export.tzinfo is None:
                         last_export = last_export.replace(tzinfo=timezone.utc)
+                    last_export = last_export.astimezone(timezone.utc)
+                    if last_export > now + MAX_FUTURE_SKEW:
+                        print(
+                            f"WARNING: Ignoring future last export marker for {self.email}: "
+                            f"{last_export.isoformat()}",
+                            file=sys.stderr,
+                        )
+                        return today_start
                     # If last export was today, use start of today
-                    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-                    if last_export.date() == datetime.now(timezone.utc).date():
+                    if last_export.date() == now.date():
                         return today_start
                     return last_export
             except Exception:
                 pass
         # Default to start of today (timezone-aware)
-        return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        return today_start
 
     def save_last_export_time(self, timestamp):
         """Persist the last incremental export time for this account."""
         try:
+            if timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=timezone.utc)
+            timestamp = timestamp.astimezone(timezone.utc)
+            now = datetime.now(timezone.utc)
+            if timestamp > now + MAX_FUTURE_SKEW:
+                print(
+                    f"Warning: refusing to save future last export time for {self.email}: "
+                    f"{timestamp.isoformat()}",
+                    file=sys.stderr,
+                )
+                return
             self.last_export_file.parent.mkdir(parents=True, exist_ok=True)
             self.last_export_file.write_text(timestamp.isoformat())
         except Exception as exc:
@@ -391,6 +412,31 @@ def parse_gmail_date(date_str):
     except Exception:
         return None
 
+def parse_internal_date(message):
+    """Parse Gmail internalDate milliseconds into a UTC datetime."""
+    internal_date = message.get('internalDate')
+    if not internal_date:
+        return None
+    try:
+        return datetime.fromtimestamp(int(internal_date) / 1000, tz=timezone.utc)
+    except (TypeError, ValueError, OSError):
+        return None
+
+def choose_message_datetime(header_datetime, internal_datetime, message_id):
+    """Prefer the Date header unless it is missing or implausibly in the future."""
+    if header_datetime:
+        now = datetime.now(timezone.utc)
+        if header_datetime <= now + MAX_FUTURE_SKEW:
+            return header_datetime
+        fallback = internal_datetime or now
+        print(
+            f"  Warning: message {message_id} has future Date header "
+            f"{header_datetime.isoformat()}; using {fallback.isoformat()} instead.",
+            file=sys.stderr,
+        )
+        return fallback
+    return internal_datetime or datetime.now(timezone.utc)
+
 def fetch_message_details(service, message_id):
     """Fetch full message details from Gmail API."""
     try:
@@ -407,10 +453,11 @@ def fetch_message_details(service, message_id):
         bcc_addr = get_header_value(headers, 'Bcc') or "(none)"
         date_str = get_header_value(headers, 'Date') or ""
 
-        # Parse date
-        email_datetime = parse_gmail_date(date_str)
-        if not email_datetime:
-            email_datetime = datetime.now(timezone.utc)
+        # Parse date. Some automated emails carry malformed future Date
+        # headers; Gmail internalDate is safer for export boundaries.
+        header_datetime = parse_gmail_date(date_str)
+        internal_datetime = parse_internal_date(message)
+        email_datetime = choose_message_datetime(header_datetime, internal_datetime, message_id)
 
         # Decode body
         parts = payload.get('parts', [])
