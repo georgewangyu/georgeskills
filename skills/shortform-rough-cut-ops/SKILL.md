@@ -41,6 +41,7 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
 
 1. Establish the target format.
    - Ask for the intended hook, situation, progress beats, twist or ending, and target platform.
+   - Capture target duration. For short-form talking/story formats, treat 55-70 seconds as a useful default window when the user has no stronger format-specific target.
    - If the user provides a recurring format runbook, read it before classifying clips.
    - If no runbook exists, create a temporary working structure from the user's rough description.
 2. Inventory the source clips.
@@ -64,6 +65,7 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
 5. Build an edit decision list before drafting.
    - Sequence selected clips against the intended story flow.
    - Include rough trims, rationale, confidence, and alternatives.
+   - Flag whether the planned sequence is likely under or over the target duration.
    - Prefer two options when ambiguity is real: story-forward and montage-forward.
 6. Plan editor automation only after structure exists.
    - Use CapCut or another draft writer as the timeline assembly layer, not the editing brain.
