@@ -1,0 +1,94 @@
+---
+name: shortform-rough-cut-ops
+description: Turn messy short-form video clips, creator intent, and optional format runbooks into an inspectable edit decision list and rough draft plan for CapCut or similar editors.
+memory_tags:
+  - domain:social-media
+  - workflow:shortform-rough-cut
+  - repo_boundary:tools
+  - inputs:local-media
+  - outputs:edit-decision-list
+  - risk:medium
+---
+
+# Shortform Rough Cut Ops
+
+## Trigger
+
+Use when:
+- the user wants help turning raw short-form video clips into a rough cut
+- clips may be filmed out of narrative order and need to be mapped to story function
+- the user has a recurring video format, hook pattern, or editing runbook
+- the output should be an edit decision list, rough timeline, or CapCut draft plan
+
+Do not use when:
+- the user only wants viral-format research; use `video-breakout-research-ops`
+- the user only wants transcription or archiving of a finished video
+- the user wants final taste decisions fully automated with no human review
+
+## Inputs
+
+- Required: local clip folder or clip manifest
+- Required: intended story flow, even if rough
+- Optional: format runbook, script, reference video, music track, beat markers, target duration, platform, and editor/draft tool
+
+## Core Principle
+
+The edit follows the intended story, not filename order.
+
+Raw short-form clips are often captured opportunistically: B-roll may belong earlier than it was filmed, A-roll may explain a previous moment, and the strongest ending may be buried in the middle of the folder. Treat chronological order as metadata, not truth.
+
+## Workflow
+
+1. Establish the target format.
+   - Ask for the intended hook, situation, progress beats, twist or ending, and target platform.
+   - If the user provides a recurring format runbook, read it before classifying clips.
+   - If no runbook exists, create a temporary working structure from the user's rough description.
+2. Inventory the source clips.
+   - Capture path, filename, duration, orientation, resolution, audio presence, and visible timestamp metadata when available.
+   - Create or request a contact sheet when visual selection matters.
+   - Do not move, overwrite, or rename raw media unless explicitly asked.
+3. Transcribe and tag clips.
+   - Transcribe speech clips with available local tools.
+   - Mark clips without useful speech as visual/B-roll candidates.
+   - Preserve exact phrases that identify anchor moments, transitions, progress updates, jokes, or twists.
+4. Classify by story function.
+   Use categories such as:
+   - hook / anchor
+   - setup
+   - A-roll explanation
+   - progress update
+   - B-roll / montage
+   - proof / detail
+   - twist / ending
+   - uncertain
+5. Build an edit decision list before drafting.
+   - Sequence selected clips against the intended story flow.
+   - Include rough trims, rationale, confidence, and alternatives.
+   - Prefer two options when ambiguity is real: story-forward and montage-forward.
+6. Plan editor automation only after structure exists.
+   - Use CapCut or another draft writer as the timeline assembly layer, not the editing brain.
+   - Generate a draft only from selected clips and rough trims.
+   - Keep final pacing, text, effects, comedic timing, and taste-heavy choices human-reviewed.
+
+## Output Contract
+
+Return:
+- clip inventory summary
+- transcript/tag table or pointer to it
+- clip classification table
+- edit decision list with rough timing and rationale
+- unresolved questions or weak clips
+- draft generation command or next manual editor steps, when applicable
+
+## Guardrails
+
+- Do not dump every clip into a timeline unless the user explicitly asks for assembly-only import.
+- Do not hard-code one creator's format into the skill. Put format-specific rules in reference runbooks.
+- Do not assume a strong hook or twist exists just because the format expects one.
+- Do not invent clip contents. If visual inspection or transcription is missing, mark the gap.
+- Do not copy private footage into public repos.
+
+## References
+
+Open only when needed:
+- format runbook structure: `references/format-runbooks.md`

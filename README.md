@@ -73,6 +73,7 @@ georgeskills/
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
 | `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |
 | `video-breakout-research-ops` | Sweep TikTok, Instagram, and YouTube Shorts for low-follower, high-traction video patterns. |
+| `shortform-rough-cut-ops` | Turn raw short-form clips, creator intent, and format runbooks into an edit decision list and rough draft plan. |
 
 ### Research
 
