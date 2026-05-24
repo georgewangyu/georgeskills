@@ -57,6 +57,7 @@ python3 skills/broad-video-trend-radar-ops/scripts/run_broad_video_radar.py \
   --lane "moving to a new city" \
   --lane "AI tools" \
   --max-base 300000 \
+  --max-age-days 14 \
   --out /tmp/broad-video-radar.jsonl
 ```
 
@@ -65,6 +66,7 @@ python3 skills/broad-video-trend-radar-ops/scripts/run_broad_video_radar.py \
 Return:
 
 - Ranked cross-platform trend candidates with links and multiplier signals.
+- Published date and age in days for each video.
 - 3-8 trend clusters with evidence links.
 - Notes on music/sound when available in captions or visible metadata.
 - Adaptation ideas for the user's content lane.

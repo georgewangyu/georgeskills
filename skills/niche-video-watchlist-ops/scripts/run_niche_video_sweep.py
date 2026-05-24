@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from datetime import datetime, timezone
 
 
 def parse_args() -> argparse.Namespace:
@@ -19,6 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-base", type=int, default=250000)
     parser.add_argument("--min-views", type=int, default=10000)
     parser.add_argument("--days", type=int, default=365)
+    parser.add_argument("--max-age-days", type=int, help="Filter output to videos published within this many days")
     parser.add_argument("--limit-per-lane", type=int, default=10)
     parser.add_argument("--platform", choices=["both", "youtube", "tiktok"], default="both")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
@@ -46,6 +48,7 @@ def merge_args(args: argparse.Namespace, config: dict[str, Any]) -> dict[str, An
         "max_base": int(thresholds.get("max_base", args.max_base)),
         "min_views": int(thresholds.get("min_views", args.min_views)),
         "days": int(thresholds.get("days", args.days)),
+        "max_age_days": int(thresholds.get("max_age_days", args.max_age_days)) if thresholds.get("max_age_days", args.max_age_days) else None,
         "limit_per_lane": int(thresholds.get("limit_per_lane", args.limit_per_lane)),
         "platform": args.platform,
         "out": args.out,
@@ -80,6 +83,8 @@ def run_json(command: list[str], cwd: str) -> list[dict[str, Any]]:
 def normalize(row: dict[str, Any], lane: str, platform: str) -> dict[str, Any]:
     base = row.get("followers") if platform == "tiktok" else row.get("subscribers")
     ratio = row.get("viewsPerFollower") if platform == "tiktok" else row.get("subscriberRatio")
+    published_at = row.get("postedAt") if platform == "tiktok" else row.get("publishedAt")
+    age_days = compute_age_days(published_at)
     return {
         "platform": platform,
         "lane": lane,
@@ -88,10 +93,32 @@ def normalize(row: dict[str, Any], lane: str, platform: str) -> dict[str, Any]:
         "views": row.get("views"),
         "ratio": ratio or row.get("score"),
         "outlier": row.get("outlierScore"),
+        "published_at": published_at,
+        "age_days": age_days,
         "title": row.get("caption") or row.get("title") or "",
         "url": row.get("url"),
         "source": row.get("source"),
     }
+
+
+def compute_age_days(value: Any) -> float | None:
+    if not value:
+        return None
+    text = str(value).replace("Z", "+00:00")
+    try:
+        published = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if published.tzinfo is None:
+        published = published.replace(tzinfo=timezone.utc)
+    return round((datetime.now(timezone.utc) - published).total_seconds() / 86400, 2)
+
+
+def within_age(row: dict[str, Any], max_age_days: int | None) -> bool:
+    if max_age_days is None:
+        return True
+    age_days = row.get("age_days")
+    return age_days is not None and float(age_days) <= max_age_days
 
 
 def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
@@ -102,7 +129,7 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
                 "node", "src/cli.js", "find", lane,
                 "--type", "short",
                 "--video-duration", "short",
-                "--days", str(settings["days"]),
+                "--days", str(settings["max_age_days"] or settings["days"]),
                 "--max-subs", str(settings["max_base"]),
                 "--min-views", str(settings["min_views"]),
                 "--max-search", "30",
@@ -110,7 +137,7 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
                 "--sort", "subscriber-ratio",
                 "--format", "json",
             ]
-            rows.extend(normalize(row, lane, "youtube") for row in run_json(command, settings["youtube_bot_dir"]))
+            rows.extend(row for row in (normalize(row, lane, "youtube") for row in run_json(command, settings["youtube_bot_dir"])) if within_age(row, settings["max_age_days"]))
         if settings["platform"] in {"both", "tiktok"} and settings["tiktok_bot_dir"]:
             command = [
                 "node", "src/cli.js", "web-search", lane,
@@ -121,7 +148,7 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
                 "--sort", "views-per-follower",
                 "--format", "json",
             ]
-            rows.extend(normalize(row, lane, "tiktok") for row in run_json(command, settings["tiktok_bot_dir"]))
+            rows.extend(row for row in (normalize(row, lane, "tiktok") for row in run_json(command, settings["tiktok_bot_dir"])) if within_age(row, settings["max_age_days"]))
     return sorted(rows, key=lambda row: float(row.get("ratio") or 0), reverse=True)
 
 

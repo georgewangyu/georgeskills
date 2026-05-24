@@ -56,6 +56,7 @@ python3 skills/niche-video-watchlist-ops/scripts/run_niche_video_sweep.py \
   --lane "software engineer paycheck budget" \
   --max-base 250000 \
   --min-views 10000 \
+  --max-age-days 14 \
   --out /tmp/niche-video-sweep.jsonl
 ```
 
@@ -72,6 +73,7 @@ python3 skills/niche-video-watchlist-ops/scripts/run_niche_video_sweep.py \
 Return:
 
 - Ranked video links with platform, creator, views, base size, and multiplier.
+- Published date and age in days for each video.
 - The search lane or watchlist source that found each video.
 - Concept cluster labels and why each might transfer into the user's niche.
 - A short `watch order` list, not a giant dump.

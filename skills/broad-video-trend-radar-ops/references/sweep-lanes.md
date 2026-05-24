@@ -23,3 +23,4 @@ Selection rules:
 - Include at least two lanes that are clearly outside the niche.
 - Prefer formats with transferable mechanics: budget breakdown, public challenge, POV skit, street interview, before/after, checklist, confession, or "I tried X for Y days."
 - For sound/music research, treat captions as weak evidence and use browser viewing if the sound matters.
+- For "recently trending" requests, use `--max-age-days 14` or a stricter window and include `published_at` / `age_days` in the final shortlist.

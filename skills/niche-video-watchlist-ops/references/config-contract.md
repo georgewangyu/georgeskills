@@ -25,6 +25,7 @@ Use this schema for private JSON configs. Store real configs in the user's priva
     "max_base": 250000,
     "min_views": 10000,
     "days": 365,
+    "max_age_days": 14,
     "limit_per_lane": 10
   },
   "bot_dirs": {
@@ -42,5 +43,6 @@ Fields:
 - `thresholds.max_base`: follower/subscriber cap.
 - `thresholds.min_views`: minimum views for candidates.
 - `thresholds.days`: YouTube recency window.
+- `thresholds.max_age_days`: output filter for recent-only requests, such as the last 14 days.
 - `thresholds.limit_per_lane`: result count per lane/platform.
 - `bot_dirs`: optional explicit bot paths; env vars can also supply these.
