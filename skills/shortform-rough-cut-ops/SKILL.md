@@ -52,6 +52,13 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
    - Transcribe speech clips with available local tools.
    - Mark clips without useful speech as visual/B-roll candidates.
    - Preserve exact phrases that identify anchor moments, transitions, progress updates, jokes, or twists.
+   - For voiceover or A-roll cleanup, cut dead air, long silences, false starts,
+     repeated takes, filler-only fragments, and abandoned sentences. Do not speed
+     narration up by default; only apply speed changes when the user asks for
+     that style or a format runbook explicitly calls for it.
+   - Keep the cleaned speech timeline as an edit decision list of source ranges,
+     not only as a baked audio export, so captions, overlays, effects, and B-roll
+     can be retimed to the final narration.
 4. Classify by story function.
    Use categories such as:
    - hook / anchor
@@ -67,6 +74,9 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
    - Include rough trims, rationale, confidence, and alternatives.
    - Flag whether the planned sequence is likely under or over the target duration.
    - Prefer two options when ambiguity is real: story-forward and montage-forward.
+   - When speech drives the edit, lock the cleaned voiceover/A-roll timeline
+     first, then place captions, overlays, sound effects, proof assets, and B-roll
+     against that cleaned timeline.
 6. Plan editor automation only after structure exists.
    - Use CapCut or another draft writer as the timeline assembly layer, not the editing brain.
    - Generate a draft only from selected clips and rough trims.
@@ -79,6 +89,7 @@ Return:
 - transcript/tag table or pointer to it
 - clip classification table
 - edit decision list with rough timing and rationale
+- cleaned speech / voiceover range list when narration drives the edit
 - unresolved questions or weak clips
 - draft generation command or next manual editor steps, when applicable
 
