@@ -32,6 +32,13 @@ Do not use when:
 
 ## Local Probe Prerequisites
 
+- If the goal is to check the operator's own authorized TikTok account and a
+  local `tiktokbot` checkout is available, prefer that CLI before public-page
+  probing:
+  - `node src/cli.js check --min-outlier 2 --max-results 60`
+  - This returns the authorized account follower count and recent videos above
+    the requested creator-baseline multiplier.
+  - It requires Display API OAuth tokens in that bot's private env file.
 - The local probe script always uses `curl` for a first-party reachability check.
 - It can also use `yt-dlp` and `gallery-dl` as optional best-effort extractors for
   public metadata when those tools are installed locally.
@@ -58,6 +65,7 @@ Do not use when:
    - unofficial extractor output is opportunistic, not guaranteed
    - missing extractor output does not prove the account is gone
 4. Decide access path:
+   - for the operator's own authorized account analytics, use the local `tiktokbot` CLI when available
    - if the user already has valid TikTok developer access for the needed scope, read `references/current-options.md`
    - otherwise use the existing `playwright` skill for real browser viewing
 5. For browser viewing, prefer:
