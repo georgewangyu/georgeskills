@@ -1,0 +1,4 @@
+interface:
+  display_name: "Niche Video Watchlist Ops"
+  short_description: "Track niche creators and search lanes with YouTube/TikTok bots."
+  default_prompt: "Run a targeted niche video watchlist sweep using the local YouTube and TikTok bots."
