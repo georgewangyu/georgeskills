@@ -1,20 +1,20 @@
 ---
 name: broad-video-trend-radar-ops
-description: Broad cross-platform short-form trend scanning using local YouTube and TikTok bots. Use when the user wants a wider radar of what is popping off beyond their niche, including high-multiplier videos, reusable formats, emerging hooks, broad TikTok/YouTube Shorts trends, sounds or music cues when visible, and outside-niche patterns that could be adapted into the user's content.
+description: Broad cross-platform short-form trend scanning using local YouTube, TikTok, and Instagram bots. Use when the user wants a wider radar of what is popping off beyond their niche, including high-multiplier videos, reusable formats, emerging hooks, broad TikTok/YouTube Shorts/Instagram Reels trends, sounds or music cues when visible, and outside-niche patterns that could be adapted into the user's content.
 ---
 
 # Broad Video Trend Radar Ops
 
 ## Purpose
 
-Run a wide radar sweep across TikTok and YouTube Shorts to find transferable video patterns outside a narrow niche. Prefer this skill when the user asks what is generally trending, wants inspiration from other categories, or wants to find formats to adapt rather than only competitors to monitor.
+Run a wide radar sweep across TikTok, YouTube Shorts, and optionally Instagram Reels to find transferable video patterns outside a narrow niche. Prefer this skill when the user asks what is generally trending, wants inspiration from other categories, or wants to find formats to adapt rather than only competitors to monitor.
 
 ## Inputs
 
 - Broad themes or categories to inspect, such as comedy, money, lifestyle, work, AI, moving, food, fitness, or relationships.
-- Optional platform focus: TikTok, YouTube, or both.
+- Optional platform focus: TikTok, YouTube, Instagram, or all available collectors.
 - Optional thresholds: follower/subscriber cap, minimum views, limit, and recency window.
-- Bot locations: pass `--youtube-bot-dir` and `--tiktok-bot-dir`, or set `YOUTUBEBOT_DIR` and `TIKTOKBOT_DIR`.
+- Bot locations: pass `--youtube-bot-dir`, `--tiktok-bot-dir`, and `--ig-bot-dir`, or set `YOUTUBEBOT_DIR`, `TIKTOKBOT_DIR`, and `IGBOT_DIR`.
 
 ## Workflow
 
@@ -26,6 +26,7 @@ Run a wide radar sweep across TikTok and YouTube Shorts to find transferable vid
    - Use `tiktokbot web-trending` for TikTok trend/FYP-style candidates.
    - Use `tiktokbot web-search` for broad lanes where keyword context matters.
    - Use `youtubebot find` for YouTube Shorts-like search lanes.
+   - Use `igbot private-search` for Instagram Reels lanes when a private bridge session is available; treat `login_required` as a collector limitation and continue.
 3. Rank asymmetry.
    - Prioritize views/base-size multiplier, not raw scale.
    - Keep a few high-raw-view examples only when the format is unusually clear.
@@ -45,6 +46,7 @@ Run a broad default sweep:
 python3 skills/broad-video-trend-radar-ops/scripts/run_broad_video_radar.py \
   --youtube-bot-dir <path-to-youtubebot> \
   --tiktok-bot-dir <path-to-tiktokbot> \
+  --ig-bot-dir <path-to-igbot> \
   --out /tmp/broad-video-radar.jsonl
 ```
 
@@ -70,7 +72,7 @@ Return:
 - 3-8 trend clusters with evidence links.
 - Notes on music/sound when available in captions or visible metadata.
 - Adaptation ideas for the user's content lane.
-- Caveats about scraping volatility, incomplete TikTok sound metadata, and raw-view false positives.
+- Caveats about scraping volatility, incomplete TikTok/Instagram sound metadata, Instagram private-session requirements, and raw-view false positives.
 
 ## Guardrails
 

@@ -12,17 +12,18 @@ from datetime import datetime, timezone
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run targeted YouTube/TikTok bot sweeps for niche video watchlists.")
+    parser = argparse.ArgumentParser(description="Run targeted YouTube/TikTok/Instagram bot sweeps for niche video watchlists.")
     parser.add_argument("--config", type=Path, help="Private JSON config with lanes/watchlist/thresholds")
     parser.add_argument("--lane", action="append", default=[], help="Search lane. Can be repeated.")
     parser.add_argument("--youtube-bot-dir", default=os.environ.get("YOUTUBEBOT_DIR", ""))
     parser.add_argument("--tiktok-bot-dir", default=os.environ.get("TIKTOKBOT_DIR", ""))
+    parser.add_argument("--ig-bot-dir", default=os.environ.get("IGBOT_DIR", ""))
     parser.add_argument("--max-base", type=int, default=250000)
     parser.add_argument("--min-views", type=int, default=10000)
     parser.add_argument("--days", type=int, default=365)
     parser.add_argument("--max-age-days", type=int, help="Filter output to videos published within this many days")
     parser.add_argument("--limit-per-lane", type=int, default=10)
-    parser.add_argument("--platform", choices=["both", "youtube", "tiktok"], default="both")
+    parser.add_argument("--platform", choices=["all", "both", "youtube", "tiktok", "instagram"], default="all")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
     return parser.parse_args()
 
@@ -39,12 +40,15 @@ def merge_args(args: argparse.Namespace, config: dict[str, Any]) -> dict[str, An
     lanes = list(config.get("lanes", [])) + list(args.lane)
     for item in config.get("watchlist", []):
         handle = item.get("handle")
-        if handle:
+        platform = str(item.get("platform", "")).lower()
+        if handle and platform not in {"instagram", "ig"}:
             lanes.append(str(handle))
     return {
         "lanes": dedupe(lanes),
+        "watchlist": config.get("watchlist", []),
         "youtube_bot_dir": args.youtube_bot_dir or bot_dirs.get("youtube", ""),
         "tiktok_bot_dir": args.tiktok_bot_dir or bot_dirs.get("tiktok", ""),
+        "ig_bot_dir": args.ig_bot_dir or bot_dirs.get("instagram", "") or bot_dirs.get("ig", ""),
         "max_base": int(thresholds.get("max_base", args.max_base)),
         "min_views": int(thresholds.get("min_views", args.min_views)),
         "days": int(thresholds.get("days", args.days)),
@@ -81,9 +85,14 @@ def run_json(command: list[str], cwd: str) -> list[dict[str, Any]]:
 
 
 def normalize(row: dict[str, Any], lane: str, platform: str) -> dict[str, Any]:
-    base = row.get("followers") if platform == "tiktok" else row.get("subscribers")
-    ratio = row.get("viewsPerFollower") if platform == "tiktok" else row.get("subscriberRatio")
-    published_at = row.get("postedAt") if platform == "tiktok" else row.get("publishedAt")
+    if platform in {"tiktok", "instagram"}:
+        base = row.get("followers")
+        ratio = row.get("viewsPerFollower")
+        published_at = row.get("postedAt")
+    else:
+        base = row.get("subscribers")
+        ratio = row.get("subscriberRatio")
+        published_at = row.get("publishedAt")
     age_days = compute_age_days(published_at)
     return {
         "platform": platform,
@@ -123,8 +132,11 @@ def within_age(row: dict[str, Any], max_age_days: int | None) -> bool:
 
 def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
+    include_youtube = settings["platform"] in {"all", "both", "youtube"}
+    include_tiktok = settings["platform"] in {"all", "both", "tiktok"}
+    include_instagram = settings["platform"] in {"all", "instagram"}
     for lane in settings["lanes"]:
-        if settings["platform"] in {"both", "youtube"} and settings["youtube_bot_dir"]:
+        if include_youtube and settings["youtube_bot_dir"]:
             command = [
                 "node", "src/cli.js", "find", lane,
                 "--type", "short",
@@ -138,7 +150,7 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
                 "--format", "json",
             ]
             rows.extend(row for row in (normalize(row, lane, "youtube") for row in run_json(command, settings["youtube_bot_dir"])) if within_age(row, settings["max_age_days"]))
-        if settings["platform"] in {"both", "tiktok"} and settings["tiktok_bot_dir"]:
+        if include_tiktok and settings["tiktok_bot_dir"]:
             command = [
                 "node", "src/cli.js", "web-search", lane,
                 "--max-results", "20",
@@ -149,14 +161,41 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
                 "--format", "json",
             ]
             rows.extend(row for row in (normalize(row, lane, "tiktok") for row in run_json(command, settings["tiktok_bot_dir"])) if within_age(row, settings["max_age_days"]))
+        if include_instagram and settings["ig_bot_dir"]:
+            command = [
+                "node", "src/cli.js", "private-search", lane,
+                "--max-results", "20",
+                "--limit", str(settings["limit_per_lane"]),
+                "--max-followers", str(settings["max_base"]),
+                "--min-views", str(settings["min_views"]),
+                "--sort", "views-per-follower",
+                "--format", "json",
+            ]
+            rows.extend(row for row in (normalize(row, lane, "instagram") for row in run_json(command, settings["ig_bot_dir"])) if within_age(row, settings["max_age_days"]))
+    if include_instagram and settings["ig_bot_dir"]:
+        for item in settings.get("watchlist", []):
+            platform = str(item.get("platform", "")).lower()
+            handle = str(item.get("handle", "")).strip()
+            if platform not in {"instagram", "ig"} or not handle:
+                continue
+            command = [
+                "node", "src/cli.js", "private-profile", handle,
+                "--max-results", "20",
+                "--limit", str(settings["limit_per_lane"]),
+                "--min-views", str(settings["min_views"]),
+                "--sort", "views-per-follower",
+                "--format", "json",
+            ]
+            lane = f"instagram watchlist:{handle}"
+            rows.extend(row for row in (normalize(row, lane, "instagram") for row in run_json(command, settings["ig_bot_dir"])) if within_age(row, settings["max_age_days"]))
     return sorted(rows, key=lambda row: float(row.get("ratio") or 0), reverse=True)
 
 
 def main() -> int:
     args = parse_args()
     settings = merge_args(args, load_config(args.config))
-    if not settings["lanes"]:
-        print("No lanes provided. Use --lane or --config.", file=sys.stderr)
+    if not settings["lanes"] and not settings.get("watchlist"):
+        print("No lanes or watchlist entries provided. Use --lane or --config.", file=sys.stderr)
         return 2
     settings["out"].parent.mkdir(parents=True, exist_ok=True)
     rows = collect(settings)

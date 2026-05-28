@@ -23,16 +23,17 @@ DEFAULT_LANES = [
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run a broad YouTube/TikTok trend radar sweep.")
+    parser = argparse.ArgumentParser(description="Run a broad YouTube/TikTok/Instagram trend radar sweep.")
     parser.add_argument("--lane", action="append", default=[], help="Broad search lane. Can be repeated.")
     parser.add_argument("--youtube-bot-dir", default=os.environ.get("YOUTUBEBOT_DIR", ""))
     parser.add_argument("--tiktok-bot-dir", default=os.environ.get("TIKTOKBOT_DIR", ""))
+    parser.add_argument("--ig-bot-dir", default=os.environ.get("IGBOT_DIR", ""))
     parser.add_argument("--max-base", type=int, default=300000)
     parser.add_argument("--min-views", type=int, default=25000)
     parser.add_argument("--days", type=int, default=120)
     parser.add_argument("--max-age-days", type=int, help="Filter output to videos published within this many days")
     parser.add_argument("--limit-per-lane", type=int, default=8)
-    parser.add_argument("--platform", choices=["both", "youtube", "tiktok"], default="both")
+    parser.add_argument("--platform", choices=["all", "both", "youtube", "tiktok", "instagram"], default="all")
     parser.add_argument("--include-tiktok-trending", action="store_true")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
     return parser.parse_args()
@@ -52,9 +53,14 @@ def run_json(command: list[str], cwd: str) -> list[dict[str, Any]]:
 
 
 def normalize(row: dict[str, Any], lane: str, platform: str) -> dict[str, Any]:
-    base = row.get("followers") if platform == "tiktok" else row.get("subscribers")
-    ratio = row.get("viewsPerFollower") if platform == "tiktok" else row.get("subscriberRatio")
-    published_at = row.get("postedAt") if platform == "tiktok" else row.get("publishedAt")
+    if platform in {"tiktok", "instagram"}:
+        base = row.get("followers")
+        ratio = row.get("viewsPerFollower")
+        published_at = row.get("postedAt")
+    else:
+        base = row.get("subscribers")
+        ratio = row.get("subscriberRatio")
+        published_at = row.get("publishedAt")
     age_days = compute_age_days(published_at)
     return {
         "platform": platform,
@@ -95,8 +101,11 @@ def within_age(row: dict[str, Any], max_age_days: int | None) -> bool:
 def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
     lanes = args.lane or DEFAULT_LANES
     rows: list[dict[str, Any]] = []
+    include_youtube = args.platform in {"all", "both", "youtube"}
+    include_tiktok = args.platform in {"all", "both", "tiktok"}
+    include_instagram = args.platform in {"all", "instagram"}
     for lane in lanes:
-        if args.platform in {"both", "youtube"} and args.youtube_bot_dir:
+        if include_youtube and args.youtube_bot_dir:
             command = [
                 "node", "src/cli.js", "find", lane,
                 "--type", "short",
@@ -110,7 +119,7 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
                 "--format", "json",
             ]
             rows.extend(row for row in (normalize(row, lane, "youtube") for row in run_json(command, args.youtube_bot_dir)) if within_age(row, args.max_age_days))
-        if args.platform in {"both", "tiktok"} and args.tiktok_bot_dir:
+        if include_tiktok and args.tiktok_bot_dir:
             command = [
                 "node", "src/cli.js", "web-search", lane,
                 "--max-results", "20",
@@ -121,7 +130,18 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
                 "--format", "json",
             ]
             rows.extend(row for row in (normalize(row, lane, "tiktok") for row in run_json(command, args.tiktok_bot_dir)) if within_age(row, args.max_age_days))
-    if args.include_tiktok_trending and args.tiktok_bot_dir and args.platform in {"both", "tiktok"}:
+        if include_instagram and args.ig_bot_dir:
+            command = [
+                "node", "src/cli.js", "private-search", lane,
+                "--max-results", "20",
+                "--limit", str(args.limit_per_lane),
+                "--max-followers", str(args.max_base),
+                "--min-views", str(args.min_views),
+                "--sort", "views-per-follower",
+                "--format", "json",
+            ]
+            rows.extend(row for row in (normalize(row, lane, "instagram") for row in run_json(command, args.ig_bot_dir)) if within_age(row, args.max_age_days))
+    if args.include_tiktok_trending and args.tiktok_bot_dir and include_tiktok:
         command = [
             "node", "src/cli.js", "web-trending",
             "--max-results", "30",
@@ -137,8 +157,8 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
 
 def main() -> int:
     args = parse_args()
-    if not args.youtube_bot_dir and not args.tiktok_bot_dir:
-        print("Set --youtube-bot-dir/--tiktok-bot-dir or YOUTUBEBOT_DIR/TIKTOKBOT_DIR.", file=sys.stderr)
+    if not args.youtube_bot_dir and not args.tiktok_bot_dir and not args.ig_bot_dir:
+        print("Set --youtube-bot-dir/--tiktok-bot-dir/--ig-bot-dir or YOUTUBEBOT_DIR/TIKTOKBOT_DIR/IGBOT_DIR.", file=sys.stderr)
         return 2
     args.out.parent.mkdir(parents=True, exist_ok=True)
     rows = collect(args)

@@ -1,6 +1,6 @@
 ---
 name: niche-video-watchlist-ops
-description: Targeted creator-niche video monitoring using local YouTube and TikTok bots. Use when the user wants to search within a defined content niche, maintain or consult a watchlist of creators/search lanes, find videos from tracked creators that are popping off, save promising links for later review, or turn niche breakout videos into repeatable short-form series ideas.
+description: Targeted creator-niche video monitoring using local YouTube, TikTok, and Instagram bots. Use when the user wants to search within a defined content niche, maintain or consult a watchlist of creators/search lanes, find videos from tracked creators that are popping off, save promising links for later review, or turn niche breakout videos into repeatable short-form series ideas.
 ---
 
 # Niche Video Watchlist Ops
@@ -9,7 +9,7 @@ description: Targeted creator-niche video monitoring using local YouTube and Tik
 
 Run focused, repeatable sweeps for a specific creator niche. Prefer this skill when the user already has a content lane, seed creators, recurring keywords, or a watchlist they want monitored.
 
-This skill uses local `youtubebot` and `tiktokbot` checkouts as collectors, then ranks videos by low-base/high-traction signal and groups them into portable concepts.
+This skill uses local `youtubebot`, `tiktokbot`, and optionally `igbot` checkouts as collectors, then ranks videos by low-base/high-traction signal and groups them into portable concepts.
 
 ## Inputs
 
@@ -17,7 +17,7 @@ This skill uses local `youtubebot` and `tiktokbot` checkouts as collectors, then
 - Search lanes: keywords, phrases, hashtags, or formats to run.
 - Watchlist: creator handles/channels to track when available.
 - Thresholds: follower/subscriber cap, minimum views, limit, recency window.
-- Bot locations: pass `--youtube-bot-dir` and `--tiktok-bot-dir`, or set `YOUTUBEBOT_DIR` and `TIKTOKBOT_DIR`.
+- Bot locations: pass `--youtube-bot-dir`, `--tiktok-bot-dir`, and `--ig-bot-dir`, or set `YOUTUBEBOT_DIR`, `TIKTOKBOT_DIR`, and `IGBOT_DIR`.
 
 Keep user-specific watchlists, private handles, and output archives in the user's private repo. Do not hardcode them inside this skill.
 
@@ -30,9 +30,11 @@ Keep user-specific watchlists, private handles, and output archives in the user'
    - Prefer `scripts/run_niche_video_sweep.py` for repeatable sweeps.
    - Use YouTube Shorts filters for YouTube.
    - Use `tiktokbot web-search --backend auto` for TikTok.
+   - Use `igbot private-search` for Instagram search lanes when a private bridge session is available; if it returns `login_required`, keep going with other collectors.
 3. Include watchlist checks when possible.
    - For YouTube, query creator/channel names plus niche keywords if channel-specific commands are not available.
    - For TikTok, query creator handles plus niche keywords; use `tiktok-check-ops` only for one-off account inspection.
+   - For Instagram watchlist handles, prefer `igbot private-profile <handle>` because known-profile collection can work even when Instagram search/hashtag surfaces require login.
 4. Rank videos.
    - Favor views/subscribers or views/followers over raw views.
    - Treat creator-baseline outliers as stronger than ratio-only rows when available.
@@ -52,6 +54,7 @@ Run a niche sweep from inline lanes:
 python3 skills/niche-video-watchlist-ops/scripts/run_niche_video_sweep.py \
   --youtube-bot-dir <path-to-youtubebot> \
   --tiktok-bot-dir <path-to-tiktokbot> \
+  --ig-bot-dir <path-to-igbot> \
   --lane "software engineer on call" \
   --lane "software engineer paycheck budget" \
   --max-base 250000 \
@@ -78,6 +81,7 @@ Return:
 - Concept cluster labels and why each might transfer into the user's niche.
 - A short `watch order` list, not a giant dump.
 - Any missing-data caveats, especially when TikTok only provides ratio signals.
+- Any missing-data caveats, especially when TikTok only provides ratio signals or Instagram search/hashtag collection requires a private session.
 
 ## Guardrails
 

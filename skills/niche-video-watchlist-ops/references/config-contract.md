@@ -19,6 +19,11 @@ Use this schema for private JSON configs. Store real configs in the user's priva
       "platform": "youtube",
       "handle": "Example Channel",
       "notes": "Why this channel matters"
+    },
+    {
+      "platform": "instagram",
+      "handle": "examplecreator",
+      "notes": "Known Instagram creator to poll with igbot private-profile"
     }
   ],
   "thresholds": {
@@ -30,7 +35,8 @@ Use this schema for private JSON configs. Store real configs in the user's priva
   },
   "bot_dirs": {
     "youtube": "<path-to-youtubebot>",
-    "tiktok": "<path-to-tiktokbot>"
+    "tiktok": "<path-to-tiktokbot>",
+    "instagram": "<path-to-igbot>"
   }
 }
 ```
@@ -45,4 +51,4 @@ Fields:
 - `thresholds.days`: YouTube recency window.
 - `thresholds.max_age_days`: output filter for recent-only requests, such as the last 14 days.
 - `thresholds.limit_per_lane`: result count per lane/platform.
-- `bot_dirs`: optional explicit bot paths; env vars can also supply these.
+- `bot_dirs`: optional explicit bot paths; env vars can also supply these. Use `instagram` or `ig` for `igbot`.
