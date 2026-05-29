@@ -129,6 +129,14 @@ georgeskills/
 | `utility-ops` | Resume conversion, PDF text helpers, repo summary generation, and frontmatter backfills. |
 | `pdf-reconstruction-ops` | PDF and image text extraction and OCR pre-processing. |
 
+### Career
+
+| Skill | Description |
+|---|---|
+| `resume-role-tailoring-ops` | Tailor resumes to a target JD, company, role family, and ATS keyword plan while preserving truthful evidence. |
+| `resume-formatting-ops` | Fix resume formatting, build PDFs, check one-page fit, and verify ATS parseability before submission. |
+| `resume-ats-validation-ops` | Validate resume variants for parser sanity, keyword coverage, truthful tailoring, and required content preservation. |
+
 ---
 
 ## Installation
