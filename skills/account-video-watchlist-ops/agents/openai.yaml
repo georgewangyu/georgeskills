@@ -1,0 +1,4 @@
+interface:
+  display_name: "Account Video Watchlist"
+  short_description: "Track creator accounts for viral videos"
+  default_prompt: "Use $account-video-watchlist-ops to check my tracked niche creators for new high-performing videos."

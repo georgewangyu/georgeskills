@@ -74,6 +74,7 @@ georgeskills/
 | `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |
 | `video-breakout-research-ops` | Sweep TikTok, Instagram, and YouTube Shorts for low-follower, high-traction video patterns. |
 | `niche-video-watchlist-ops` | Run targeted YouTube/TikTok bot sweeps for niche search lanes and creator watchlists. |
+| `account-video-watchlist-ops` | Track a private list of niche creator accounts for new high-view videos worth emulating. |
 | `broad-video-trend-radar-ops` | Run broad cross-platform trend sweeps for high-multiplier short-form formats outside a narrow niche. |
 | `shortform-rough-cut-ops` | Turn raw short-form clips, creator intent, and format runbooks into an edit decision list and rough draft plan. |
 
