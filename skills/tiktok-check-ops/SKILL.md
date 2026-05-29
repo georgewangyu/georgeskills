@@ -73,6 +73,7 @@ Do not use when:
    - fresh snapshot
    - click through visible posts only after re-snapshotting
    - headed mode when a human-readable visual check matters
+   - muted browser audio, for example Playwright/Chrome launched with `--mute-audio`, so TikTok autoplay does not make sound during background checks
 
 ## Output Contract
 
@@ -89,6 +90,7 @@ Do not use when:
 - Treat third-party extractors as volatile and best-effort.
 - For anything interactive or visually confirmatory, route to `playwright` instead of inventing a second browser workflow here.
 - Do not store cookies or credentials inside this skill.
+- Do not intentionally play TikTok video audio during browser fallback unless the user asks to listen; keep media pages muted by default.
 
 ## References
 

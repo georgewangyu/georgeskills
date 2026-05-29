@@ -41,7 +41,7 @@ Do not use when:
    - missing public metadata does not prove the account is gone
 4. Decide access path:
    - if the user already has valid Meta app access for the needed scope, read `references/current-options.md`
-   - otherwise use `playwright` for visual inspection
+   - otherwise use `playwright` for visual inspection, with browser audio muted when possible, for example Chrome launched with `--mute-audio`
 
 ## Output Contract
 
@@ -55,6 +55,7 @@ Do not use when:
 - Do not imply Graph API coverage for arbitrary public profiles without the right app/user access.
 - Treat public HTML extraction as best-effort.
 - Route interactive viewing to `playwright` rather than duplicating browser automation here.
+- Do not intentionally play Reels/post audio during browser fallback unless the user asks to listen; keep media pages muted by default.
 
 ## References
 

@@ -31,6 +31,7 @@ Keep user-specific watchlists, private handles, and output archives in the user'
    - Use YouTube Shorts filters for YouTube.
    - Use `tiktokbot web-search --backend auto` for TikTok.
    - Use `igbot private-search` for Instagram search lanes when a private bridge session is available; if it returns `login_required`, keep going with other collectors.
+   - When a collector or fallback launches Playwright/Chrome for TikTok, Instagram, YouTube Shorts, or other media pages, keep the browser muted when possible, for example with `--mute-audio`, so research does not play audible autoplay media.
 3. Include watchlist checks when possible.
    - For YouTube, query creator/channel names plus niche keywords if channel-specific commands are not available.
    - For TikTok, query creator handles plus niche keywords; use `tiktok-check-ops` only for one-off account inspection.
@@ -89,3 +90,4 @@ Return:
 - Do not equate raw views with a good concept.
 - Do not overfit to one viral accident; look for repeatability across creators or formats.
 - Keep broad trend discovery out of this skill; use `broad-video-trend-radar-ops` for wide, non-niche sweeps.
+- Mute browser automation for media-heavy pages whenever supported; do not play TikTok/Reels/Shorts audio during background research unless the user explicitly asks for audio review.
