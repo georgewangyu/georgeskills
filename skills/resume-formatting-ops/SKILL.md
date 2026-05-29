@@ -37,6 +37,7 @@ Do not use when:
    - If only PDF/DOCX exists, extract text first and decide whether conversion is needed.
 3. Make formatting-only edits unless the user explicitly asks for content rewrites.
    - Safe edits: margins, spacing, line breaks, section ordering for layout, font sizing, bullet wrapping, link formatting, filename consistency.
+   - Preserve and normalize selective bolding for scan-critical metrics and ATS keywords when the local resume style uses bold emphasis.
    - Avoid inflating claims, changing metrics, or adding skills during this pass.
 4. Build using the repo's deterministic path.
    - Prefer local build scripts if present.
@@ -55,6 +56,7 @@ Do not use when:
 - ATS-friendly resumes should favor one-column or simple two-column layouts with extractable text and standard headings.
 - Keep headings conventional: Summary, Work Experience, Technical Projects, Education, Skills.
 - Preserve real hyperlinks where the source format supports them.
+- Use bold emphasis sparingly for concrete metrics and role-critical keywords; avoid bolding full bullets or generic filler.
 - Avoid icons, text boxes, image-only text, dense tables, and absolute-positioned layout if ATS parseability matters.
 - For software engineering resumes, content density is useful, but do not solve overflow by making text unreasonably small.
 
