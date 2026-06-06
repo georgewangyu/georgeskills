@@ -122,6 +122,21 @@ SECTION_ORDER = [
     "Reflections",
 ]
 LEVEL2_HEADER_RE = re.compile(r"^##\s+(.+?)\s*$", flags=re.MULTILINE)
+MODULE_PROFILE_DESCRIPTIONS = {
+    "core": "light check-in; skips exports, health import, memory refresh, and agent-managed refresh",
+    "standard": "default compatibility mode; preserves the current normal daily workflow prep behavior",
+    "full": "explicit heavy mode; currently equivalent to standard plus a visible profile label",
+}
+MODULE_PROFILE_SKIP_FLAGS = {
+    "core": {
+        "skip_exports": True,
+        "skip_health": True,
+        "skip_memory": True,
+        "skip_agent_managed": True,
+    },
+    "standard": {},
+    "full": {},
+}
 
 
 @dataclass
@@ -1485,6 +1500,15 @@ def hydrate_summary_context(day_text: str, *, audio_config: AudioSummaryConfig) 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Prepare daily workflow context with one command")
     parser.add_argument("--date", default=date.today().isoformat(), help="Target date YYYY-MM-DD (default: today)")
+    parser.add_argument(
+        "--module-profile",
+        choices=sorted(MODULE_PROFILE_DESCRIPTIONS),
+        default="standard",
+        help=(
+            "Daily workflow module profile. "
+            "Default 'standard' preserves existing output; 'core' is a lightweight check-in."
+        ),
+    )
     parser.add_argument("--skip-exports", action="store_true", help="Skip Apple Notes / email / calendar exports")
     parser.add_argument(
         "--force-exports",
@@ -1536,6 +1560,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    for flag_name, value in MODULE_PROFILE_SKIP_FLAGS[args.module_profile].items():
+        if value:
+            setattr(args, flag_name, True)
+
     audio_config = AudioSummaryConfig(
         provider=args.audio_llm_provider,
         model=args.audio_llm_model,
@@ -1546,6 +1574,7 @@ def main() -> int:
 
     print(f"Target date: {args.date}")
     print(f"Summary path: {summary_path_for(args.date)}")
+    print(f"Module profile: {args.module_profile} ({MODULE_PROFILE_DESCRIPTIONS[args.module_profile]})")
 
     if not args.skip_exports:
         export_specs = [

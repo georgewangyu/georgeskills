@@ -30,6 +30,9 @@ Use this skill when implementing reusable journal tooling such as:
 
 Implementations currently live in:
 - `skills/journal-ops/scripts/`
+- `skills/journal-ops/config/daily_workflow_modules.yml` defines the module
+  profiles used to keep daily workflow prep lightweight without changing the
+  normal output contract.
 
 Legacy entrypoints remain in `<private-repo>/scripts/journal/` as wrappers that
 delegate to this skill.

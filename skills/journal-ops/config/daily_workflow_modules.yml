@@ -1,0 +1,59 @@
+schema: journal_daily_workflow_modules_v1
+default_profile: standard
+
+profiles:
+  core:
+    description: Fast check-in that avoids heavy context refresh.
+    modules:
+      summary_status: required
+      inferred_sprints_review: required
+      work_sprint_capture: prompt_if_weekday_or_blind_spot
+      exports: skip
+      health_context: skip
+      email_context: existing_data_only
+      location_context: existing_data_only
+      audio_ingestion: source_check_only
+      memory_refresh: skip
+      agent_managed_refresh: skip
+
+  standard:
+    description: Compatibility mode matching the current normal daily workflow.
+    modules:
+      summary_status: required
+      exports: run_with_freshness_cache
+      health_context: run_if_source_available
+      email_context: run
+      location_context: run
+      audio_ingestion: hydrate_if_artifacts_exist
+      inferred_sprints_review: required
+      work_sprint_capture: prompt_if_weekday_or_blind_spot
+      content_capture: prompt_if_content_mentioned
+      memory_refresh: run_if_summary_exists
+      agent_managed_refresh: run_if_available
+
+  full:
+    description: Heavy closeout or catch-up mode.
+    modules:
+      summary_status: required
+      exports: force_or_cache
+      health_context: run_if_source_available
+      email_context: run
+      location_context: run
+      audio_ingestion: hydrate_if_artifacts_exist
+      inferred_sprints_review: required
+      work_sprint_capture: required_prompt
+      content_capture: required_prompt_if_active
+      sprint_metrics: run
+      memory_refresh: run_if_summary_exists
+      agent_managed_refresh: run_if_available
+
+confidence_labels:
+  - confirmed
+  - inferred
+  - missing_source
+  - work_laptop_blind_spot
+
+output_contract:
+  default_must_remain_comparable_to_current_daily_workflow: true
+  omitted_modules_must_be_labeled: true
+  modules_should_emit_typed_blocks_before_summary_prose: true
