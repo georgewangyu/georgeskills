@@ -34,7 +34,7 @@ Keep real handles, private notes, and saved run outputs in the user's private re
    - YouTube: searches Shorts using `query` when present, otherwise the account/channel handle as the query seed. Treat these as search-seeded candidates unless the result creator matches the intended channel.
    - TikTok: uses public web search for the handle/account seed.
    - Instagram: uses `igbot private-profile` for known profiles.
-   - When a collector or fallback uses Playwright/Chrome for TikTok, Instagram, YouTube Shorts, or other media pages, launch the browser muted when possible, for example with `--mute-audio`, and avoid letting autoplay audio leak into the user's machine.
+   - The wrapper passes `--mute-audio true` to TikTok browser automation by default; keep this default unless the user explicitly asks for audio review.
 3. Rank and filter.
    - Default to `views >= 100000`.
    - Prefer absolute views first, then account-relative outlier signals when available.
@@ -53,6 +53,7 @@ python3 skills/account-video-watchlist-ops/scripts/run_account_video_watchlist.p
   --tiktok-bot-dir <path-to-tiktokbot> \
   --ig-bot-dir <path-to-igbot> \
   --tiktok-web-backend node \
+  --tiktok-web-mute-audio true \
   --min-views 100000 \
   --max-age-days 45 \
   --previous <private-repo>/areas/social-media/video/research/previous-account-watchlist.jsonl \
@@ -77,4 +78,4 @@ Return:
 - Do not copy creator-specific identity, celebrity access, institution access, or personal-life details that will not transfer.
 - If a bot fails, continue with other platforms and report the failure plainly.
 - Do not pretend YouTube search-seeded rows are definitely from the tracked account unless the returned creator/channel matches.
-- Mute browser automation for media-heavy pages whenever supported; never intentionally play TikTok/Reels/Shorts audio during background research unless the user asks to listen.
+- Mute browser automation for media-heavy pages whenever supported; never intentionally play TikTok/Reels/Shorts audio during background research unless the user asks to listen. If TikTok sound is required, require an explicit `--tiktok-web-mute-audio false` override.

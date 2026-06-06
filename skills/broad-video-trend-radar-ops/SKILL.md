@@ -25,6 +25,7 @@ Run a wide radar sweep across TikTok, YouTube Shorts, and optionally Instagram R
    - Use `scripts/run_broad_video_radar.py` when doing a repeatable sweep.
    - Use `tiktokbot web-trending` for TikTok trend/FYP-style candidates.
    - Use `tiktokbot web-search` for broad lanes where keyword context matters.
+   - The wrapper passes `--mute-audio true` to TikTok browser automation by default; only disable it for explicit audio review.
    - Use `youtubebot find` for YouTube Shorts-like search lanes.
    - Use `igbot private-search` for Instagram Reels lanes when a private bridge session is available; treat `login_required` as a collector limitation and continue.
 3. Rank asymmetry.
@@ -47,6 +48,7 @@ python3 skills/broad-video-trend-radar-ops/scripts/run_broad_video_radar.py \
   --youtube-bot-dir <path-to-youtubebot> \
   --tiktok-bot-dir <path-to-tiktokbot> \
   --ig-bot-dir <path-to-igbot> \
+  --tiktok-mute-audio true \
   --out /tmp/broad-video-radar.jsonl
 ```
 
@@ -60,6 +62,7 @@ python3 skills/broad-video-trend-radar-ops/scripts/run_broad_video_radar.py \
   --lane "AI tools" \
   --max-base 300000 \
   --max-age-days 14 \
+  --tiktok-mute-audio true \
   --out /tmp/broad-video-radar.jsonl
 ```
 
@@ -80,3 +83,4 @@ Return:
 - Do not claim that a sound is trending unless the available metadata or visual review supports it.
 - Do not over-index on accounts that are already huge unless the format is unusually portable.
 - Prefer links the user can watch quickly over long explanation.
+- Keep TikTok browser automation muted during background sweeps unless the user explicitly asks to listen for sound/audio cues.

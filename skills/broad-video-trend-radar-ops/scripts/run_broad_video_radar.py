@@ -35,6 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit-per-lane", type=int, default=8)
     parser.add_argument("--platform", choices=["all", "both", "youtube", "tiktok", "instagram"], default="all")
     parser.add_argument("--include-tiktok-trending", action="store_true")
+    parser.add_argument("--tiktok-mute-audio", choices=["true", "false"], default=os.environ.get("TIKTOK_WEB_MUTE_AUDIO", "true"), help="Mute TikTok browser automation audio")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
     return parser.parse_args()
 
@@ -127,6 +128,7 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
                 "--max-followers", str(args.max_base),
                 "--min-views", str(args.min_views),
                 "--sort", "views-per-follower",
+                "--mute-audio", args.tiktok_mute_audio,
                 "--format", "json",
             ]
             rows.extend(row for row in (normalize(row, lane, "tiktok") for row in run_json(command, args.tiktok_bot_dir)) if within_age(row, args.max_age_days))
@@ -149,6 +151,7 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
             "--max-followers", str(args.max_base),
             "--min-views", str(args.min_views),
             "--sort", "views-per-follower",
+            "--mute-audio", args.tiktok_mute_audio,
             "--format", "json",
         ]
         rows.extend(row for row in (normalize(row, "tiktok trending", "tiktok") for row in run_json(command, args.tiktok_bot_dir)) if within_age(row, args.max_age_days))

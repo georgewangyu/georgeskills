@@ -31,7 +31,7 @@ Keep user-specific watchlists, private handles, and output archives in the user'
    - Use YouTube Shorts filters for YouTube.
    - Use `tiktokbot web-search --backend auto` for TikTok.
    - Use `igbot private-search` for Instagram search lanes when a private bridge session is available; if it returns `login_required`, keep going with other collectors.
-   - When a collector or fallback launches Playwright/Chrome for TikTok, Instagram, YouTube Shorts, or other media pages, keep the browser muted when possible, for example with `--mute-audio`, so research does not play audible autoplay media.
+   - The wrapper passes `--mute-audio true` to TikTok browser automation by default; keep that default unless the user explicitly asks for audio review.
 3. Include watchlist checks when possible.
    - For YouTube, query creator/channel names plus niche keywords if channel-specific commands are not available.
    - For TikTok, query creator handles plus niche keywords; use `tiktok-check-ops` only for one-off account inspection.
@@ -61,6 +61,7 @@ python3 skills/niche-video-watchlist-ops/scripts/run_niche_video_sweep.py \
   --max-base 250000 \
   --min-views 10000 \
   --max-age-days 14 \
+  --tiktok-mute-audio true \
   --out /tmp/niche-video-sweep.jsonl
 ```
 
@@ -100,4 +101,4 @@ Return:
 - Do not equate raw views with a good concept.
 - Do not overfit to one viral accident; look for repeatability across creators or formats.
 - Keep broad trend discovery out of this skill; use `broad-video-trend-radar-ops` for wide, non-niche sweeps.
-- Mute browser automation for media-heavy pages whenever supported; do not play TikTok/Reels/Shorts audio during background research unless the user explicitly asks for audio review.
+- Mute browser automation for media-heavy pages whenever supported; do not play TikTok/Reels/Shorts audio during background research unless the user explicitly asks for audio review. If a TikTok sweep needs sound, require an explicit `--tiktok-mute-audio false` override.

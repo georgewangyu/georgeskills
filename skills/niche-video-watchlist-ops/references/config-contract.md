@@ -32,7 +32,8 @@ Use this schema for private JSON configs. Store real configs in the user's priva
     "days": 365,
     "max_age_days": 14,
     "limit_per_lane": 10,
-    "tiktok_backend": "auto"
+    "tiktok_backend": "auto",
+    "tiktok_mute_audio": "true"
   },
   "bot_dirs": {
     "youtube": "<path-to-youtubebot>",
@@ -53,4 +54,5 @@ Fields:
 - `thresholds.max_age_days`: output filter for recent-only requests, such as the last 14 days.
 - `thresholds.limit_per_lane`: result count per lane/platform.
 - `thresholds.tiktok_backend`: optional `auto`, `python`, or `node` override for TikTok web collection.
+- `thresholds.tiktok_mute_audio`: optional `true` / `false` override. Defaults to `true`; only set `false` when the user explicitly asks for audio review.
 - `bot_dirs`: optional explicit bot paths; env vars can also supply these. Use `instagram` or `ig` for `igbot`.

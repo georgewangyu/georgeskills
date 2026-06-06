@@ -25,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit-per-lane", type=int)
     parser.add_argument("--platform", choices=["all", "both", "youtube", "tiktok", "instagram"], default="all")
     parser.add_argument("--tiktok-backend", choices=["auto", "python", "node"], help="TikTok web collection backend")
+    parser.add_argument("--tiktok-mute-audio", choices=["true", "false"], default=os.environ.get("TIKTOK_WEB_MUTE_AUDIO", "true"), help="Mute TikTok browser automation audio")
     parser.add_argument("--watchlist-only", action="store_true", help="Skip search lanes and only run supported watchlist collectors")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
     return parser.parse_args()
@@ -60,6 +61,7 @@ def merge_args(args: argparse.Namespace, config: dict[str, Any]) -> dict[str, An
         "limit_per_lane": int(args.limit_per_lane if args.limit_per_lane is not None else thresholds.get("limit_per_lane", 10)),
         "platform": args.platform,
         "tiktok_backend": str(args.tiktok_backend if args.tiktok_backend is not None else thresholds.get("tiktok_backend", "auto")),
+        "tiktok_mute_audio": str(thresholds.get("tiktok_mute_audio", args.tiktok_mute_audio)).lower(),
         "out": args.out,
     }
 
@@ -164,6 +166,7 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
                 "--min-views", str(settings["min_views"]),
                 "--sort", "views-per-follower",
                 "--backend", settings["tiktok_backend"],
+                "--mute-audio", settings["tiktok_mute_audio"],
                 "--format", "json",
             ]
             rows.extend(row for row in (normalize(row, lane, "tiktok") for row in run_json(command, settings["tiktok_bot_dir"])) if within_age(row, settings["max_age_days"]))
