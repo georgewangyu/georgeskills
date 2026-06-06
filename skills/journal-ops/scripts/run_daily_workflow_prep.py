@@ -123,12 +123,12 @@ SECTION_ORDER = [
 ]
 LEVEL2_HEADER_RE = re.compile(r"^##\s+(.+?)\s*$", flags=re.MULTILINE)
 MODULE_PROFILE_DESCRIPTIONS = {
-    "core": "light check-in; skips exports, health import, memory refresh, and agent-managed refresh",
+    "checkin": "light check-in only; not a normal daily workflow closeout",
     "standard": "default compatibility mode; preserves the current normal daily workflow prep behavior",
     "full": "explicit heavy mode; currently equivalent to standard plus a visible profile label",
 }
 MODULE_PROFILE_SKIP_FLAGS = {
-    "core": {
+    "checkin": {
         "skip_exports": True,
         "skip_health": True,
         "skip_memory": True,
@@ -1506,7 +1506,7 @@ def main() -> int:
         default="standard",
         help=(
             "Daily workflow module profile. "
-            "Default 'standard' preserves existing output; 'core' is a lightweight check-in."
+            "Default 'standard' preserves existing output; 'checkin' is a lightweight non-closeout pass."
         ),
     )
     parser.add_argument("--skip-exports", action="store_true", help="Skip Apple Notes / email / calendar exports")

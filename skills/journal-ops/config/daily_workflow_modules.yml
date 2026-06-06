@@ -2,8 +2,8 @@ schema: journal_daily_workflow_modules_v1
 default_profile: standard
 
 profiles:
-  core:
-    description: Fast check-in that avoids heavy context refresh.
+  checkin:
+    description: Fast check-in that avoids heavy context refresh. Not a normal daily workflow closeout.
     modules:
       summary_status: required
       inferred_sprints_review: required
