@@ -27,7 +27,7 @@ Do not use when:
 ## Inputs
 
 - Required: Instagram username, profile URL, or post URL
-- Optional: whether browser viewing is allowed, whether Meta developer credentials already exist
+- Optional: whether browser viewing is allowed, whether screen-control fallback is allowed, whether Meta developer credentials already exist
 
 ## Workflow
 
@@ -41,7 +41,19 @@ Do not use when:
    - missing public metadata does not prove the account is gone
 4. Decide access path:
    - if the user already has valid Meta app access for the needed scope, read `references/current-options.md`
-   - otherwise use `playwright` for visual inspection, with browser audio muted when possible, for example Chrome launched with `--mute-audio`
+   - otherwise use browser viewing for visual inspection
+   - prefer `playwright` for public/clean-session checks
+   - use `social-screen-control-ops` only when the user explicitly wants Codex screen control, logged-in local browser state is needed, or Playwright/public probes are blocked or flaky
+   - keep browser audio muted when possible
+
+## Screen-Control Fallback
+
+Use `social-screen-control-ops` only as a bounded viewing aid:
+- inspect public profiles, Reels, and posts that are blocked in lightweight probes
+- use existing logged-in browser state when the user asks for that path
+- capture visible metadata, captions, and page state from screenshots/snapshots
+
+Do not use screen-control fallback to send DMs, post, comment, like, follow, change account settings, solve captchas, or enter credentials unless the user gives explicit task-specific approval at action time.
 
 ## Output Contract
 
@@ -54,7 +66,7 @@ Do not use when:
 
 - Do not imply Graph API coverage for arbitrary public profiles without the right app/user access.
 - Treat public HTML extraction as best-effort.
-- Route interactive viewing to `playwright` rather than duplicating browser automation here.
+- Route interactive viewing to the appropriate browser skill rather than duplicating browser automation here.
 - Do not intentionally play Reels/post audio during browser fallback unless the user asks to listen; keep media pages muted by default.
 
 ## References

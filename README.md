@@ -69,6 +69,7 @@ georgeskills/
 | `x-check-ops` | Pull the X/Twitter home feed, run searches, or read a specific post. Summarizes signal themes. |
 | `tiktok-check-ops` | Check TikTok account or video public metadata and recent content. |
 | `instagram-check-ops` | Check Instagram account or post public status and profile metadata. |
+| `social-screen-control-ops` | Use Codex Computer Use for bounded logged-in visual checks on social-media pages when CLI or Playwright paths are blocked. |
 | `youtube-check-ops` | Check YouTube channel or video public metadata. Falls back to lightweight public probes. |
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
 | `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |

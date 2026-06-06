@@ -52,6 +52,7 @@ python3 skills/account-video-watchlist-ops/scripts/run_account_video_watchlist.p
   --youtube-bot-dir <path-to-youtubebot> \
   --tiktok-bot-dir <path-to-tiktokbot> \
   --ig-bot-dir <path-to-igbot> \
+  --tiktok-web-backend node \
   --min-views 100000 \
   --max-age-days 45 \
   --previous <private-repo>/areas/social-media/video/research/previous-account-watchlist.jsonl \

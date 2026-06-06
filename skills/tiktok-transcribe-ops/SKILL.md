@@ -16,7 +16,7 @@ Use when the user wants a transcript of a TikTok video.
 
 ## Goal
 
-Produce a reliable transcript of a TikTok from the URL with a CLI-first workflow. Do not use browser automation by default.
+Produce a reliable transcript of a TikTok from the URL with a CLI-first workflow. Do not use browser automation by default, but allow screen-control fallback when the user asks for it or CLI extraction is blocked.
 
 ## Workflow
 
@@ -24,12 +24,14 @@ Produce a reliable transcript of a TikTok from the URL with a CLI-first workflow
 2. Run the shared social transcription helper.
 3. Prefer subtitle extraction when available.
 4. Fall back to local audio transcription when subtitles are unavailable.
-5. Return the transcript with a short provenance and confidence note.
+5. If CLI extraction cannot access the video and browser fallback is allowed, use the browser fallback rules below.
+6. Return the transcript with a short provenance and confidence note.
 
 ## Preferred Order
 
 1. Embedded or platform-provided captions and subtitle tracks fetched by CLI.
 2. Local audio extraction plus Whisper transcription fallback.
+3. Browser-assisted capture only when CLI paths fail or the user explicitly asks to use their browser session.
 
 ## Inputs
 
@@ -54,6 +56,16 @@ If caption extraction is not sufficient:
 2. Extract audio to a temporary file.
 3. Run the local Whisper transcription workflow.
 4. Lightly clean the output while preserving meaning and speaker changes when obvious.
+
+## Browser Fallback
+
+If CLI/subtitle/audio acquisition is blocked:
+
+1. Prefer `playwright` for public/clean-session viewing.
+2. Use `social-screen-control-ops` when the user explicitly wants Codex screen control, logged-in local browser state is needed, or Playwright/public probes are blocked or flaky.
+3. Keep media muted unless audio capture/listening is required for transcription and the user has approved that.
+4. Capture only what is needed for transcription: visible captions, creator text, page state, or a locally acquired media/audio artifact.
+5. Do not send DMs, post, comment, like, follow, change account settings, solve captchas, or enter credentials unless the user gives explicit task-specific approval at action time.
 
 ## Local Helper
 

@@ -31,7 +31,8 @@ Use this schema for private JSON configs. Store real configs in the user's priva
     "min_views": 10000,
     "days": 365,
     "max_age_days": 14,
-    "limit_per_lane": 10
+    "limit_per_lane": 10,
+    "tiktok_backend": "auto"
   },
   "bot_dirs": {
     "youtube": "<path-to-youtubebot>",
@@ -51,4 +52,5 @@ Fields:
 - `thresholds.days`: YouTube recency window.
 - `thresholds.max_age_days`: output filter for recent-only requests, such as the last 14 days.
 - `thresholds.limit_per_lane`: result count per lane/platform.
+- `thresholds.tiktok_backend`: optional `auto`, `python`, or `node` override for TikTok web collection.
 - `bot_dirs`: optional explicit bot paths; env vars can also supply these. Use `instagram` or `ig` for `igbot`.

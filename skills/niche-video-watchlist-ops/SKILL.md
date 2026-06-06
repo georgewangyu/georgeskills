@@ -72,6 +72,16 @@ python3 skills/niche-video-watchlist-ops/scripts/run_niche_video_sweep.py \
   --out <private-repo>/areas/social-media/research/latest-niche-sweep.jsonl
 ```
 
+Run only supported watchlist collectors from a private config:
+
+```bash
+python3 skills/niche-video-watchlist-ops/scripts/run_niche_video_sweep.py \
+  --config <private-repo>/areas/social-media/video-watchlists/example.json \
+  --platform instagram \
+  --watchlist-only \
+  --out <private-repo>/areas/social-media/research/latest-instagram-watchlist.jsonl
+```
+
 ## Output Contract
 
 Return:

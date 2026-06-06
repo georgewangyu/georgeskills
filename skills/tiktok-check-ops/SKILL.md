@@ -28,7 +28,7 @@ Do not use when:
 ## Inputs
 
 - Required: TikTok username, profile URL, or video URL
-- Optional: number of items to sample, whether browser viewing is allowed, whether developer credentials already exist
+- Optional: number of items to sample, whether browser viewing is allowed, whether screen-control fallback is allowed, whether developer credentials already exist
 
 ## Local Probe Prerequisites
 
@@ -44,7 +44,8 @@ Do not use when:
   public metadata when those tools are installed locally.
 - These extractor tools are not required. Missing extractor output does not mean a
   profile or video is unavailable; it only means the CLI path is limited and the
-  next step should be browser viewing via `playwright`.
+  next step should be browser viewing via `playwright`, or screen-control viewing
+  via `social-screen-control-ops` when logged-in local browser state is needed.
 - Treat both extractors as volatile dependencies. They can work one week and fail
   the next due to upstream TikTok changes.
 
@@ -67,13 +68,23 @@ Do not use when:
 4. Decide access path:
    - for the operator's own authorized account analytics, use the local `tiktokbot` CLI when available
    - if the user already has valid TikTok developer access for the needed scope, read `references/current-options.md`
-   - otherwise use the existing `playwright` skill for real browser viewing
+   - otherwise use browser viewing
 5. For browser viewing, prefer:
    - profile page open
    - fresh snapshot
    - click through visible posts only after re-snapshotting
-   - headed mode when a human-readable visual check matters
-   - muted browser audio, for example Playwright/Chrome launched with `--mute-audio`, so TikTok autoplay does not make sound during background checks
+   - the `playwright` skill for public/clean-session checks
+   - `social-screen-control-ops` only when the user explicitly wants Codex screen control, logged-in local browser state is needed, or Playwright/public probes are blocked or flaky
+   - muted browser audio, for example Playwright launched with `--mute-audio`, so TikTok autoplay does not make sound during background checks
+
+## Screen-Control Fallback
+
+Use `social-screen-control-ops` only as a bounded viewing aid:
+- inspect public profiles/videos that are blocked in lightweight probes
+- use existing logged-in browser state when the user asks for that path
+- capture visible metadata, captions, and page state from screenshots/snapshots
+
+Do not use screen-control fallback to send DMs, post, comment, like, follow, change account settings, solve captchas, or enter credentials unless the user gives explicit task-specific approval at action time.
 
 ## Output Contract
 
@@ -88,7 +99,7 @@ Do not use when:
 
 - Do not imply official API coverage when the account has not authorized access.
 - Treat third-party extractors as volatile and best-effort.
-- For anything interactive or visually confirmatory, route to `playwright` instead of inventing a second browser workflow here.
+- For anything interactive or visually confirmatory, use the appropriate browser skill instead of inventing a second browser workflow here.
 - Do not store cookies or credentials inside this skill.
 - Do not intentionally play TikTok video audio during browser fallback unless the user asks to listen; keep media pages muted by default.
 

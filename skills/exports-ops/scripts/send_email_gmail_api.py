@@ -537,7 +537,11 @@ def main() -> int:
     )
     parser.add_argument("--preview-dir", help="Directory to write .eml and .html preview artifacts")
     parser.add_argument("--preview-only", action="store_true", help="Generate preview artifacts without sending")
-    parser.add_argument("--no-signature", action="store_true", help="Do not append assistant disclosure footer")
+    parser.add_argument(
+        "--no-signature",
+        action="store_true",
+        help="Do not append assistant disclosure footer. Use only when George explicitly requests no signature.",
+    )
     parser.add_argument("--auth-only", action="store_true", help="Only run OAuth/auth verification and save token")
     parser.add_argument("--reauth", action="store_true", help="Delete the existing token for this account first")
     parser.add_argument("--reply-to-message-id", help="Reply to an existing Gmail message id")
@@ -563,6 +567,11 @@ def main() -> int:
     if not account.allow_send:
         print(f"Account is not send-enabled: {account.email}", file=sys.stderr)
         return 1
+    if args.no_signature and account.assistant_signature:
+        print(
+            f"WARNING: sending from {account.email} without the configured assistant disclosure footer.",
+            file=sys.stderr,
+        )
 
     if args.reauth and account.token_file.exists():
         account.token_file.unlink()

@@ -19,6 +19,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--youtube-bot-dir", default=os.environ.get("YOUTUBEBOT_DIR", ""))
     parser.add_argument("--tiktok-bot-dir", default=os.environ.get("TIKTOKBOT_DIR", ""))
     parser.add_argument("--ig-bot-dir", default=os.environ.get("IGBOT_DIR", ""))
+    parser.add_argument("--tiktok-web-backend", choices=["auto", "python", "node"], default="auto")
+    parser.add_argument("--tiktok-web-browser", choices=["chromium", "firefox", "webkit"], default="chromium")
+    parser.add_argument("--tiktok-web-headless", choices=["true", "false"], default="true")
     parser.add_argument("--platform", choices=["all", "youtube", "tiktok", "instagram"], default="all")
     parser.add_argument("--min-views", type=int, default=100000)
     parser.add_argument("--max-age-days", type=int, default=45)
@@ -174,7 +177,11 @@ def collect(args: argparse.Namespace, accounts: list[dict[str, str]], previous_u
         elif platform == "tiktok" and args.tiktok_bot_dir:
             query = account.get("query") or handle
             command = [
-                "node", "src/cli.js", "web-search", query,
+                "node", "src/cli.js", "web-search",
+                "--backend", args.tiktok_web_backend,
+                "--browser", args.tiktok_web_browser,
+                "--headless", args.tiktok_web_headless,
+                query,
                 "--max-results", "30",
                 "--limit", str(args.limit_per_account),
                 "--max-followers", str(args.max_base),

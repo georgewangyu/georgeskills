@@ -18,12 +18,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--youtube-bot-dir", default=os.environ.get("YOUTUBEBOT_DIR", ""))
     parser.add_argument("--tiktok-bot-dir", default=os.environ.get("TIKTOKBOT_DIR", ""))
     parser.add_argument("--ig-bot-dir", default=os.environ.get("IGBOT_DIR", ""))
-    parser.add_argument("--max-base", type=int, default=250000)
-    parser.add_argument("--min-views", type=int, default=10000)
-    parser.add_argument("--days", type=int, default=365)
+    parser.add_argument("--max-base", type=int)
+    parser.add_argument("--min-views", type=int)
+    parser.add_argument("--days", type=int)
     parser.add_argument("--max-age-days", type=int, help="Filter output to videos published within this many days")
-    parser.add_argument("--limit-per-lane", type=int, default=10)
+    parser.add_argument("--limit-per-lane", type=int)
     parser.add_argument("--platform", choices=["all", "both", "youtube", "tiktok", "instagram"], default="all")
+    parser.add_argument("--tiktok-backend", choices=["auto", "python", "node"], help="TikTok web collection backend")
+    parser.add_argument("--watchlist-only", action="store_true", help="Skip search lanes and only run supported watchlist collectors")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
     return parser.parse_args()
 
@@ -43,18 +45,21 @@ def merge_args(args: argparse.Namespace, config: dict[str, Any]) -> dict[str, An
         platform = str(item.get("platform", "")).lower()
         if handle and platform not in {"instagram", "ig"}:
             lanes.append(str(handle))
+    if args.watchlist_only:
+        lanes = []
     return {
         "lanes": dedupe(lanes),
         "watchlist": config.get("watchlist", []),
         "youtube_bot_dir": args.youtube_bot_dir or bot_dirs.get("youtube", ""),
         "tiktok_bot_dir": args.tiktok_bot_dir or bot_dirs.get("tiktok", ""),
         "ig_bot_dir": args.ig_bot_dir or bot_dirs.get("instagram", "") or bot_dirs.get("ig", ""),
-        "max_base": int(thresholds.get("max_base", args.max_base)),
-        "min_views": int(thresholds.get("min_views", args.min_views)),
-        "days": int(thresholds.get("days", args.days)),
-        "max_age_days": int(thresholds.get("max_age_days", args.max_age_days)) if thresholds.get("max_age_days", args.max_age_days) else None,
-        "limit_per_lane": int(thresholds.get("limit_per_lane", args.limit_per_lane)),
+        "max_base": int(args.max_base if args.max_base is not None else thresholds.get("max_base", 250000)),
+        "min_views": int(args.min_views if args.min_views is not None else thresholds.get("min_views", 10000)),
+        "days": int(args.days if args.days is not None else thresholds.get("days", 365)),
+        "max_age_days": int(args.max_age_days if args.max_age_days is not None else thresholds["max_age_days"]) if args.max_age_days is not None or thresholds.get("max_age_days") else None,
+        "limit_per_lane": int(args.limit_per_lane if args.limit_per_lane is not None else thresholds.get("limit_per_lane", 10)),
         "platform": args.platform,
+        "tiktok_backend": str(args.tiktok_backend if args.tiktok_backend is not None else thresholds.get("tiktok_backend", "auto")),
         "out": args.out,
     }
 
@@ -158,6 +163,7 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
                 "--max-followers", str(settings["max_base"]),
                 "--min-views", str(settings["min_views"]),
                 "--sort", "views-per-follower",
+                "--backend", settings["tiktok_backend"],
                 "--format", "json",
             ]
             rows.extend(row for row in (normalize(row, lane, "tiktok") for row in run_json(command, settings["tiktok_bot_dir"])) if within_age(row, settings["max_age_days"]))
