@@ -89,6 +89,7 @@ georgeskills/
 | `breakout-signal-research-ops` | Find products with asymmetric traction relative to their starting base — the low-follower breakout pattern. |
 | `customer-pain-mining-ops` | Mine reviews, forums, and App Store comments for repeated user pain points and unmet needs. |
 | `product-hunt-trends-ops` | Scout Product Hunt launches for interesting products, breakout signals, positioning patterns, and market ideas. |
+| `ignitionbot-trend-radar-ops` | Run IgnitionBot scored trend sweeps across developer, social, video, RSS, web, and watchlist sources. |
 | `yc-company-scouting-ops` | Scout YC companies, batches, and Launch YC posts for standout startups, batch themes, and useful product ideas. |
 | `deep-exploration-ops` | Exploration artifact processing and framework distillation support. |
 | `closed-source-product-reconstruction-ops` | Inspect public closed-source products to infer stack, frontend/API/backend patterns, open-source analogues, and rebuild plans. |

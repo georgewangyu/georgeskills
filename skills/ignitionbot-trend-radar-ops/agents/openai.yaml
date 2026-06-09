@@ -1,0 +1,4 @@
+interface:
+  display_name: "IgnitionBot Trend Radar"
+  short_description: "Run scored cross-source trend radar sweeps with IgnitionBot."
+  default_prompt: "Run an IgnitionBot trend radar sweep and summarize the top scored clusters."
