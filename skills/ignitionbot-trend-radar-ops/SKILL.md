@@ -18,8 +18,11 @@ or available as a source checkout pointed to by `IGNITIONBOT_DIR`.
 
 - Query or query list, such as `AI agents`, `developer tools`, or
   `creator workflow automation`.
-- Optional source list: `youtube`, `github`, `hackernews`, `reddit`, `rss`,
-  `web`, `tiktok`, `instagram`, `x`.
+- Optional source list: `youtube`, `github`, `producthunt`, `hackernews`,
+  `reddit`, `polymarket`, `bluesky`, `digg`, `v2ex`, `rss`, `web`,
+  `tiktok`, `instagram`, `x`, `threads`, `pinterest`, `linkedin`,
+  `truthsocial`, `exa`, `perplexity`, `jina`, `parallel`, `bilibili`,
+  `xiaohongshu`, `douyin`, `wechat`, `weibo`, `xueqiu`, `xiaoyuzhou`.
 - Optional window: `24h`, `7d`, `30d`.
 - Optional output format: `markdown` or `json`.
 - Optional watchlist management request.
