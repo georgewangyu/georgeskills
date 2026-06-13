@@ -1,6 +1,6 @@
 ---
 name: niche-video-watchlist-ops
-description: Targeted creator-niche video monitoring using local YouTube, TikTok, and Instagram bots. Use when the user wants to search within a defined content niche, maintain or consult a watchlist of creators/search lanes, find videos from tracked creators that are popping off, save promising links for later review, or turn niche breakout videos into repeatable short-form series ideas.
+description: Monitor a defined creator niche or watchlist for high-traction videos and repeatable content ideas.
 ---
 
 # Niche Video Watchlist Ops

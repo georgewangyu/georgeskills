@@ -42,18 +42,11 @@ Do not use when:
 4. Decide access path:
    - if the user already has valid Meta app access for the needed scope, read `references/current-options.md`
    - otherwise use browser viewing for visual inspection
-   - prefer `playwright` for public/clean-session checks
-   - use `social-screen-control-ops` only when the user explicitly wants Codex screen control, logged-in local browser state is needed, or Playwright/public probes are blocked or flaky
-   - keep browser audio muted when possible
+   - the shared browser fallback rules in `skills/_shared/social-platform-fallbacks.md`
 
 ## Screen-Control Fallback
 
-Use `social-screen-control-ops` only as a bounded viewing aid:
-- inspect public profiles, Reels, and posts that are blocked in lightweight probes
-- use existing logged-in browser state when the user asks for that path
-- capture visible metadata, captions, and page state from screenshots/snapshots
-
-Do not use screen-control fallback to send DMs, post, comment, like, follow, change account settings, solve captchas, or enter credentials unless the user gives explicit task-specific approval at action time.
+Follow `skills/_shared/social-platform-fallbacks.md`.
 
 ## Output Contract
 

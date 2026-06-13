@@ -1,6 +1,6 @@
 ---
 name: ignitionbot-trend-radar-ops
-description: Run IgnitionBot, a self-contained trend radar CLI, to produce scored morning or ad hoc trend briefs across developer, social, video, RSS, web, and watchlist sources. Use when the user asks for an IgnitionBot sweep, ignition score, morning traction radar, Google-Trends-like score, trend watchlist, or cross-source research brief.
+description: Run IgnitionBot trend sweeps and return scored briefs across configured sources.
 memory_tags:
   - domain:trend-research
   - workflow:morning-radar

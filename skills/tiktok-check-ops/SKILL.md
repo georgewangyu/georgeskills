@@ -74,17 +74,11 @@ Do not use when:
    - fresh snapshot
    - click through visible posts only after re-snapshotting
    - the `playwright` skill for public/clean-session checks
-   - `social-screen-control-ops` only when the user explicitly wants Codex screen control, logged-in local browser state is needed, or Playwright/public probes are blocked or flaky
-   - muted browser audio, for example Playwright launched with `--mute-audio`, so TikTok autoplay does not make sound during background checks
+   - the shared browser fallback rules in `skills/_shared/social-platform-fallbacks.md`
 
 ## Screen-Control Fallback
 
-Use `social-screen-control-ops` only as a bounded viewing aid:
-- inspect public profiles/videos that are blocked in lightweight probes
-- use existing logged-in browser state when the user asks for that path
-- capture visible metadata, captions, and page state from screenshots/snapshots
-
-Do not use screen-control fallback to send DMs, post, comment, like, follow, change account settings, solve captchas, or enter credentials unless the user gives explicit task-specific approval at action time.
+Follow `skills/_shared/social-platform-fallbacks.md`.
 
 ## Output Contract
 

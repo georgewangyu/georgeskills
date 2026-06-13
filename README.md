@@ -66,7 +66,8 @@ georgeskills/
 
 | Skill | Description |
 |---|---|
-| `x-check-ops` | Pull the X/Twitter home feed, run searches, or read a specific post. Summarizes signal themes. |
+| `x-check-xbot` | Pull X/Twitter home and latest feeds with the native xbot engine. Summarizes signal themes. |
+| `x-check-bird` | Deprecated legacy Bird fallback for explicit baseline or blocked-xbot cases only. |
 | `tiktok-check-ops` | Check TikTok account or video public metadata and recent content. |
 | `instagram-check-ops` | Check Instagram account or post public status and profile metadata. |
 | `social-screen-control-ops` | Use Codex Computer Use for bounded logged-in visual checks on social-media pages when CLI or Playwright paths are blocked. |

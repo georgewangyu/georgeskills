@@ -1,6 +1,6 @@
 ---
 name: x-check-bird
-description: "[DEPRECATED] Check X/Twitter using the legacy Bird CLI engine. Use ONLY as a fallback if the native xbot engine fails."
+description: "Deprecated legacy X/Twitter Bird fallback; use only when x-check-xbot is blocked or explicitly requested."
 memory_tags:
   - domain:social-media
   - workflow:timeline-check
@@ -19,6 +19,9 @@ Use when:
 - the user explicitly asks to use the "bird method"
 - you need a ground-truth baseline to compare against the native engine
 - the native xbot engine is experiencing issues
+
+Do not use this for ordinary `check X` or timeline requests. Route those to
+`x-check-xbot` first.
 
 ## Workflow
 

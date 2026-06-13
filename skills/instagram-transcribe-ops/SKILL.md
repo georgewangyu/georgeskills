@@ -61,11 +61,9 @@ If captions are unavailable or incomplete:
 
 If CLI/subtitle/audio acquisition is blocked:
 
-1. Prefer `playwright` for public/clean-session viewing.
-2. Use `social-screen-control-ops` when the user explicitly wants Codex screen control, logged-in local browser state is needed, or Playwright/public probes are blocked or flaky.
-3. Keep media muted unless audio capture/listening is required for transcription and the user has approved that.
-4. Capture only what is needed for transcription: visible captions, post text, page state, or a locally acquired media/audio artifact.
-5. Do not send DMs, post, comment, like, follow, change account settings, solve captchas, or enter credentials unless the user gives explicit task-specific approval at action time.
+Follow `skills/_shared/social-platform-fallbacks.md`. Capture only what is
+needed for transcription: visible captions, post text, page state, or a locally
+acquired media/audio artifact.
 
 ## Local Helper
 

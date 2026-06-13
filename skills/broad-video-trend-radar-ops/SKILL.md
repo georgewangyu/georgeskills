@@ -1,6 +1,6 @@
 ---
 name: broad-video-trend-radar-ops
-description: Broad cross-platform short-form trend scanning using local YouTube, TikTok, and Instagram bots. Use when the user wants a wider radar of what is popping off beyond their niche, including high-multiplier videos, reusable formats, emerging hooks, broad TikTok/YouTube Shorts/Instagram Reels trends, sounds or music cues when visible, and outside-niche patterns that could be adapted into the user's content.
+description: Scan short-form platforms for broad trend patterns and reusable formats outside a narrow niche.
 ---
 
 # Broad Video Trend Radar Ops

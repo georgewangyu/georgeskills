@@ -1,6 +1,6 @@
 ---
 name: product-hunt-trends-ops
-description: Scout Product Hunt launches for interesting products, breakout signals, positioning patterns, and market ideas. Use when the user asks to check Product Hunt, scan launches, find new products, compare product categories, or look for product/launch trends.
+description: Scout Product Hunt launches for products, positioning patterns, and market signals.
 memory_tags:
   - domain:product-research
   - source:product-hunt

@@ -1,6 +1,6 @@
 ---
 name: yc-company-scouting-ops
-description: Scout Y Combinator companies, batches, Launch YC posts, and related public signals to identify interesting startups, strong wedges, fast-growing categories, and ideas worth studying. Use when the user asks to check YC, scan YC batches, find interesting YC companies, or understand what is doing well in YC.
+description: Scout YC companies, batches, and Launch YC signals for standout startups and market patterns.
 memory_tags:
   - domain:startup-research
   - source:y-combinator
