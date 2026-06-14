@@ -1,0 +1,6 @@
+interface:
+  display_name: "Social Motion Diagrams"
+  short_description: "Animated sketch diagrams for social posts"
+  default_prompt: "Use $social-motion-diagram-ops to turn this draft into a short looping diagram asset for X or LinkedIn."
+policy:
+  allow_implicit_invocation: true
