@@ -1,0 +1,4 @@
+interface:
+  display_name: "Social Hook Selection"
+  short_description: "Pick strong short-form video hooks"
+  default_prompt: "Use $social-hook-selection-ops to choose the best hook for this short-form video idea."

@@ -70,8 +70,10 @@ georgeskills/
 | `x-check-bird` | Deprecated legacy Bird fallback for explicit baseline or blocked-xbot cases only. |
 | `tiktok-check-ops` | Check TikTok account or video public metadata and recent content. |
 | `instagram-check-ops` | Check Instagram account or post public status and profile metadata. |
+| `instagram-carousel-ops` | Create branded Instagram carousel assets, including PNG posters, short MP4 motion pages, editable references, and posting notes. |
 | `social-screen-control-ops` | Use Codex Computer Use for bounded logged-in visual checks on social-media pages when CLI or Playwright paths are blocked. |
 | `social-motion-diagram-ops` | Create Excalidraw-style static diagrams and short looping motion assets for LinkedIn/X/social drafts. |
+| `social-hook-selection-ops` | Select and adapt high-fit hooks for TikTok, Instagram Reels, YouTube Shorts, and short-form video ideas. |
 | `youtube-check-ops` | Check YouTube channel or video public metadata. Falls back to lightweight public probes. |
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
 | `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |

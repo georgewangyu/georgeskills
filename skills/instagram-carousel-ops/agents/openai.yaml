@@ -1,0 +1,4 @@
+interface:
+  display_name: "Instagram Carousel Ops"
+  short_description: "Create branded Instagram carousel assets and motion variants."
+  default_prompt: "Create a branded Instagram carousel from this topic or source post."
