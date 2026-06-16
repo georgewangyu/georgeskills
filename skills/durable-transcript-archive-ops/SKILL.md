@@ -37,7 +37,8 @@ Do not use when:
    - stable source ID when available
    - target archive root supplied by the user or private repo convention
 2. Preserve raw artifacts:
-   - original media when downloaded
+   - original media when downloaded, but keep large binary source media out of
+     git-tracked transcript trees by default
    - subtitle/caption files
    - raw Whisper or ASR output
    - command notes when a fallback path was needed
@@ -51,6 +52,9 @@ Do not use when:
    - avoid duplicate root folders
    - move scratch outputs into the archive tree
    - do not delete raw files unless the user explicitly asks
+   - if source video/audio is large, move it to a separate non-git raw-media
+     archive and leave only metadata, derived audio/transcript artifacts, and
+     path/provenance references in the transcript repo
 5. Add a concise handoff note:
    - transcript saved path
    - raw artifact path
@@ -71,4 +75,8 @@ Return:
 - This skill archives artifacts; use source-specific skills for extraction first.
 - Do not invent metadata that cannot be inferred from source or user input.
 - Do not copy private media into public repos.
+- Do not treat large downloaded source video as a normal Markdown-adjacent
+  artifact. Prefer a separate raw-media/archive location supplied by the user
+  or private repo convention, and record the external path in processed
+  Markdown plus command notes.
 - Keep path examples generic and prefer `<private-repo>` placeholders.
