@@ -18,10 +18,26 @@ Run these checks before posting:
 
 - Confirm target account and posting tool.
 - Confirm every media URL is publicly accessible if the API requires URL ingest.
+- For local files, prefer a temporary direct-public HTTPS hosting prefix over
+  presigned URLs when publishing MP4 carousel pages through Graph API-style
+  tools.
 - Confirm all media files share dimensions/aspect ratio.
 - Confirm MP4 duration, frame rate, codec, and file size are accepted by the posting path.
 - Confirm caption length and hashtags fit the target platform limits.
 - Get explicit user approval before publishing.
+
+## Media Hosting Notes
+
+When the carousel assets are local files, the posting tool may need public URL
+ingest. The safest observed pattern is:
+
+1. Upload media to a narrow temporary public prefix.
+2. Verify each URL returns `HEAD 200` and the expected content type.
+3. Publish with the platform tool.
+4. Delete temporary media and remove the temporary public-read policy.
+
+Keep concrete bucket names, account IDs, credentials, and private paths in the
+project-local private overlay, not in this reusable skill.
 
 ## Source Links
 

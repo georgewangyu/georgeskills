@@ -65,6 +65,9 @@ The goal is a reusable carousel system, not just a one-off set of slides: preser
    - List the selected media files in order.
    - Include the account/brand to post from when known.
    - Include public hosting or upload requirements for any API/posting bot.
+   - If the user approves actual publishing, load any project-local private
+     media-hosting or account overlay before creating public URLs. Prefer a
+     local `IGBOT_MEDIA_HOSTING_WORKFLOW.md` when present.
    - Do not publish until the user explicitly approves the final assets and caption.
 
 10. Document what changed.
