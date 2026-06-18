@@ -74,6 +74,7 @@ georgeskills/
 | `social-screen-control-ops` | Use Codex Computer Use for bounded logged-in visual checks on social-media pages when CLI or Playwright paths are blocked. |
 | `social-motion-diagram-ops` | Create Excalidraw-style static diagrams and short looping motion assets for LinkedIn/X/social drafts. |
 | `social-hook-selection-ops` | Select and adapt high-fit hooks for TikTok, Instagram Reels, YouTube Shorts, and short-form video ideas. |
+| `shortform-talking-points-ops` | Create natural point-form talking outlines for TikTok, Instagram Reels, and Shorts using a sourced hook, hot take beats, and final twist. |
 | `youtube-check-ops` | Check YouTube channel or video public metadata. Falls back to lightweight public probes. |
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
 | `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |

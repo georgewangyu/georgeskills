@@ -31,6 +31,12 @@ Always label source strength:
   and some performance evidence.
 - `candidate`: plausible structure that still needs testing.
 
+Do not invent hooks from general taste when a promoted hook library or
+performance-backed research source is available. Every recommended hook must
+name the underlying hook family or pattern it came from. If no existing pattern
+fits, say that the library lacks a good match, propose a new candidate pattern,
+and keep it labeled `candidate` until validated.
+
 ## Workflow
 
 1. Identify the platform and objective:
@@ -57,11 +63,19 @@ Always label source strength:
    - If a research memo has a useful pattern but the reusable hook library does
      not, promote the distilled pattern into the library when editing docs is
      part of the request.
-5. Generate 3-5 candidate hooks:
-   - start with `proven` and `proven-adjacent` patterns
-   - add `source-observed` patterns when they fit the idea
-   - use `candidate` patterns only when stronger sources do not fit
-6. Pick one primary hook and one backup.
+5. Rank available hook patterns by evidence before writing lines:
+   - owned-account `proven`
+   - owned-account `proven-adjacent`
+   - actual TikTok / Instagram / Shorts examples with performance evidence
+     (`source-observed`)
+   - unvalidated formulas or prompt-framework ideas (`candidate`)
+6. Generate 3-5 candidate hooks from those ranked patterns.
+   - Include the pattern name for each hook.
+   - Include the source-strength label for each hook.
+   - Keep the line easy to say on camera.
+   - Preserve the user's intended thesis instead of simplifying away the
+     controversial or specific part.
+7. Pick one primary hook and one backup.
 
 ## Selection Heuristics
 
@@ -82,6 +96,10 @@ Avoid hooks that:
 - copy another creator's identity instead of borrowing the structure
 - make claims stronger than the source supports
 - start with topic labeling instead of tension
+- are clever but hard to parse in the first 1-3 seconds
+- flatten the user's specific thesis into a generic category claim
+- cannot be traced to a named hook family, source-observed format, or explicit
+  new candidate pattern
 
 ## Output Contract
 
@@ -92,6 +110,7 @@ Best hook:
 - Line:
 - Source strength:
 - Pattern:
+- Source basis:
 - Why it fits:
 - First frame:
 - On-screen text:
@@ -100,6 +119,8 @@ Best hook:
 Backup:
 - Line:
 - Source strength:
+- Pattern:
+- Source basis:
 - Why:
 
 Avoid:
@@ -107,6 +128,10 @@ Avoid:
 ```
 
 If the user asks for many options, group them by source strength.
+
+If the user asks why a hook was chosen, answer by pointing to the pattern,
+source strength, and fit to the idea. Do not justify it only by saying it
+"sounds viral."
 
 ## Updating A Hook Library
 
