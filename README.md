@@ -92,6 +92,7 @@ georgeskills/
 | `revenue-signal-research-ops` | Estimate which apps or SaaS products are likely making meaningful revenue from public signals. |
 | `asymmetric-revenue-case-study-ops` | Produce single-company case studies for small-team or under-the-radar products with disproportionate revenue signals. |
 | `breakout-signal-research-ops` | Find products with asymmetric traction relative to their starting base — the low-follower breakout pattern. |
+| `person-ignition-case-study-ops` | Research how a public creator, founder, builder, or operator got their first major audience, reputation, or open-source traction spike. |
 | `customer-pain-mining-ops` | Mine reviews, forums, and App Store comments for repeated user pain points and unmet needs. |
 | `product-hunt-trends-ops` | Scout Product Hunt launches for interesting products, breakout signals, positioning patterns, and market ideas. |
 | `ignitionbot-trend-radar-ops` | Run IgnitionBot scored trend sweeps across developer, social, video, RSS, web, and watchlist sources. |
