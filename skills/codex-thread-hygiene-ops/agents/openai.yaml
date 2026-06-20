@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Thread Hygiene"
+  short_description: "Rename and review Codex chats"
+  default_prompt: "Use $codex-thread-hygiene-ops to review recent Codex chats and improve unclear thread titles."
