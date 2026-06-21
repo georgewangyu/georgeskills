@@ -94,11 +94,17 @@ Never silently guess when two projects could plausibly own the same export.
 
 1. Resolve local paths.
    - Find the private repo's current video plan or ask for it if missing.
+   - If the private repo defines a weekday show calendar, format calendar, or
+     recurring content slots, load that planning surface before selecting
+     projects.
    - Find or create the media root from private config or user instruction.
    - Keep private absolute paths out of reusable skill files.
 2. Create or update the batch.
    - Use the publish or production week as `YYYY-Www_video-batch`.
    - Add one project folder per selected video.
+   - When a weekday show calendar exists, keep each candidate tied to its slot
+     in the weekly plan. Treat the slots as coverage guidance, not as required
+     folders or a forced posting quota.
    - Keep shared raw-materials folders separate from selected-video folders.
    - Put next-week candidates in the next batch, not the current batch.
 3. Prepare imports.
@@ -157,6 +163,7 @@ Use this shape for final-video normalization:
 Return:
 - batch folder path
 - per-video project folder list
+- show-slot coverage status, when a weekday show calendar exists
 - CapCut export inbox path
 - weekly phone-transfer bundle path
 - final-video mapping status
