@@ -1,6 +1,6 @@
 ---
 name: person-ignition-case-study-ops
-description: Research how a public creator, founder, builder, or operator got their initial audience, reputation, open-source traction, or credibility spike; focuses on ignition events, preconditions, distribution surfaces, and repeatable lessons.
+description: Research a public person's first audience, reputation, open-source, or credibility spike. Use for ignition events, breakout paths, distribution surfaces, and repeatable lessons.
 memory_tags:
   - domain:research
   - workflow:person-ignition-case-study

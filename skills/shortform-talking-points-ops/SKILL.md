@@ -1,6 +1,6 @@
 ---
 name: shortform-talking-points-ops
-description: Create natural point-form talking outlines for TikTok, Instagram Reels, and YouTube Shorts using a sourced hook pattern, hot take beats, and a final twist. Use when drafting short-form talking-head videos, creator commentary, career takes, product takes, or opinion videos that should sound improvised rather than memorized.
+description: Create natural point-form talking outlines for TikTok, Instagram Reels, and YouTube Shorts. Use for talking-head commentary, career/product takes, sourced hooks, hot-take beats, and twist endings.
 memory_tags:
   - domain:social-media
   - workflow:shortform-talking-points

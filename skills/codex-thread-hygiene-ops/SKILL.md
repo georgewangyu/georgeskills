@@ -1,6 +1,6 @@
 ---
 name: codex-thread-hygiene-ops
-description: Organize Codex conversations by reviewing pinned or recent threads, improving vague thread titles, and proposing pin/archive cleanup. Use when the user asks to rename chats, organize pinned chats, clean up previous Codex sessions, run thread hygiene, or prepare a manual review before creating a recurring automation.
+description: Review Codex threads, rename vague or stale titles, and propose pin/archive cleanup. Use for chat title hygiene, pinned/recent thread review, and pre-automation cleanup passes.
 memory_tags:
   - domain:workflow
   - workflow:thread-hygiene

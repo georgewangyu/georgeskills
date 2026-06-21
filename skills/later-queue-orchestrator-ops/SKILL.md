@@ -1,6 +1,6 @@
 ---
 name: later-queue-orchestrator-ops
-description: "Orchestrate later/backlog queues: refresh items, classify routing, prepare decision-ready briefs, promote work, and enforce proof gates."
+description: "Orchestrate later/backlog queues: review items, choose next actions, route owner questions, and enforce proof gates."
 memory_tags:
   - domain:workflow
   - workflow:queue-orchestration

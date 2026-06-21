@@ -1,6 +1,6 @@
 ---
 name: social-hook-selection-ops
-description: Select and adapt high-fit hooks for short-form social video ideas. Use when the user asks for a TikTok, Instagram Reels, YouTube Shorts, or short-form video hook; wants to choose between hooks; wants hooks based on proven, observed, or candidate patterns; or provides a video idea and asks for the strongest opening line, first frame, on-screen text, or retention angle.
+description: Select source-backed hooks for TikTok, Instagram Reels, and YouTube Shorts. Use for choosing or adapting opening lines, first frames, on-screen text, and retention angles.
 memory_tags:
   - domain:social-media
   - workflow:hook-selection

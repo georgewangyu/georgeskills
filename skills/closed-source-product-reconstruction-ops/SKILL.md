@@ -1,6 +1,6 @@
 ---
 name: closed-source-product-reconstruction-ops
-description: Reverse-engineer a public closed-source product's visible stack, frontend patterns, API/network behavior, likely backend modules, design language, and open-source analogues, then turn the findings into an original rebuild plan.
+description: Analyze a public closed-source product's visible stack, UI/API patterns, design language, and open-source analogues to produce an original rebuild plan.
 memory_tags:
   - domain:product-research
   - workflow:closed-source-reconstruction
