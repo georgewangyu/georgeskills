@@ -1,0 +1,4 @@
+interface:
+  display_name: "Weekly Video Batch Ops"
+  short_description: "Organize short-form video batch folders"
+  default_prompt: "Use $weekly-video-batch-ops to set up a weekly short-form video batch and organize final exports."

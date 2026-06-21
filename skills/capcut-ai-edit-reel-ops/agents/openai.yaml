@@ -1,0 +1,4 @@
+interface:
+  display_name: "CapCut AI Edit Reel Ops"
+  short_description: "Duplicate list reels and update title/caption"
+  default_prompt: "Use $capcut-ai-edit-reel-ops to create a 5-item short-form reel with the title format '5 <Subject> I Wish I Knew Last Year', update the CapCut title, and save a markdown draft."

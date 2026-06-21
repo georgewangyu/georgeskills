@@ -75,6 +75,8 @@ georgeskills/
 | `social-motion-diagram-ops` | Create Excalidraw-style static diagrams and short looping motion assets for LinkedIn/X/social drafts. |
 | `social-hook-selection-ops` | Select and adapt high-fit hooks for TikTok, Instagram Reels, YouTube Shorts, and short-form video ideas. |
 | `shortform-talking-points-ops` | Create natural point-form talking outlines for TikTok, Instagram Reels, and Shorts using a sourced hook, hot take beats, and final twist. |
+| `capcut-ai-edit-reel-ops` | Create list-style short-form reels by duplicating a proven CapCut AI-edit template, updating the title, and drafting the numbered caption/comment copy. |
+| `weekly-video-batch-ops` | Organize recurring short-form video batch folders, CapCut final export inboxes, canonical final names, quick-access final-video indexes, and weekly phone-transfer bundles. |
 | `youtube-check-ops` | Check YouTube channel or video public metadata. Falls back to lightweight public probes. |
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
 | `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |
