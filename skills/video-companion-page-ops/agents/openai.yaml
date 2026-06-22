@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video Companion Page Ops"
+  short_description: "Plan and build local HTML companion pages"
+  default_prompt: "Use $video-companion-page-ops to create a local HTML companion page for an educational video."

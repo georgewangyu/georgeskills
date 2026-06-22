@@ -31,6 +31,7 @@ Use one stable media root chosen by the user or private repo.
           assets/
           exports/
           final-videos/
+          editor-projects/
   final-videos/
     incoming/
     index/
@@ -53,6 +54,11 @@ Rules:
 - Treat `exports/` as working exports, not the final library.
 - Treat each project's `final-videos/` folder as the source of truth for final
   renders.
+- Use `editor-projects/` for editor-side project shells, draft pointers, or
+  import instructions. When creating a project folder, create a same-name empty
+  editor project/shell when the local editor workflow supports it, or record the
+  exact manual project name to create. Keep the shell empty until raw footage
+  has been imported and the rough-cut direction is clear.
 - Treat `<media-root>/final-videos/index/` as quick access only. Prefer
   symlinks to project-owned final files.
 - Treat `<media-root>/final-videos/by-week/YYYY-Www_video-batch/` as the
@@ -102,6 +108,14 @@ Never silently guess when two projects could plausibly own the same export.
 2. Create or update the batch.
    - Use the publish or production week as `YYYY-Www_video-batch`.
    - Add one project folder per selected video.
+   - For each selected video, also prepare a same-name empty editor project
+     shell or editor-project pointer:
+     `YYYY-MM-DD_video-slug`. Store shell metadata, links, or notes under that
+     project's `editor-projects/` folder rather than scattering editor state.
+     If the local editor automation can duplicate an empty template, run its
+     dry-run first, then apply it only when the destination name is unambiguous.
+     If no automation is available, leave a short manual instruction such as
+     `Create empty editor project named YYYY-MM-DD_video-slug`.
    - When a weekday show calendar exists, keep each candidate tied to its slot
      in the weekly plan. Treat the slots as coverage guidance, not as required
      folders or a forced posting quota.
@@ -163,6 +177,7 @@ Use this shape for final-video normalization:
 Return:
 - batch folder path
 - per-video project folder list
+- per-video editor project shell or manual editor-project creation status
 - show-slot coverage status, when a weekday show calendar exists
 - CapCut export inbox path
 - weekly phone-transfer bundle path
@@ -175,6 +190,9 @@ Return:
 ## Guardrails
 
 - Do not move legacy media trees without explicit approval.
+- Do not create or overwrite editor projects in an application's private
+  library unless the local workflow explicitly supports safe project creation,
+  dry-run/backup, and same-name collision handling.
 - Do not rename project folders that may still be referenced by an active editor
   project unless the user explicitly calls the video done or the local runbook
   says the closeout rename is safe.
