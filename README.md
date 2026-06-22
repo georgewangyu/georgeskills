@@ -85,6 +85,7 @@ georgeskills/
 | `account-video-watchlist-ops` | Track a private list of niche creator accounts for new high-view videos worth emulating. |
 | `broad-video-trend-radar-ops` | Run broad cross-platform trend sweeps for high-multiplier short-form formats outside a narrow niche. |
 | `shortform-rough-cut-ops` | Turn raw short-form clips, creator intent, and format runbooks into an edit decision list and rough draft plan. |
+| `video-companion-page-ops` | Create local HTML/blog-style companion pages for educational videos with clickable sources, screenshots, diagrams, and talking outlines. |
 
 ### Research
 
@@ -120,6 +121,7 @@ georgeskills/
 |---|---|
 | `website-page-planning-ops` | Turn a rough site concept into a concrete page plan with section structure and CTA map before design starts. |
 | `frontend-art-direction-ops` | Build visual direction for a product UI: style references, typography, color tokens, layout and motion rules. |
+| `frontend-catalog-design-ops` | Start catalog-first frontend prototypes for searchable indexes, libraries, radars, directories, and contribution-backed resource hubs. |
 | `frontend-polish-pass-ops` | Final polish pass: responsiveness, accessibility, hierarchy, interaction quality, and perceived performance. |
 | `pencil-design-orchestration-ops` | Run a repeatable Pencil MCP design workflow from the coding agent through to frontend handoff. |
 | `disk-space-ops` | Inspect disk usage, highlight large folders/files, and suggest conservative cleanup targets with risk framing. |
@@ -132,6 +134,7 @@ georgeskills/
 | `later-queue-orchestrator-ops` | Orchestrate later queues: classify routing, prepare decision-ready briefs, promote work, and enforce proof gates. |
 | `later-queue-triage-ops` | Convert deferred work queues into source-first decision cards with fit, risk, proof, blockers, and next action. |
 | `live-proof-gate-ops` | Define proof-before-done gates for agent workflows, automations, integrations, and queued work. |
+| `decision-gate-ops` | Evaluate meaningful operational, automation, product, workflow, or personal execution decisions with constraints, proof thresholds, reversible defaults, and future principles. |
 | `codex-thread-hygiene-ops` | Organize Codex conversations by renaming vague threads and reviewing pinned-chat cleanup candidates. |
 | `skill-forge-ops` | Mine journals, transcripts, PRs, commits, scripts, and agent notes for workflows worth turning into reusable skills. |
 | `agent-eval-harness-ops` | Design lightweight eval harnesses for coding or workflow agents, including rubrics and failure taxonomies. |

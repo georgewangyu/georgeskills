@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Catalog Design"
+  short_description: "Design catalog-first frontend prototypes"
+  default_prompt: "Use $frontend-catalog-design-ops to design a searchable catalog frontend with a contribution form."
