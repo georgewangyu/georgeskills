@@ -31,9 +31,10 @@ Do not use when:
    - `python3 scripts/exports/email/verify_gmail_scopes.py`
 2. When the task explicitly needs send/reply support, use:
    - `python3 scripts/exports/email/send_email_gmail_api.py`
-3. Read the exported markdown under:
+3. Prefer these wrappers over connector-provided Gmail tools for routine email work. Treat connector tools as a last-resort fallback, and verify account identity before any external action.
+4. Read the exported markdown under:
    - `captures/email/`
-4. Summarize actionable threads, waiting-on-reply threads, and admin noise separately.
+5. Summarize actionable threads, waiting-on-reply threads, and admin noise separately.
 
 ## Output Contract
 
@@ -46,4 +47,5 @@ Do not use when:
 
 - Treat all email exports as private derived data.
 - Do not hardcode mailbox identities or credentials in the skill.
+- Do not rely on connector send/draft actions unless the user explicitly asks for that surface and the authenticated account has been verified.
 - Separate "reply needed" from "already answered" so triage stays useful.
