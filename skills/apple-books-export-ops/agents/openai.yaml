@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apple Books Export Ops"
+  short_description: "Explain Apple Books exports to markdown"
+  default_prompt: "Use $apple-books-export-ops to explain how Apple Books highlights, notes, and bookmarks are exported into private markdown drafts."

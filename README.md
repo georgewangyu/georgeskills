@@ -58,6 +58,7 @@ georgeskills/
 |---|---|
 | `exports-ops` | Umbrella skill for multi-source export pipelines. Use when no more specific export skill applies. |
 | `apple-notes-export-ops` | Export Apple Notes into private markdown artifacts for journaling and context-building. |
+| `apple-books-export-ops` | Explain and run Apple Books highlights, notes, and bookmarks export into private markdown drafts. |
 | `email-ops` | Work with the Gmail export pipeline for triage context, scope verification, and lightweight send/reply helpers. |
 | `calendar-ops` | Work with the Google Calendar export pipeline for schedule context and day planning. |
 | `cursor-chat-export-ops` | Export Cursor chats into private artifacts for search, review, and context recovery. |
