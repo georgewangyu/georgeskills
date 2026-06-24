@@ -67,6 +67,7 @@ georgeskills/
 
 | Skill | Description |
 |---|---|
+| `voice-calibration-ops` | Build or apply a source-derived writing voice profile, then draft or revise prose so it matches real samples instead of generic AI style. |
 | `x-check-xbot` | Pull X/Twitter home and latest feeds with the native xbot engine. Summarizes signal themes. |
 | `x-check-bird` | Deprecated legacy Bird fallback for explicit baseline or blocked-xbot cases only. |
 | `tiktok-check-ops` | Check TikTok account or video public metadata and recent content. |

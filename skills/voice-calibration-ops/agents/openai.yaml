@@ -1,0 +1,4 @@
+interface:
+  display_name: "Voice Calibration"
+  short_description: "Match drafts to a real writing voice"
+  default_prompt: "Use $voice-calibration-ops to analyze these writing samples and revise this draft so it sounds like the source voice."
