@@ -81,6 +81,7 @@ georgeskills/
 | `youtube-check-ops` | Check YouTube channel or video public metadata. Falls back to lightweight public probes. |
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
 | `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |
+| `social-video-archive-ops` | Archive reference videos from social platforms outside active repos, with provenance notes and repo-side symlinks. |
 | `video-breakout-research-ops` | Sweep TikTok, Instagram, and YouTube Shorts for low-follower, high-traction video patterns. |
 | `niche-video-watchlist-ops` | Run targeted YouTube/TikTok bot sweeps for niche search lanes and creator watchlists. |
 | `account-video-watchlist-ops` | Track a private list of niche creator accounts for new high-view videos worth emulating. |

@@ -23,6 +23,8 @@ import hashlib
 import json
 import math
 import os
+import subprocess
+import tempfile
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -33,6 +35,7 @@ from repo_paths import resolve_private_repo_root
 
 ROOT = resolve_private_repo_root()
 TOKENS_FILE = ROOT / ".tokens" / "traccar.env"
+LOCATION_INGEST_FILE = ROOT / ".tokens" / "location-ingest.env"
 PLACES_FILE = ROOT / ".tokens" / "location_places.json"
 TRACCAR_CACHE_DIR = ROOT / ".cache" / "traccar"
 LOCAL_TZ = datetime.now().astimezone().tzinfo
@@ -45,6 +48,13 @@ class TraccarConfig:
     email: str
     password: str
     device_id: str
+
+
+@dataclass
+class OwnTracksS3Config:
+    bucket: str
+    prefix: str
+    region: str
 
 
 @dataclass
@@ -124,6 +134,16 @@ def build_config() -> TraccarConfig | None:
         password=password,
         device_id=device_id,
     )
+
+
+def build_owntracks_s3_config() -> OwnTracksS3Config | None:
+    load_env_file(LOCATION_INGEST_FILE)
+    bucket = os.environ.get("LOCATION_INGEST_S3_BUCKET", "").strip()
+    prefix = os.environ.get("LOCATION_INGEST_S3_PREFIX", "owntracks/raw/").strip()
+    region = os.environ.get("LOCATION_INGEST_AWS_REGION", "").strip()
+    if not bucket:
+        return None
+    return OwnTracksS3Config(bucket=bucket, prefix=prefix.strip("/"), region=region)
 
 
 def auth_header(email: str, password: str) -> str:
@@ -311,6 +331,123 @@ def fetch_report_stops(config: TraccarConfig, day_text: str) -> list[ReportStop]
     return stops
 
 
+def aws_cli_json(args: list[str]) -> Any:
+    argv = ["aws", *args, "--output", "json"]
+    proc = subprocess.run(argv, check=False, text=True, capture_output=True)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or f"aws exited {proc.returncode}")
+    if not proc.stdout.strip():
+        return {}
+    return json.loads(proc.stdout)
+
+
+def owntracks_s3_day_prefixes(config: OwnTracksS3Config, day_text: str) -> list[str]:
+    target_day = datetime.strptime(day_text, "%Y-%m-%d").date()
+    days = [target_day - timedelta(days=1), target_day, target_day + timedelta(days=1)]
+    return [
+        f"{config.prefix}/year={day.year:04d}/month={day.month:02d}/day={day.day:02d}/"
+        for day in days
+    ]
+
+
+def list_owntracks_s3_keys(config: OwnTracksS3Config, day_text: str) -> list[str]:
+    keys: list[str] = []
+    region_args = ["--region", config.region] if config.region else []
+    for prefix in owntracks_s3_day_prefixes(config, day_text):
+        token: str | None = None
+        while True:
+            args = [
+                "s3api",
+                "list-objects-v2",
+                "--bucket",
+                config.bucket,
+                "--prefix",
+                prefix,
+                *region_args,
+            ]
+            if token:
+                args.extend(["--continuation-token", token])
+            payload = aws_cli_json(args)
+            for item in payload.get("Contents") or []:
+                key = str(item.get("Key") or "")
+                if key.endswith(".json"):
+                    keys.append(key)
+            token = payload.get("NextContinuationToken")
+            if not token:
+                break
+    return sorted(set(keys))
+
+
+def get_owntracks_s3_record(config: OwnTracksS3Config, key: str) -> dict[str, Any] | None:
+    region_args = ["--region", config.region] if config.region else []
+    with tempfile.NamedTemporaryFile() as temp:
+        aws_cli_json(
+            [
+                "s3api",
+                "get-object",
+                "--bucket",
+                config.bucket,
+                "--key",
+                key,
+                temp.name,
+                *region_args,
+            ]
+        )
+        try:
+            payload = json.loads(Path(temp.name).read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
+    if isinstance(payload, dict):
+        return payload
+    return None
+
+
+def owntracks_timestamp(payload: dict[str, Any], record: dict[str, Any]) -> datetime | None:
+    tst = parse_float(payload.get("tst"))
+    if tst is not None:
+        parsed = datetime.fromtimestamp(tst, tz=LOCAL_TZ)
+        if LOCAL_TZ is not None:
+            return parsed.astimezone(LOCAL_TZ)
+        return parsed
+    received = parse_timestamp(str(record.get("received_at") or ""))
+    return received
+
+
+def owntracks_position_from_record(record: dict[str, Any]) -> Position | None:
+    payload = record.get("payload")
+    if not isinstance(payload, dict):
+        return None
+    timestamp = owntracks_timestamp(payload, record)
+    latitude = parse_float(first_present(payload.get("lat"), payload.get("latitude")))
+    longitude = parse_float(first_present(payload.get("lon"), payload.get("longitude")))
+    if timestamp is None or latitude is None or longitude is None:
+        return None
+    speed_kph = parse_float(first_present(payload.get("vel"), payload.get("speed"))) or 0.0
+    return Position(
+        timestamp=timestamp,
+        latitude=latitude,
+        longitude=longitude,
+        speed_kph=speed_kph,
+        address="",
+    )
+
+
+def fetch_owntracks_s3_positions(config: OwnTracksS3Config, day_text: str) -> list[Position]:
+    target_day = datetime.strptime(day_text, "%Y-%m-%d").date()
+    positions: list[Position] = []
+    for key in list_owntracks_s3_keys(config, day_text):
+        record = get_owntracks_s3_record(config, key)
+        if record is None:
+            continue
+        position = owntracks_position_from_record(record)
+        if position is None:
+            continue
+        if position.timestamp.date() == target_day:
+            positions.append(position)
+    positions.sort(key=lambda item: item.timestamp)
+    return positions
+
+
 def load_places(path: Path) -> list[SavedPlace]:
     if not path.exists():
         return []
@@ -354,6 +491,13 @@ def parse_float(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def first_present(*values: Any) -> Any:
+    for value in values:
+        if value is not None and value != "":
+            return value
+    return None
 
 
 def haversine_km(a: Position, b: Position) -> float:
@@ -532,10 +676,16 @@ def summarize_report_stops(stops: list[ReportStop], places: list[SavedPlace]) ->
     return summaries[:8]
 
 
-def print_summary(day_text: str, config: TraccarConfig, positions: list[Position], places: list[SavedPlace]) -> None:
+def print_summary(
+    day_text: str,
+    positions: list[Position],
+    places: list[SavedPlace],
+    source_label: str,
+    config: TraccarConfig | None = None,
+) -> None:
     print(f"Location context for {day_text}:")
     if not positions:
-        print("- No Traccar positions found for this date.")
+        print(f"- No {source_label} positions found for this date.")
         return
 
     total_distance_km = 0.0
@@ -550,6 +700,7 @@ def print_summary(day_text: str, config: TraccarConfig, positions: list[Position
     first = positions[0]
     last = positions[-1]
     current_place = nearest_saved_place(last, places)
+    print(f"- Source: {source_label}")
     print(f"- Position samples: {len(positions)}")
     print(f"- First seen: {first.timestamp.strftime('%H:%M')} | {first.latitude:.4f}, {first.longitude:.4f}")
     print(f"- Last seen: {last.timestamp.strftime('%H:%M')} | {last.latitude:.4f}, {last.longitude:.4f}")
@@ -560,11 +711,12 @@ def print_summary(day_text: str, config: TraccarConfig, positions: list[Position
     print(f"- Peak observed speed: {max_speed:.1f} km/h")
 
     stops: list[str] = []
-    try:
-        report_stops = fetch_report_stops(config, day_text)
-        stops = summarize_report_stops(report_stops, places)
-    except Exception:
-        stops = []
+    if config is not None:
+        try:
+            report_stops = fetch_report_stops(config, day_text)
+            stops = summarize_report_stops(report_stops, places)
+        except Exception:
+            stops = []
 
     if not stops:
         stops = summarize_stop_clusters(positions, places)
@@ -580,6 +732,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Print Traccar location context for a target date.")
     parser.add_argument("--date", default=date.today().isoformat(), help="Target date YYYY-MM-DD (default: today)")
     args = parser.parse_args()
+
+    places = load_places(PLACES_FILE)
+    owntracks_s3_config = build_owntracks_s3_config()
+    if owntracks_s3_config is not None:
+        try:
+            owntracks_positions = fetch_owntracks_s3_positions(owntracks_s3_config, args.date)
+        except Exception:
+            owntracks_positions = []
+        if owntracks_positions:
+            print_summary(args.date, owntracks_positions, places, "OwnTracks/S3")
+            return 0
 
     config = build_config()
     if config is None:
@@ -598,8 +761,7 @@ def main() -> int:
         print(f"Location context for {args.date}: skipped ({exc.__class__.__name__}).")
         return 0
 
-    places = load_places(PLACES_FILE)
-    print_summary(args.date, config, positions, places)
+    print_summary(args.date, positions, places, "Traccar", config=config)
     return 0
 
 

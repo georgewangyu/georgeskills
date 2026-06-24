@@ -1,20 +1,25 @@
 ---
 name: transcribe-offline-meeting
 description: Processes offline audio recordings from an external mic into the daily log pipeline.
-version: 1.0
-tags:
-  - audio
-  - journal
-  - transcription
+metadata:
+  version: 1.0
+  tags:
+    - audio
+    - journal
+    - transcription
 ---
 # Transcribe Offline Meeting
 
 ## Purpose
-This skill defines the process for an agent to take a raw `.wav` or `.mp3` file (typically recorded offline via a DJI Mic 2 or Dictaphone), transcribe it using Whisper (Transcription Only), and then use the AI's natural language understanding to provide a speaker-labeled summary in the LifeRepo `DAILY_SUMMARY_WORKFLOW`.
+This skill defines the process for an agent to take a raw `.wav` or `.mp3` file
+(typically recorded offline via a DJI Mic 2 or Dictaphone), transcribe it using
+the native ARM64 MLX Whisper path, and then use the AI's natural language
+understanding to provide a speaker-labeled summary in the LifeRepo
+`DAILY_SUMMARY_WORKFLOW`.
 
 ## Script Usage
 The core transcription utility is located at:
-`georgeskills/scripts/transcription/whisperx_transcriber.py`
+`georgeskills/scripts/transcription/mlx_transcriber.py`
 
 ### PREREQUISITES
 1. The agent/user must use the native ARM64 virtual environment:
@@ -22,27 +27,27 @@ The core transcription utility is located at:
 
 ## Execution
 
-You have two modes depending on your recording length and hardware:
+Use the MLX path for transcription. Do not choose WhisperX,
+`whisper-ctranslate2`, or generic CPU Whisper as a normal fallback for this
+workflow. If MLX fails, fix the MLX environment first: native ARM64 venv,
+working `mlx` / `mlx_whisper` imports, and a valid Hugging Face cache.
 
-### Option A: Balanced Mode (WhisperX)
-*Best for short files (< 15 mins) where you want a backup speaker-label pass.*
 ```bash
 source georgeskills/scripts/transcription/venv/bin/activate
-source georgerepo/.tokens/huggingface.env
-python georgeskills/scripts/transcription/whisperx_transcriber.py /path/to/file.wav --device cpu --outdir /georgerepo/journal/audio/transcripts/
-```
-
-### Option B: Hyper-Speed Mode (MLX)
-*Best for long files (hours long). Uses Mac GPU/Neural Engine. 5x-10x faster.*
-```bash
-source georgeskills/scripts/transcription/venv/bin/activate
-python georgeskills/scripts/transcription/mlx_transcriber.py /path/to/file.wav --outdir /georgerepo/journal/audio/transcripts/
+HF_HOME=<stable-huggingface-cache> python georgeskills/scripts/transcription/mlx_transcriber.py /path/to/file.wav --outdir /georgerepo/journal/audio/transcripts/
 ```
 
 Current defaults for the MLX path:
 - model: `mlx-community/whisper-large-v3-turbo`
 - preprocessing: built-in silence trimming / energy-based VAD before transcription
 - fallback: if the turbo model fails to load or run, the script retries `mlx-community/whisper-large-v3-mlx-4bit`
+- environment: use the native ARM64 transcription venv. If the default
+  Hugging Face cache is stale or points at a missing volume, set `HF_HOME` to a
+  stable local cache before running the MLX script.
+
+Do not use the old CPU transcriber to work around a local setup issue. Treat
+MLX import/cache/model failures as environment blockers and record the blocker
+in the daily summary or command notes.
 
 Storage rule:
 - Keep `Workspace/dji-audio/` raw-only.

@@ -1,0 +1,3 @@
+display_name: Social Video Archive Ops
+short_description: Archive social videos outside repos.
+default_prompt: Archive this social video for reference using the external raw-media archive and repo-side provenance note.
