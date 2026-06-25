@@ -23,6 +23,7 @@ Use one stable media root chosen by the user or private repo.
 
 ```text
 <media-root>/
+  _CURRENT_WEEK -> batches/YYYY/YYYY-Www_video-batch/
   batches/
     YYYY/
       YYYY-Www_video-batch/
@@ -43,6 +44,10 @@ Use one stable media root chosen by the user or private repo.
 Rules:
 - Use `YYYY-Www_video-batch`, not weekday-specific names. A batch can span
   filming, editing, export, and posting across multiple days.
+- Treat `<media-root>/_CURRENT_WEEK` as a convenience symlink to the newest or
+  selected active weekly batch. Refresh it whenever creating or switching the
+  active weekly batch. If the path exists and is not a symlink, stop and report
+  it instead of replacing a real directory.
 - Keep one folder per video inside the batch.
 - Shared scratch or raw-materials holding folders should not use the
   `YYYY-MM-DD_video-slug` pattern. Use a plain name like
@@ -107,6 +112,10 @@ Never silently guess when two projects could plausibly own the same export.
    - Keep private absolute paths out of reusable skill files.
 2. Create or update the batch.
    - Use the publish or production week as `YYYY-Www_video-batch`.
+   - After the batch directory exists, refresh the current-week symlink:
+     `scripts/refresh_current_week_symlink.py --media-root <media-root> --batch-dir <batch-dir> --dry-run`,
+     then run the same command without `--dry-run` when it points at the
+     intended batch.
    - Add one project folder per selected video.
    - For each selected video, also prepare a same-name empty editor project
      shell or editor-project pointer:
@@ -176,6 +185,7 @@ Use this shape for final-video normalization:
 
 Return:
 - batch folder path
+- current-week symlink path and refresh status
 - per-video project folder list
 - per-video editor project shell or manual editor-project creation status
 - show-slot coverage status, when a weekday show calendar exists
