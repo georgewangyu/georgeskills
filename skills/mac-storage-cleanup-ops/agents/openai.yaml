@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mac Storage Cleanup Ops"
+  short_description: "Find safe Mac cleanup targets."
+  default_prompt: "Evaluate my Mac disk usage and show safe cleanup candidates before deleting anything."

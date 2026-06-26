@@ -128,6 +128,7 @@ georgeskills/
 | `frontend-polish-pass-ops` | Final polish pass: responsiveness, accessibility, hierarchy, interaction quality, and perceived performance. |
 | `pencil-design-orchestration-ops` | Run a repeatable Pencil MCP design workflow from the coding agent through to frontend handoff. |
 | `disk-space-ops` | Inspect disk usage, highlight large folders/files, and suggest conservative cleanup targets with risk framing. |
+| `mac-storage-cleanup-ops` | Evaluate recurring macOS cleanup candidates, separate safe-ish caches/logs from review-first app data, and guide conservative cleanup passes. |
 
 ### Journal and Workflow
 
