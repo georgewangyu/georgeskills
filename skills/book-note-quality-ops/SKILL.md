@@ -67,6 +67,39 @@ Block if:
 
 ## Review Workflow
 
+### Bulk Audit Rule
+
+For large audits, preserve the main context by splitting the review across
+subagents whenever subagent tooling is available.
+
+Use subagents when any of these are true:
+- auditing 10 or more books
+- auditing more than roughly 10,000 words of note content
+- comparing source markdown, generated catalog data, rendered pages, and
+  copyable markdown across many records
+- the task is likely to require several independent passes for privacy, quality,
+  and consistency
+
+Parent-agent responsibilities:
+- define the audit rubric and pass/block criteria once
+- assign bounded batches, normally 5-8 books per subagent
+- tell each subagent to return only status, issues, suggested fixes, and file or
+  record identifiers
+- keep raw private notes out of subagent prompts unless they are required for
+  the assigned review
+- aggregate the subagent findings into one final decision list
+- run deterministic validators or grep checks after any edits
+
+Subagent responsibilities:
+- inspect only the assigned batch
+- score each note `pass`, `revise`, or `block`
+- flag public-safety risks, thin summaries, stale copyable markdown, and generic
+  recommendation text
+- avoid rewriting the whole note unless explicitly assigned a rewrite batch
+
+If subagent tooling is not available, process the audit in small batches and
+report that the subagent split was unavailable.
+
 1. Identify the source layer:
    - raw/private import
    - reviewed public markdown
