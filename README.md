@@ -52,6 +52,30 @@ georgeskills/
 
 ## Skill Catalog
 
+### Current Highlights
+
+These are the skill clusters that have been moving fastest recently:
+
+- **Books and reading workflows:** `apple-books-export-ops` exports Apple Books
+  annotations; `book-note-quality-ops` checks whether book notes are
+  public-ready before they feed a catalog or Books Radar-style site.
+- **Social video production:** `weekly-video-batch-ops`,
+  `capcut-ai-edit-reel-ops`, `shortform-rough-cut-ops`, and
+  `social-video-archive-ops` cover batch planning, edit preparation, final
+  export handling, and durable reference-video archives.
+- **Voice and writing:** `voice-calibration-ops` builds a source-derived voice
+  profile and applies it to posts, essays, emails, and launch notes.
+- **Repo and workflow quality:** `repo-readme-onboarding-ops`,
+  `decision-gate-ops`, `live-proof-gate-ops`, and
+  `agent-eval-harness-ops` turn recurring judgment calls into inspectable
+  rubrics, proof gates, and README/onboarding passes.
+- **Local operations:** `mac-storage-cleanup-ops` and `disk-space-ops` separate
+  safe-ish cleanup candidates from review-first app data.
+- **Frontend and catalog work:** `frontend-catalog-design-ops`,
+  `frontend-art-direction-ops`, `frontend-polish-pass-ops`, and
+  `video-companion-page-ops` support public catalogs, companion pages, and
+  polished frontend prototypes.
+
 ### Data Exports
 
 | Skill | Description |
@@ -70,9 +94,13 @@ georgeskills/
 |---|---|
 | `voice-calibration-ops` | Build or apply a source-derived writing voice profile, then draft or revise prose so it matches real samples instead of generic AI style. |
 | `x-check-xbot` | Pull X/Twitter home and latest feeds with the native xbot engine. Summarizes signal themes. |
+| `x-post-xbot` | Post to X/Twitter through the local xbot official API path after public-safety and approval checks. |
+| `x-post-ops` | Legacy Bird-based daily X drafting/posting workflow; prefer `x-post-xbot` for approved publishing. |
 | `x-check-bird` | Deprecated legacy Bird fallback for explicit baseline or blocked-xbot cases only. |
 | `tiktok-check-ops` | Check TikTok account or video public metadata and recent content. |
+| `tiktok-transcribe-ops` | Transcribe a TikTok video to text, preferring captions or subtitles before local audio fallback. |
 | `instagram-check-ops` | Check Instagram account or post public status and profile metadata. |
+| `instagram-transcribe-ops` | Transcribe an Instagram Reel or video post to text, preferring subtitles before local audio fallback. |
 | `instagram-carousel-ops` | Create branded Instagram carousel assets, including PNG posters, short MP4 motion pages, editable references, and posting notes. |
 | `social-screen-control-ops` | Use Codex Computer Use for bounded logged-in visual checks on social-media pages when CLI or Playwright paths are blocked. |
 | `social-motion-diagram-ops` | Create Excalidraw-style static diagrams and short looping motion assets for LinkedIn/X/social drafts. |
@@ -103,6 +131,7 @@ georgeskills/
 | `person-ignition-case-study-ops` | Research how a public creator, founder, builder, or operator got their first major audience, reputation, or open-source traction spike. |
 | `customer-pain-mining-ops` | Mine reviews, forums, and App Store comments for repeated user pain points and unmet needs. |
 | `product-hunt-trends-ops` | Scout Product Hunt launches for interesting products, breakout signals, positioning patterns, and market ideas. |
+| `github-trends-ops` | Fetch and analyze GitHub trending repositories to surface daily or weekly developer-signal clusters. |
 | `ignitionbot-trend-radar-ops` | Run IgnitionBot scored trend sweeps across developer, social, video, RSS, web, and watchlist sources. |
 | `yc-company-scouting-ops` | Scout YC companies, batches, and Launch YC posts for standout startups, batch themes, and useful product ideas. |
 | `deep-exploration-ops` | Exploration artifact processing and framework distillation support. |
@@ -117,6 +146,7 @@ georgeskills/
 | `saas-template-fit-ops` | Map a chosen SaaS idea to the right template shape: account model, billing, architecture constraints. |
 | `naming-ops` | Generate and screen brandable company, product, and SaaS names with domain and trademark checks. |
 | `sales-discovery-email-ops` | Write respectful first-touch outbound emails for sales discovery and consulting outreach. |
+| `resend-ops` | Set up or maintain Resend email integration, env wiring, and deployment-secret configuration. |
 | `stripe-ops` | Reusable local Stripe setup workflow using shared private credentials, Stripe CLI, and the installed upstream Stripe skills. |
 | `tax-filing-ops` | Build a repeatable tax-prep workflow with checklist automation, product-specific filing runbooks, and human-reviewed submission gates. |
 
@@ -149,7 +179,6 @@ georgeskills/
 | `health-ops` | Health data ingestion and derived analytics workflows (Apple Health pipeline). |
 | `memory-ops` | Structured memory extraction, validation, promotion, and document salience indexing. |
 | `knowledge-ops` | Maintain compiled knowledge pages between raw source artifacts and compact structured memory. |
-| `aida-ops` | Aida workflow bookkeeping and audit tooling. |
 | `utility-ops` | Resume conversion, PDF text helpers, repo summary generation, and frontmatter backfills. |
 | `pdf-reconstruction-ops` | PDF and image text extraction and OCR pre-processing. |
 
@@ -160,6 +189,12 @@ georgeskills/
 | `resume-role-tailoring-ops` | Tailor resumes to a target JD, company, role family, and ATS keyword plan while preserving truthful evidence. |
 | `resume-formatting-ops` | Fix resume formatting, build PDFs, check one-page fit, and verify ATS parseability before submission. |
 | `resume-ats-validation-ops` | Validate resume variants for parser sanity, keyword coverage, truthful tailoring, and required content preservation. |
+
+### Legacy / Maintenance
+
+| Skill | Description |
+|---|---|
+| `aida-ops` | Maintenance-only Aida bookkeeping and audit tooling. Aida itself is no longer an active workspace project. |
 
 ---
 

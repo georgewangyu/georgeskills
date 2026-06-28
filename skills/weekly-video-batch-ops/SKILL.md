@@ -1,6 +1,6 @@
 ---
 name: weekly-video-batch-ops
-description: Organize recurring short-form video batch production folders and final-export handling. Use when planning weekly TikTok, Instagram Reels, or YouTube Shorts batches; setting up batch/project media folders; handling CapCut export inboxes with awkward default names; normalizing final video names; creating quick-access final-video indexes; or refreshing weekly phone-transfer bundles.
+description: Organize recurring short-form video batch production folders, final-export handling, and owned-platform posting audits. Use when planning weekly TikTok, Instagram Reels, or YouTube Shorts batches; setting up batch/project media folders; handling CapCut export inboxes with awkward default names; normalizing final video names; creating quick-access final-video indexes; refreshing weekly phone-transfer bundles; or checking which final videos have already been posted.
 memory_tags:
   - domain:social-media
   - workflow:weekly-video-batch
@@ -152,6 +152,17 @@ Never silently guess when two projects could plausibly own the same export.
      plan or private log.
    - Make sure the weekly phone-transfer bundle contains every final media file
      the creator may need to copy or AirDrop to a phone.
+   - When the user asks which videos have been posted, which finals still need
+     posting, or what remains for the week, run an owned-platform posting audit
+     instead of relying only on the plan. Prefer configured local tools such as
+     `igbot my-media --max-results <n> --format json` and
+     `tiktokbot my-videos --max-results <n> --format json` when available;
+     otherwise use the relevant platform-check skill or clearly report the
+     missing data source.
+   - Compare recent owned Instagram/TikTok posts against the final-video
+     bundle, project slugs, captions, dates, and known same-day exceptions.
+     Record matched links and mark unmatched finals as `needs posting`, not as
+     done.
    - Rename completed project folders according to the local completion
      convention, then update any weekly plan paths that pointed at the old
      folder name.
@@ -192,6 +203,8 @@ Return:
 - CapCut export inbox path
 - weekly phone-transfer bundle path
 - final-video mapping status
+- owned-platform posting audit status, including tools used and matched /
+  unmatched finals when the task involves posting state
 - dry-run command and result for any normalization
 - transfer-bundle refresh command and result
 - unresolved exports that need human review
