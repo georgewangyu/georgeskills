@@ -145,3 +145,6 @@ When the task includes documentation maintenance:
 
 For a compact source-strength reference, see
 `references/source-strength.md`.
+
+For generic external hook formulas that can be adapted when no owned-account
+pattern fits, see `references/external-hook-patterns.md`.
