@@ -90,6 +90,7 @@ georgeskills/
 | `broad-video-trend-radar-ops` | Run broad cross-platform trend sweeps for high-multiplier short-form formats outside a narrow niche. |
 | `shortform-rough-cut-ops` | Turn raw short-form clips, creator intent, and format runbooks into an edit decision list and rough draft plan. |
 | `video-companion-page-ops` | Create local HTML/blog-style companion pages for educational videos with clickable sources, screenshots, diagrams, and talking outlines. |
+| `static-note-share-ops` | Publish selected local notes, transcripts, or research docs as sanitized static share pages with explicit redaction and deployment gates. |
 
 ### Research
 

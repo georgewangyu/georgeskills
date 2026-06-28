@@ -1,0 +1,4 @@
+interface:
+  display_name: "Static Note Share Ops"
+  short_description: "Publish sanitized notes as static share pages"
+  default_prompt: "Create a public-safe static share page from a selected note."
