@@ -43,7 +43,9 @@ def clone_or_copy(source: Path, target: Path) -> None:
 
 def collect_final_files(batch_dir: Path, final_subdir: str, exts: set[str]) -> list[Path]:
     files: list[Path] = []
-    for project_dir in sorted(path for path in batch_dir.iterdir() if path.is_dir()):
+    for project_dir in sorted(
+        path for path in batch_dir.iterdir() if path.is_dir() and not path.is_symlink()
+    ):
         final_dir = project_dir / final_subdir
         if not final_dir.is_dir():
             continue

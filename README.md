@@ -157,6 +157,8 @@ These are the skill clusters that have been moving fastest recently:
 | `website-page-planning-ops` | Turn a rough site concept into a concrete page plan with section structure and CTA map before design starts. |
 | `frontend-art-direction-ops` | Build visual direction for a product UI: style references, typography, color tokens, layout and motion rules. |
 | `frontend-catalog-design-ops` | Start catalog-first frontend prototypes for searchable indexes, libraries, radars, directories, and contribution-backed resource hubs. |
+| `website-github-issue-form-ops` | Add or retrofit bottom-page GitHub-backed request, contribution, feedback, or audience intake forms with server-side issue creation. |
+| `installable-skill-lead-gate-ops` | Add a Books/Loops-style email unlock before showing installable skill commands, with Supabase lead storage and repo-star activation. |
 | `frontend-polish-pass-ops` | Final polish pass: responsiveness, accessibility, hierarchy, interaction quality, and perceived performance. |
 | `pencil-design-orchestration-ops` | Run a repeatable Pencil MCP design workflow from the coding agent through to frontend handoff. |
 | `disk-space-ops` | Inspect disk usage, highlight large folders/files, and suggest conservative cleanup targets with risk framing. |

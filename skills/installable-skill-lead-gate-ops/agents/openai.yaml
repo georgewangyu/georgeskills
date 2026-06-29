@@ -1,0 +1,4 @@
+interface:
+  display_name: "Installable Skill Lead Gate"
+  short_description: "Add an email unlock to skill websites"
+  default_prompt: "Use $installable-skill-lead-gate-ops to add a Books/Loops-style email unlock before showing an installable skill command."

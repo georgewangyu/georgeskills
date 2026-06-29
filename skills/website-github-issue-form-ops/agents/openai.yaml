@@ -1,0 +1,4 @@
+interface:
+  display_name: "Website GitHub Issue Form"
+  short_description: "Add GitHub-backed site request forms"
+  default_prompt: "Use $website-github-issue-form-ops to add a GitHub-backed request form to the bottom of this website."
