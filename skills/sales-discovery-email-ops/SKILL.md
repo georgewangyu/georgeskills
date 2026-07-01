@@ -1,21 +1,31 @@
 ---
 name: sales-discovery-email-ops
-description: Write short, respectful first-touch sales discovery emails for consulting, services, or workflow offers, with a soft CTA and no aggressive close.
+description: Generate short, respectful first-touch lead messages for sales discovery across email, LinkedIn, DMs, or similar outreach, especially for consulting, services, workflow, or AI automation offers.
+memory_tags:
+  - domain:business
+  - workflow:sales-discovery
+  - skill_role:generator
+  - repo_boundary:tools
+  - inputs:offer-context
+  - outputs:lead-message-drafts
+  - risk:medium
 ---
 
-# Sales Discovery Email Ops
+# Sales Discovery Message Ops
 
 ## Trigger
 
 Use when:
-- the user wants first-touch outbound emails for a service, consulting offer, or design/build engagement
+- the user wants first-touch outbound messages for a service, consulting offer, or design/build engagement
+- the user wants to generate lead messages for email, LinkedIn, DMs, or similar outreach
 - the goal is a discovery call, reply, or lightweight conversation
 - the draft must avoid sounding like a teardown, pricing pitch, or generic spam
 
 Do not use when:
-- the user wants a proposal, quote, negotiation email, or closing email
+- the user wants a proposal, quote, negotiation message, or closing message
 - the recipient already asked for pricing or scope details
 - the task is support, account management, or post-sale follow-up
+- the user wants to critique an existing lead message; use the companion evaluator skill instead
 
 ## Workflow
 
@@ -38,6 +48,14 @@ Do not use when:
    - or offer to send a few ideas
    - never force urgency unless the user explicitly wants that tone
 
+## Generator / Evaluator Boundary
+
+This is a **generator** skill. It should create plausible first-touch messages
+from buyer, pain, offer, and proof context.
+
+If the user already has a draft and wants to know whether it is good, specific,
+or likely to get replies, use `sales-message-evaluator-ops` instead.
+
 ## Default Structure
 
 ```text
@@ -55,6 +73,18 @@ If this is relevant, would you be open to a quick 15-minute discovery call somet
 
 Best,
 {{sender}}
+```
+
+## DM / Short Message Structure
+
+```text
+Hey {{name}}, quick question.
+
+I’m testing a small {{offer_type}} offer for {{target_type}}.
+
+The idea is simple: {{specific_result}} without {{main_friction}}.
+
+Do you have any recurring {{pain_area}} work right now that feels manual, annoying, or easy to forget?
 ```
 
 ## Tone Rules
@@ -109,6 +139,7 @@ Keep the workflow guess narrow and concrete.
 Return:
 - 2-5 subject line options
 - one primary email draft
+- one short DM/LinkedIn variant when useful
 - one softer variant if tone is uncertain
 - 1-3 bullet notes on why the personalization works
 

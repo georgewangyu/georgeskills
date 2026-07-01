@@ -23,9 +23,22 @@ memory_tags:
 ## Recommended Tags
 
 - `workflow:<name>`
+- `skill_role:<generator|evaluator|operator|researcher|orchestrator>`
 - `risk:<low|medium|high>`
 - `inputs:<type>`
 - `outputs:<type>`
+
+## Skill Role Tags
+
+- `skill_role:generator` creates candidate artifacts: drafts, plans,
+  messages, scripts, names, or designs.
+- `skill_role:evaluator` judges an existing artifact against a rubric and
+  returns scores, risks, required fixes, or a pass/fail decision.
+- `skill_role:operator` runs a concrete workflow against files, APIs, local
+  tools, or external state.
+- `skill_role:researcher` gathers and synthesizes evidence before a decision.
+- `skill_role:orchestrator` routes, sequences, or coordinates other skills and
+  workflow state.
 
 ## Rule
 
