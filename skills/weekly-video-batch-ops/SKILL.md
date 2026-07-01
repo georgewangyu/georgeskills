@@ -4,6 +4,7 @@ description: Organize recurring short-form video batch production folders, final
 memory_tags:
   - domain:social-media
   - workflow:weekly-video-batch
+  - skill_role:operator
   - repo_boundary:tools
   - outputs:video-batch
   - risk:medium
@@ -169,6 +170,26 @@ Never silently guess when two projects could plausibly own the same export.
    - Preserve compatibility symlinks for old CapCut-facing paths when a
      completed-folder rename would otherwise break them.
    - Carry unused but good topics into the next batch plan.
+
+## Video Brief Shape
+
+When creating or updating per-video planning Markdown, start with the smallest
+usable creative unit before any longer production notes:
+
+```text
+## Hook / Beat / Twist
+
+- Hook: [one spoken/on-screen opener]
+- Beat 1: [first concrete progression beat]
+- Beat 2: [second concrete progression beat]
+- Twist: [payoff, turn, or button]
+```
+
+Keep this block near the top, directly after the title/frontmatter. Longer
+sections such as shot lists, captions, sponsor notes, proof assets, and folder
+paths can follow, but they should not hide the hook, main beats, or twist. If
+the user is trying to review or choose videos quickly, prefer this compact
+block over a long script.
 
 ## Mapping File
 
