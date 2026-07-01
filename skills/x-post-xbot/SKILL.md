@@ -4,9 +4,12 @@ description: Post to X/Twitter through the local xbot official API path using ap
 memory_tags:
   - domain:social-media
   - workflow:posting
+  - skill_role:operator
+  - repo_boundary:tools
   - engine:xbot-native
   - auth:official-api
   - platform:x-twitter
+  - risk:high
 ---
 
 # X Post Xbot

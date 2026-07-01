@@ -4,6 +4,7 @@ description: Mine journals, transcripts, pull requests, commit history, scripts,
 memory_tags:
   - domain:workflow-systems
   - workflow:skill-forging
+  - skill_role:orchestrator
   - repo_boundary:tools
   - risk:medium
 ---

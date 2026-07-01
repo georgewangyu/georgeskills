@@ -4,6 +4,7 @@ description: Export Cursor chats into private artifacts for later search, review
 memory_tags:
   - domain:cursor
   - workflow:chat-export
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - inputs:chat-history

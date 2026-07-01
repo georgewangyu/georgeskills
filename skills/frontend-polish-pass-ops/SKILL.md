@@ -4,6 +4,7 @@ description: Run a final frontend polish pass for responsiveness, accessibility,
 memory_tags:
   - domain:frontend-design
   - workflow:ui-polish
+  - skill_role:evaluator
   - repo_boundary:tools
   - inputs:implemented-ui
   - outputs:polish-checklist

@@ -4,6 +4,7 @@ description: Check disk usage on a Mac or Linux machine, surface the largest fol
 memory_tags:
   - domain:storage
   - workflow:disk-audit
+  - skill_role:operator
   - repo_boundary:tools
   - inputs:filesystem
   - outputs:cleanup-report

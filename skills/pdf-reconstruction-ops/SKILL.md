@@ -4,6 +4,7 @@ description: Modular tooling for PDF/image text extraction and OCR pre-processin
 memory_tags:
   - domain:pdf-reconstruction
   - workflow:extract-ocr
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - risk:medium

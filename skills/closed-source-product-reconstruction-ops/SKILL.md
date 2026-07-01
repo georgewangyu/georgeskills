@@ -4,6 +4,7 @@ description: Analyze a public closed-source product's visible stack, UI/API patt
 memory_tags:
   - domain:product-research
   - workflow:closed-source-reconstruction
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:rebuild-plan

@@ -1,6 +1,14 @@
 ---
 name: video-companion-page-ops
 description: Create local HTML/blog-style companion pages for educational long-form videos, explainers, demos, and presentation-style recordings. Use when the user wants a first local page that explains a topic, includes clickable source/screenshot sections, supports a talking outline, and may later become a deployed website, blog post, or SEO artifact.
+memory_tags:
+  - domain:publishing
+  - workflow:video-companion-page
+  - skill_role:generator
+  - repo_boundary:tools
+  - inputs:video-context
+  - outputs:companion-page
+  - risk:medium
 ---
 
 # Video Companion Page Ops

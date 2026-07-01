@@ -4,6 +4,7 @@ description: "Build a clear visual direction for a UI or landing page before imp
 memory_tags:
   - domain:frontend-design
   - workflow:art-direction
+  - skill_role:generator
   - repo_boundary:tools
   - inputs:product-brief
   - outputs:visual-spec

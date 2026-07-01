@@ -4,6 +4,7 @@ description: Check an Instagram account or post for public status and basic meta
 memory_tags:
   - domain:social-media
   - workflow:account-check
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:status-report

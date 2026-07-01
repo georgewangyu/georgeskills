@@ -7,14 +7,14 @@ description: >-
   standard bottom-page request form, or when GitHub issue routing, labels,
   server-side tokens, environment variables, and verification need to be wired
   consistently.
-metadata:
-  memory_tags:
-    - domain:frontend
-    - workflow:github-issue-intake
-    - inputs:website
-    - outputs:code-change
-    - risk:medium
-    - repo_boundary:tools
+memory_tags:
+  - domain:frontend
+  - workflow:github-issue-intake
+  - skill_role:operator
+  - inputs:website
+  - outputs:code-change
+  - risk:medium
+  - repo_boundary:tools
 ---
 
 # Website GitHub Issue Form Ops

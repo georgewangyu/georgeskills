@@ -4,6 +4,7 @@ description: Set up or maintain Resend email integration, env wiring, and deploy
 memory_tags:
   - domain:email
   - workflow:resend-setup
+  - skill_role:operator
   - repo_boundary:tools
   - risk:high
 ---

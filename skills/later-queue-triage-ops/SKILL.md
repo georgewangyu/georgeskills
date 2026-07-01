@@ -4,6 +4,7 @@ description: Convert later/backlog queues into source-first decision cards with 
 memory_tags:
   - domain:workflow
   - workflow:queue-triage
+  - skill_role:orchestrator
   - repo_boundary:tools
   - inputs:queue
   - outputs:decision-cards

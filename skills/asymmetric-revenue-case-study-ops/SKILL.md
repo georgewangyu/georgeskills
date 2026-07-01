@@ -4,6 +4,7 @@ description: Produce single-company case studies for small-team, under-the-radar
 memory_tags:
   - domain:market-research
   - workflow:revenue-density-case-study
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:case-study

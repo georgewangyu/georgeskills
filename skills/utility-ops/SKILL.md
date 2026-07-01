@@ -4,6 +4,7 @@ description: Modular utility tooling for resume conversion, PDF text helpers, re
 memory_tags:
   - domain:utility
   - workflow:maintenance
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - risk:low

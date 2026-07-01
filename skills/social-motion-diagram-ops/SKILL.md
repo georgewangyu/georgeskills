@@ -4,6 +4,7 @@ description: Create Excalidraw-style static diagrams and short looping motion di
 memory_tags:
   - domain:social-media
   - workflow:motion-diagram
+  - skill_role:generator
   - inputs:draft
   - outputs:visual-asset
   - repo_boundary:tools

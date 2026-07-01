@@ -4,6 +4,7 @@ description: Review Codex threads, rename vague or stale titles, and propose pin
 memory_tags:
   - domain:workflow
   - workflow:thread-hygiene
+  - skill_role:operator
   - repo_boundary:tools
   - outputs:codex-thread-updates
   - risk:medium

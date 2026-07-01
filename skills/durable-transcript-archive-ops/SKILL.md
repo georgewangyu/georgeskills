@@ -4,6 +4,7 @@ description: Preserve transcripts and source media into a durable archive after 
 memory_tags:
   - domain:media
   - workflow:transcript-archiving
+  - skill_role:operator
   - repo_boundary:tools
   - inputs:media-artifacts
   - outputs:archived-transcript

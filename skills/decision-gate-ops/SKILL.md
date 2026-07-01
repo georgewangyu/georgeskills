@@ -4,6 +4,7 @@ description: Evaluate meaningful operational, automation, product, workflow, or 
 memory_tags:
   - domain:decision-making
   - workflow:decision-gate
+  - skill_role:evaluator
   - repo_boundary:tools
   - inputs:decision-context
   - outputs:decision-brief

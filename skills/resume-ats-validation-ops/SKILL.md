@@ -1,6 +1,14 @@
 ---
 name: resume-ats-validation-ops
 description: Validate resume variants for ATS parseability, role-targeted keyword coverage, truthful tailoring, one-page constraints, and required section/experience preservation before submission.
+memory_tags:
+  - domain:career
+  - workflow:resume-ats-validation
+  - skill_role:evaluator
+  - repo_boundary:tools
+  - inputs:resume
+  - outputs:validation-report
+  - risk:medium
 metadata:
   domain: resume
   workflow: ats-validation

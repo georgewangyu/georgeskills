@@ -4,6 +4,7 @@ description: Turn market, revenue, breakout, and pain research into a concrete p
 memory_tags:
   - domain:product-strategy
   - workflow:wedge-selection
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:research-findings
   - outputs:opportunity-shortlist

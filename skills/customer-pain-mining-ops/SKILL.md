@@ -4,6 +4,7 @@ description: Mine reviews and public discussions for repeated user pain points, 
 memory_tags:
   - domain:market-research
   - workflow:pain-mining
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:pain-point-map

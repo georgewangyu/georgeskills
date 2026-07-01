@@ -4,6 +4,7 @@ description: Plan and run a repeatable tax-prep workflow with AI-assisted checkl
 memory_tags:
   - domain:finance
   - workflow:tax-filing
+  - skill_role:operator
   - inputs:user-doc-inventory
   - outputs:filing-runbook
   - risk:high

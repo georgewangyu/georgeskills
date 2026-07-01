@@ -4,6 +4,7 @@ description: Maintain compiled knowledge pages that sit between raw source artif
 memory_tags:
   - domain:knowledge
   - workflow:compiled-knowledge
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - outputs:markdown-synthesis

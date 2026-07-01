@@ -4,6 +4,7 @@ description: Modular Aida workflow bookkeeping and audit tooling.
 memory_tags:
   - domain:aida
   - workflow:bookkeeping-audit
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - risk:medium

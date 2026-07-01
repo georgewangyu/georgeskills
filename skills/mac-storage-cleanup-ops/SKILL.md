@@ -4,6 +4,7 @@ description: Evaluate and optionally perform conservative macOS disk cleanup and
 memory_tags:
   - domain:storage
   - workflow:mac-cleanup
+  - skill_role:operator
   - repo_boundary:tools
   - inputs:filesystem
   - outputs:cleanup-plan

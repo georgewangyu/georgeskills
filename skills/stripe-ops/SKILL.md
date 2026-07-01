@@ -4,6 +4,7 @@ description: Use when a repo needs Stripe setup or maintenance through local sha
 memory_tags:
   - domain:payments
   - workflow:stripe-setup
+  - skill_role:operator
   - repo_boundary:tools
   - risk:high
 ---

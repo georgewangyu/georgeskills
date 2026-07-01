@@ -1,6 +1,14 @@
 ---
 name: niche-video-watchlist-ops
 description: Monitor a defined creator niche or watchlist for high-traction videos and repeatable content ideas.
+memory_tags:
+  - domain:video
+  - workflow:niche-watchlist
+  - skill_role:researcher
+  - repo_boundary:tools
+  - inputs:public-social-account
+  - outputs:watchlist-record
+  - risk:medium
 ---
 
 # Niche Video Watchlist Ops

@@ -4,6 +4,7 @@ description: Create branded Instagram carousel assets from a topic, blog, source
 memory_tags:
   - domain:social-media
   - workflow:instagram-carousel
+  - skill_role:generator
   - outputs:visual-assets
   - repo_boundary:tools
   - risk:medium

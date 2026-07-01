@@ -4,6 +4,7 @@ description: Modular tooling for exploration artifact processing and framework d
 memory_tags:
   - domain:deep-exploration
   - workflow:distill-frameworks
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - risk:low

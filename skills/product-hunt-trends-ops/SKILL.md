@@ -5,6 +5,7 @@ memory_tags:
   - domain:product-research
   - source:product-hunt
   - workflow:trend-scouting
+  - skill_role:researcher
   - repo_boundary:tools
   - risk:low
 ---

@@ -1,13 +1,13 @@
 ---
 name: social-video-archive-ops
 description: Archive reference videos from social platforms without putting large media inside active repos. Use when a user wants to download, preserve, transcribe, or keep a reference copy of an X/Twitter, YouTube, TikTok, Instagram, LinkedIn, Product Hunt, or other social/web video; when extracting direct MP4/HLS media URLs from platform metadata; or when creating repo-side provenance notes and symlinks that point to an external raw-media archive.
-metadata:
-  memory_tags:
-    - domain:social-media
-    - domain:transcripts
-    - workflow:video-archive
-    - repo_boundary:tools
-    - risk:medium
+memory_tags:
+  - domain:social-media
+  - domain:transcripts
+  - workflow:video-archive
+  - skill_role:operator
+  - repo_boundary:tools
+  - risk:medium
 ---
 
 # Social Video Archive Ops

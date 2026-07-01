@@ -4,6 +4,7 @@ description: Use when tailoring a senior software engineering resume to a specif
 memory_tags:
   - domain:resume
   - workflow:role-tailoring
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - risk:medium

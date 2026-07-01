@@ -4,8 +4,11 @@ description: Run IgnitionBot trend sweeps and return scored briefs across config
 memory_tags:
   - domain:trend-research
   - workflow:morning-radar
+  - skill_role:researcher
+  - repo_boundary:tools
   - source:multi-source
   - outputs:scored-brief
+  - risk:medium
 ---
 
 # IgnitionBot Trend Radar Ops

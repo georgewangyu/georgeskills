@@ -4,6 +4,7 @@ description: Use Codex Computer Use to inspect social-media pages in a local vis
 memory_tags:
   - domain:social-media
   - workflow:screen-control
+  - skill_role:operator
   - repo_boundary:tools
   - inputs:web
   - outputs:status-report

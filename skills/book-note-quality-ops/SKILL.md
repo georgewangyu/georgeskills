@@ -4,6 +4,7 @@ description: Evaluate and improve public-ready book recommendation notes before 
 memory_tags:
   - domain:books
   - workflow:public-note-quality
+  - skill_role:evaluator
   - repo_boundary:tools
   - inputs:markdown
   - outputs:quality-audit

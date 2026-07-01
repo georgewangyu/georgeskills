@@ -6,6 +6,14 @@ description: >-
   catalog, radar, directory, or resource hub distributes an installable skill
   and needs name/email lead capture, Supabase radar_leads storage, a repo-star
   CTA, Vercel env wiring, docs, and frontend tests.
+memory_tags:
+  - domain:skills
+  - workflow:lead-gate-installation
+  - skill_role:operator
+  - repo_boundary:tools
+  - inputs:skill-repo
+  - outputs:lead-gate
+  - risk:medium
 ---
 
 # Installable Skill Lead Gate Ops

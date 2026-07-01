@@ -4,6 +4,7 @@ description: "Research a software or app market: major categories, leaders, pric
 memory_tags:
   - domain:market-research
   - workflow:landscape-mapping
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:competitor-map

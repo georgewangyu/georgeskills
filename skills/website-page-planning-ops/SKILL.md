@@ -4,6 +4,7 @@ description: Turn a rough website or marketing-site idea into a concrete page pl
 memory_tags:
   - domain:frontend-design
   - workflow:page-planning
+  - skill_role:generator
   - repo_boundary:tools
   - inputs:site-brief
   - outputs:page-plan

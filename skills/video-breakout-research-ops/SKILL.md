@@ -4,6 +4,7 @@ description: Sweep TikTok, Instagram, and YouTube Shorts for low-base, high-trac
 memory_tags:
   - domain:social-media
   - workflow:breakout-concept-research
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:niche-brief
   - outputs:concept-shortlist

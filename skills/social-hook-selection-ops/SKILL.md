@@ -4,6 +4,7 @@ description: Select source-backed hooks for TikTok, Instagram Reels, and YouTube
 memory_tags:
   - domain:social-media
   - workflow:hook-selection
+  - skill_role:generator
   - outputs:recommendation
   - repo_boundary:tools
   - risk:low

@@ -4,6 +4,7 @@ description: Modular tooling for structured memory extraction, validation, promo
 memory_tags:
   - domain:memory
   - workflow:candidate-promotion
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - risk:medium

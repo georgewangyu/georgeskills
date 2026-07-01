@@ -4,6 +4,7 @@ description: Automate daily X (Twitter) posting by synthesizing content from jou
 memory_tags:
   - domain:social-media
   - workflow:content-generation
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - platform:x-twitter

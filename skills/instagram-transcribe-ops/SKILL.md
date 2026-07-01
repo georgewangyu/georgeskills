@@ -4,6 +4,7 @@ description: Transcribe an Instagram Reel or video post to text, preferring subt
 memory_tags:
   - domain:social-media
   - workflow:transcription
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:transcript

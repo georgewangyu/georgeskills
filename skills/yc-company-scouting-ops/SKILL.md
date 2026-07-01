@@ -5,6 +5,7 @@ memory_tags:
   - domain:startup-research
   - source:y-combinator
   - workflow:company-scouting
+  - skill_role:researcher
   - repo_boundary:tools
   - risk:low
 ---

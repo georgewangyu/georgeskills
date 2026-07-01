@@ -4,8 +4,11 @@ description: "Deprecated legacy X/Twitter Bird fallback; use only when x-check-x
 memory_tags:
   - domain:social-media
   - workflow:timeline-check
+  - skill_role:researcher
+  - repo_boundary:tools
   - engine:bird-legacy
   - status:deprecated
+  - risk:medium
 ---
 
 # X Check Bird (Legacy - DEPRECATED)

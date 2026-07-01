@@ -4,6 +4,7 @@ description: Modular tooling for journal ingestion, prep, and derived-context ge
 memory_tags:
   - domain:journal
   - workflow:daily-summary
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - risk:medium

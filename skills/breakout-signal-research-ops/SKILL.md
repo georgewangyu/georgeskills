@@ -4,6 +4,7 @@ description: Find apps or SaaS tools with breakout traction relative to a small 
 memory_tags:
   - domain:market-research
   - workflow:breakout-signal-detection
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:breakout-candidate-list

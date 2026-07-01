@@ -4,6 +4,7 @@ description: Transcribe a YouTube video to text, preferring subtitles or auto-ca
 memory_tags:
   - domain:media
   - workflow:transcription
+  - skill_role:researcher
   - repo_boundary:tools
   - data_class:public-derived
   - risk:medium

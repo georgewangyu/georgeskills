@@ -7,6 +7,14 @@ description: >-
   similar to Loops Radar: scrollable/searchable items, detail pages or detail
   panels, category filters, and a bottom contribution/request form that can
   route submissions into a private review workflow.
+memory_tags:
+  - domain:frontend-design
+  - workflow:catalog-ui-generation
+  - skill_role:generator
+  - repo_boundary:tools
+  - inputs:product-catalog
+  - outputs:frontend-ui
+  - risk:medium
 ---
 
 # Frontend Catalog Design Ops

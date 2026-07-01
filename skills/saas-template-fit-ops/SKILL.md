@@ -4,6 +4,7 @@ description: "Map a chosen SaaS idea to the right template shape: account model,
 memory_tags:
   - domain:product-strategy
   - workflow:template-fit
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:product-idea
   - outputs:template-spec

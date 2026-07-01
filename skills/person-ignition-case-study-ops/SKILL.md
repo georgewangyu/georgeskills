@@ -4,6 +4,7 @@ description: Research a public person's first audience, reputation, open-source,
 memory_tags:
   - domain:research
   - workflow:person-ignition-case-study
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:case-study

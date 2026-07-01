@@ -4,6 +4,7 @@ description: Umbrella skill for private export and import pipelines. Use this wh
 memory_tags:
   - domain:exports
   - workflow:data-ingestion
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - risk:high

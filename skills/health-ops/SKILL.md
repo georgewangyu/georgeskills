@@ -4,6 +4,7 @@ description: Modular tooling for health-data ingestion and derived analytics wor
 memory_tags:
   - domain:health
   - workflow:ingest-analyze
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:sensitive-derived
   - risk:high

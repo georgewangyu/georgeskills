@@ -4,7 +4,10 @@ description: Fetch and analyze GitHub trending repositories (daily/weekly) to su
 memory_tags:
   - domain:development
   - workflow:trend-analysis
+  - skill_role:researcher
+  - repo_boundary:tools
   - source:github-trending
+  - risk:low
 ---
 
 # GitHub Trending Operations

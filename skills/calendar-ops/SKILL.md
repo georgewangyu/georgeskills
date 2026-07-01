@@ -4,6 +4,7 @@ description: Work with the private Google Calendar export pipeline for schedule 
 memory_tags:
   - domain:calendar
   - workflow:calendar-export
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - inputs:calendar

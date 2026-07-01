@@ -4,6 +4,7 @@ description: Export Apple Notes into private markdown artifacts for downstream s
 memory_tags:
   - domain:notes
   - workflow:notes-export
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - inputs:notes

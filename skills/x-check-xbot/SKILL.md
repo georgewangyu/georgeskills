@@ -4,7 +4,10 @@ description: Check X/Twitter using the native 100% browserless xbot engine. Use 
 memory_tags:
   - domain:social-media
   - workflow:timeline-check
+  - skill_role:researcher
+  - repo_boundary:tools
   - engine:xbot-native
+  - risk:medium
 ---
 
 # X Check Xbot (Native)

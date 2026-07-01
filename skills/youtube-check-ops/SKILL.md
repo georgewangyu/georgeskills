@@ -4,6 +4,7 @@ description: Check a YouTube channel or video for public metadata, preferring li
 memory_tags:
   - domain:social-media
   - workflow:account-check
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:status-report

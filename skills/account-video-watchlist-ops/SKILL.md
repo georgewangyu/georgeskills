@@ -1,6 +1,14 @@
 ---
 name: account-video-watchlist-ops
 description: Track a private markdown watchlist of niche creator accounts across YouTube, TikTok, and Instagram, then surface new or newly viral videos above an absolute view threshold for format emulation.
+memory_tags:
+  - domain:video
+  - workflow:account-watchlist
+  - skill_role:researcher
+  - repo_boundary:tools
+  - inputs:public-social-account
+  - outputs:watchlist-record
+  - risk:medium
 ---
 
 # Account Video Watchlist Ops

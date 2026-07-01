@@ -1,6 +1,14 @@
 ---
 name: broad-video-trend-radar-ops
 description: Scan short-form platforms for broad trend patterns and reusable formats outside a narrow niche.
+memory_tags:
+  - domain:video
+  - workflow:broad-trend-radar
+  - skill_role:researcher
+  - repo_boundary:tools
+  - inputs:public-social-platforms
+  - outputs:trend-candidates
+  - risk:medium
 ---
 
 # Broad Video Trend Radar Ops

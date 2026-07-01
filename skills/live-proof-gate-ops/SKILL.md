@@ -4,6 +4,7 @@ description: Define and enforce proof-before-done gates for agent workflows, aut
 memory_tags:
   - domain:agent-systems
   - workflow:live-proof-gate
+  - skill_role:evaluator
   - repo_boundary:tools
   - inputs:workflow
   - outputs:verification-plan

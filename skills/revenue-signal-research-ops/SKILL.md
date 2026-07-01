@@ -4,6 +4,7 @@ description: Estimate which apps or SaaS products are making meaningful revenue 
 memory_tags:
   - domain:market-research
   - workflow:revenue-signal-estimation
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:revenue-signal-sheet

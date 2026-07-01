@@ -4,6 +4,7 @@ description: "Orchestrate later/backlog queues: review items, choose next action
 memory_tags:
   - domain:workflow
   - workflow:queue-orchestration
+  - skill_role:orchestrator
   - repo_boundary:tools
   - inputs:queue
   - outputs:queue-brief

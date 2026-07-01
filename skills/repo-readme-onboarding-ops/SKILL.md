@@ -4,6 +4,7 @@ description: Audit and improve repository README files and GitHub About metadata
 memory_tags:
   - domain:documentation
   - workflow:repo-onboarding
+  - skill_role:operator
   - repo_boundary:tools
   - inputs:repository
   - outputs:readme-audit

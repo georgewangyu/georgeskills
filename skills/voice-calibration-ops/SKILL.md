@@ -4,6 +4,7 @@ description: Build or apply a source-derived writing voice profile from real sam
 memory_tags:
   - domain:writing
   - workflow:voice-calibration
+  - skill_role:generator
   - inputs:writing-samples
   - outputs:voice-profile
   - repo_boundary:tools

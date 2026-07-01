@@ -4,6 +4,7 @@ description: Create repeatable list-style short-form reels from an existing CapC
 memory_tags:
   - domain:social-media
   - workflow:capcut-template-reel
+  - skill_role:generator
   - repo_boundary:tools
   - outputs:shortform-caption
   - risk:medium

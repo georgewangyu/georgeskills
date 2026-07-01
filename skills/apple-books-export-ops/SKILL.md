@@ -1,15 +1,15 @@
 ---
 name: apple-books-export-ops
 description: Explain and run the Apple Books export workflow that turns local Apple Books highlights, notes, and bookmarks into private markdown drafts. Use when a user asks how Apple Books/iBooks import works, where annotations are stored, how to export Apple Books notes, how to reconcile Apple Books drafts into a books source repo, or how Apple Books data feeds a public Books Radar-style site.
-metadata:
-  memory_tags:
-    - domain:books
-    - workflow:apple-books-export
-    - repo_boundary:tools
-    - data_class:private-derived
-    - inputs:apple-books
-    - outputs:markdown-export
-    - risk:high
+memory_tags:
+  - domain:books
+  - workflow:apple-books-export
+  - skill_role:operator
+  - repo_boundary:tools
+  - data_class:private-derived
+  - inputs:apple-books
+  - outputs:markdown-export
+  - risk:high
 ---
 
 # Apple Books Export Ops

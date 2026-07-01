@@ -4,6 +4,7 @@ description: Generate and screen brandable company, product, and SaaS names with
 memory_tags:
   - domain:naming
   - workflow:brand-naming
+  - skill_role:generator
   - repo_boundary:tools
   - inputs:brand-brief
   - outputs:name-shortlist

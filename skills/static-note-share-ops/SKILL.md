@@ -1,6 +1,14 @@
 ---
 name: static-note-share-ops
 description: Publish selected local notes, transcripts, research docs, or markdown artifacts as public-safe static share pages. Use when the user wants a Notion-like "copy link" workflow, an unlisted/public page on a configured static site, a Vercel/Cloudflare/Netlify share route, or a repeatable export process from a private repo into a sanitized public page.
+memory_tags:
+  - domain:publishing
+  - workflow:static-note-share
+  - skill_role:generator
+  - repo_boundary:tools
+  - inputs:markdown-note
+  - outputs:static-page
+  - risk:medium
 ---
 
 # Static Note Share Ops

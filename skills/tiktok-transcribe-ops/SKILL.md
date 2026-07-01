@@ -4,6 +4,7 @@ description: Transcribe a TikTok video to text, preferring captions or subtitles
 memory_tags:
   - domain:social-media
   - workflow:transcription
+  - skill_role:researcher
   - repo_boundary:tools
   - inputs:web
   - outputs:transcript

@@ -4,6 +4,7 @@ description: Use when a resume needs formatting, LaTeX/PDF build cleanup, one-pa
 memory_tags:
   - domain:resume
   - workflow:formatting
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - risk:medium

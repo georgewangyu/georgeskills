@@ -4,6 +4,7 @@ description: Critique a product idea before building by testing whether the pain
 memory_tags:
   - domain:product-strategy
   - workflow:ignition-critique
+  - skill_role:evaluator
   - repo_boundary:tools
   - inputs:product-idea
   - outputs:launch-readiness-critique

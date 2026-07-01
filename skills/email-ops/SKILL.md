@@ -4,6 +4,7 @@ description: Work with the private Gmail pipeline for export, triage context, sc
 memory_tags:
   - domain:email
   - workflow:email-export
+  - skill_role:operator
   - repo_boundary:tools
   - data_class:private-derived
   - inputs:email

@@ -4,6 +4,7 @@ description: Run bounded rental-search due diligence for apartments or homes by 
 memory_tags:
   - domain:housing
   - workflow:rental-due-diligence
+  - skill_role:operator
   - repo_boundary:tools
   - inputs:web
   - outputs:ranked-shortlist

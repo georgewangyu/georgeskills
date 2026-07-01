@@ -4,6 +4,7 @@ description: Design lightweight eval harnesses for coding or workflow agents, es
 memory_tags:
   - domain:agent-systems
   - workflow:agent-evaluation
+  - skill_role:evaluator
   - repo_boundary:tools
   - inputs:agent-instructions
   - outputs:evaluation-rubric

@@ -4,6 +4,7 @@ description: Run a repeatable Pencil MCP workflow to generate, refine, and hand 
 memory_tags:
   - domain:frontend-design
   - workflow:pencil-orchestration
+  - skill_role:operator
   - repo_boundary:tools
   - inputs:design-brief
   - outputs:pencil-design-handoff

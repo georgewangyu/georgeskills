@@ -4,6 +4,7 @@ description: Turn messy short-form video clips, creator intent, and optional for
 memory_tags:
   - domain:social-media
   - workflow:shortform-rough-cut
+  - skill_role:operator
   - repo_boundary:tools
   - inputs:local-media
   - outputs:edit-decision-list

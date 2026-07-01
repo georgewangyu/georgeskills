@@ -4,6 +4,7 @@ description: Create natural point-form talking outlines for TikTok, Instagram Re
 memory_tags:
   - domain:social-media
   - workflow:shortform-talking-points
+  - skill_role:generator
   - repo_boundary:tools
   - outputs:talking-outline
   - risk:low
