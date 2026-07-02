@@ -78,6 +78,25 @@ and keep it labeled `candidate` until validated.
      controversial or specific part.
 7. Pick one primary hook and one backup.
 
+## Reaction Batch Mode
+
+When hook selection is part of a recurring reaction-filming batch, optimize for
+pre-filming clarity instead of exploration.
+
+For each selected reaction candidate:
+
+- Generate `3-4` hook options, not a giant brainstorm.
+- Pick one recommended final hook before the filming block unless the creator
+  explicitly wants to choose live.
+- Include the source object, the creator's one-sentence take, first frame or
+  proof object, `2-3` beats, and the twist/payoff.
+- Use a hook-plus-tail structure when a plain thesis would feel like topic
+  labeling: the first clause makes the source claim legible, and the tail opens
+  a concrete loop the video will resolve.
+- Keep wording readable enough to say directly on camera after a quick
+  read-through.
+- Mark backup hooks as backups instead of leaving all options equally weighted.
+
 ## Selection Heuristics
 
 Prefer hooks that have:
@@ -126,6 +145,25 @@ Backup:
 
 Avoid:
 - [weak angle to skip]
+```
+
+For a reaction-batch candidate, use:
+
+```text
+Reaction filming packet:
+- Source:
+- Take:
+- Recommended hook:
+- Hook options:
+  1. [line] - [source strength] - [pattern]
+  2. [line] - [source strength] - [pattern]
+  3. [line] - [source strength] - [pattern]
+  4. [optional line] - [source strength] - [pattern]
+- Beats:
+- Twist/payoff:
+- First frame:
+- On-screen text:
+- Avoid:
 ```
 
 If the user asks for many options, group them by source strength.

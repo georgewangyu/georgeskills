@@ -171,6 +171,51 @@ Never silently guess when two projects could plausibly own the same export.
      completed-folder rename would otherwise break them.
    - Carry unused but good topics into the next batch plan.
 
+## Pre-Filming Reaction Batch
+
+Use this when the weekly workflow includes a recurring reaction-filming block,
+especially a midweek session built from posts, videos, comments, transcripts,
+or other source material the creator saw during the day.
+
+This is not a posting calendar. It is a read-through packet for filming.
+
+1. Start with inventory.
+   - List already filmed or already edited videos first, so the creator does
+     not refilm ideas that are already covered.
+   - List carryover edits separately from fresh filming candidates.
+   - If the next several publish slots are already covered, say so and do not
+     force new candidates just because the calendar has open slots.
+2. Build the fresh reaction queue.
+   - Pull candidates from the creator's saved posts, observed videos, source
+     links, transcripts, daily notes, or explicit user picks.
+   - Keep the queue short enough to film. Prefer `3-5` likely candidates over
+     a long archive.
+   - Treat show slots or content categories as tags, not obligations.
+3. For each candidate, capture the minimum decision packet:
+   - working title
+   - tags such as `reaction`, `personal story`, `on-call`, `demo`, `receipt`,
+     `creator-process`, or `sponsor`
+   - source object or source note
+   - the creator's take in one sentence
+   - proof object or first visual frame
+   - production burden: `talking-head`, `green-screen/source card`,
+     `screen recording`, `B-roll`, or `edit-only`
+   - status: `selected to film`, `backup`, `already filmed`, `edit pickup`,
+     or `parked`
+   - next action
+4. Prepare the read-through packet before the filming block.
+   - For each selected reaction candidate, write `3-4` hook options.
+   - Pick one recommended hook before filming unless the creator asks to decide
+     live.
+   - Add `2-3` beat bullets and a twist/payoff.
+   - Include first-frame and on-screen-text guidance when a source post or
+     screenshot anchors the reaction.
+5. Keep the packet separate from the backlog.
+   - Park unused candidates in the weekly plan or private notes, but do not let
+     them crowd the filming packet.
+   - The filming packet should answer: "What am I reading through and filming
+     today?"
+
 ## Video Brief Shape
 
 When creating or updating per-video planning Markdown, start with the smallest
@@ -190,6 +235,39 @@ sections such as shot lists, captions, sponsor notes, proof assets, and folder
 paths can follow, but they should not hide the hook, main beats, or twist. If
 the user is trying to review or choose videos quickly, prefer this compact
 block over a long script.
+
+For a reaction candidate that will be filmed in a batch, use a slightly richer
+but still compact shape:
+
+```text
+## Filming Packet
+
+- Source:
+- Take:
+- Recommended hook:
+- Hook options:
+  - [option 1]
+  - [option 2]
+  - [option 3]
+  - [optional option 4]
+- Beat 1:
+- Beat 2:
+- Beat 3:
+- Twist:
+- First frame / proof object:
+```
+
+Avoid writing a long script unless the creator asks for one. The goal is to
+give the creator something sharp enough to read through, internalize, and film
+naturally.
+
+## Reminder Cadence
+
+When a creator has a known weekly filming block, prepare the read-through packet
+the prior evening or at least before the filming window. The reminder should
+name the likely videos to film, identify which ones are already filmed or only
+need edits, and link or summarize the compact filming packets. Do not send a
+long candidate archive as the reminder.
 
 ## Mapping File
 
@@ -221,6 +299,7 @@ Return:
 - per-video project folder list
 - per-video editor project shell or manual editor-project creation status
 - show-slot coverage status, when a weekday show calendar exists
+- pre-filming reaction packet status, when the task involves a reaction batch
 - CapCut export inbox path
 - weekly phone-transfer bundle path
 - final-video mapping status
