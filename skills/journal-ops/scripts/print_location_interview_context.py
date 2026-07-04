@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Print compact Traccar location context for daily-summary interviews.
+Print compact location context for daily-summary interviews.
 
-Configuration is read from environment variables or an optional
-`<private-repo>/.tokens/traccar.env` file:
+OwnTracks/S3 configuration is read from environment variables or an optional
+location repository `.tokens/location-ingest.env` file. Traccar fallback
+configuration is read from environment variables or an optional private-repo
+`.tokens/traccar.env` file:
 
 - TRACCAR_BASE_URL
 - TRACCAR_EMAIL
@@ -35,8 +37,10 @@ from repo_paths import resolve_private_repo_root
 
 ROOT = resolve_private_repo_root()
 TOKENS_FILE = ROOT / ".tokens" / "traccar.env"
-LOCATION_INGEST_FILE = ROOT / ".tokens" / "location-ingest.env"
-PLACES_FILE = ROOT / ".tokens" / "location_places.json"
+LOCATION_REPO_MARKER = ".location-repo.json"
+LOCATION_REPO_ENV_KEYS = ("LOCATION_REPO_ROOT", "GEORGE_LOCATION_ROOT")
+LEGACY_LOCATION_INGEST_FILE = ROOT / ".tokens" / "location-ingest.env"
+LEGACY_PLACES_FILE = ROOT / ".tokens" / "location_places.json"
 TRACCAR_CACHE_DIR = ROOT / ".cache" / "traccar"
 LOCAL_TZ = datetime.now().astimezone().tzinfo
 GEOCODER_USER_AGENT = "georgeskills-journal-ops/1.0"
@@ -96,6 +100,39 @@ STATIONARY_SPEED_KPH = 3.0
 STOP_RADIUS_M = 120.0
 MIN_STOP_MINUTES = 8
 CACHE_TTL_SECONDS = 300
+
+
+def resolve_location_repo_root() -> Path | None:
+    for key in LOCATION_REPO_ENV_KEYS:
+        value = os.environ.get(key, "").strip()
+        if not value:
+            continue
+        candidate = Path(value).expanduser().resolve()
+        if candidate.exists():
+            return candidate
+
+    for parent in (ROOT, ROOT.parent):
+        try:
+            children = [parent, *parent.iterdir()]
+        except OSError:
+            children = [parent]
+        for child in children:
+            if child.is_dir() and (child / LOCATION_REPO_MARKER).exists():
+                return child.resolve()
+    return None
+
+
+LOCATION_REPO_ROOT = resolve_location_repo_root()
+LOCATION_INGEST_FILE = (
+    LOCATION_REPO_ROOT / ".tokens" / "location-ingest.env"
+    if LOCATION_REPO_ROOT is not None
+    else LEGACY_LOCATION_INGEST_FILE
+)
+PLACES_FILE = (
+    LOCATION_REPO_ROOT / ".tokens" / "location_places.json"
+    if LOCATION_REPO_ROOT is not None and (LOCATION_REPO_ROOT / ".tokens" / "location_places.json").exists()
+    else LEGACY_PLACES_FILE
+)
 
 
 def load_env_file(path: Path) -> None:
