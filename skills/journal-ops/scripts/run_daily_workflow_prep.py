@@ -57,8 +57,10 @@ PRINT_LOCATION = JOURNAL_OPS_DIR / "print_location_interview_context.py"
 CHECK_COMPLETENESS = SCRIPTS_DIR / "check_daily_workflow_completeness.py"
 MEMORY_EXTRACT = ROOT / "scripts" / "memory" / "extract_daily_summary_candidates.py"
 WORKSPACE_ROOT = ROOT.parent
-GEORGE_LLM_WIKI_ROOT = WORKSPACE_ROOT / "GeorgeLLMWiki"
-GEORGE_LLM_WIKI_INGEST = GEORGE_LLM_WIKI_ROOT / "scripts" / "ingest_workspace_docs.py"
+LLM_WIKI_ROOT = Path(os.environ.get("LLM_WIKI_ROOT", WORKSPACE_ROOT / "llm-wiki")).expanduser()
+if not LLM_WIKI_ROOT.is_absolute():
+    LLM_WIKI_ROOT = (WORKSPACE_ROOT / LLM_WIKI_ROOT).resolve()
+LLM_WIKI_INGEST = LLM_WIKI_ROOT / "scripts" / "ingest_workspace_docs.py"
 CAPTURES_DIR = ROOT / "captures"
 NOTES_LAST_EXPORT_MARKER = CAPTURES_DIR / "apple-notes" / "all-notes" / ".last_export"
 EMAIL_DIR = CAPTURES_DIR / "email"
@@ -1533,9 +1535,16 @@ def main() -> int:
         help="When refreshing memory candidates, only use the daily summary source (skip other memory-eligible docs).",
     )
     parser.add_argument(
-        "--skip-agent-managed",
+        "--skip-llm-wiki",
+        dest="skip_agent_managed",
         action="store_true",
-        help="Skip derived wiki refresh for the GeorgeLLMWiki layer.",
+        help="Skip derived LLM wiki refresh.",
+    )
+    parser.add_argument(
+        "--skip-agent-managed",
+        dest="skip_agent_managed",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--allow-health-miss",
@@ -1668,11 +1677,11 @@ def main() -> int:
             print("Skipped: summary file does not exist yet.")
 
     if not args.skip_agent_managed:
-        if summary_path.exists() and GEORGE_LLM_WIKI_INGEST.exists():
+        if summary_path.exists() and LLM_WIKI_INGEST.exists():
             wiki_state = build_wiki_ingest_state(target_date=args.date, summary_path=summary_path)
             skipped = maybe_skip_cached_post_step(
-                "GeorgeLLMWiki ingest refresh",
-                "george_llm_wiki_refresh",
+                "LLM wiki ingest refresh",
+                "llm_wiki_refresh",
                 wiki_state,
             )
             if skipped is not None:
@@ -1680,20 +1689,20 @@ def main() -> int:
             else:
                 post_summary_specs.append(
                     ParallelStepSpec(
-                        "GeorgeLLMWiki ingest refresh",
+                        "LLM wiki ingest refresh",
                         [
                             "python3",
-                            str(GEORGE_LLM_WIKI_INGEST),
+                            str(LLM_WIKI_INGEST),
                         ],
                     )
                 )
                 if wiki_state is not None:
-                    post_summary_states.append(("george_llm_wiki_refresh", wiki_state))
-        elif not GEORGE_LLM_WIKI_INGEST.exists():
-            print("\n== GeorgeLLMWiki ingest refresh ==")
-            print("Skipped: GeorgeLLMWiki ingest script is not available yet.")
+                    post_summary_states.append(("llm_wiki_refresh", wiki_state))
+        elif not LLM_WIKI_INGEST.exists():
+            print("\n== LLM wiki ingest refresh ==")
+            print("Skipped: LLM wiki ingest script is not available yet.")
         else:
-            print("\n== GeorgeLLMWiki ingest refresh ==")
+            print("\n== LLM wiki ingest refresh ==")
             print("Skipped: summary file does not exist yet.")
 
     if post_summary_specs:

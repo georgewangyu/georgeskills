@@ -23,12 +23,12 @@ Use when:
 ## Boundaries
 
 - Public specification source: `liferepo/knowledge/`
-- Private compiled pages: `<private-repo>/agent-managed/`
+- Private compiled pages: sibling LLM-wiki repo configured by `LLM_WIKI_ROOT`
 - Raw sources remain in repo docs, exports, and daily summaries
 
 ## Current Script Surface
 
 Implementations currently live in:
 - `skills/knowledge-ops/scripts/`
-- `refresh_agent_managed.py` for deterministic candidate extraction and low-risk auto-apply
+- `refresh_agent_managed.py` for deterministic candidate extraction and low-risk auto-apply into the configured LLM wiki
 - `llm_refresh_agent_managed.py` for headless semantic routing and topic-page rewrites via an LLM provider

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Headless LLM-driven refresh for agent-managed topic pages.
+Headless LLM-driven refresh for LLM-wiki topic pages.
 
 This script keeps the current deterministic input gathering from
 `refresh_agent_managed.py`, but replaces keyword-based topic matching with an
@@ -61,7 +61,7 @@ class SignalRecord:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Headless LLM refresh for agent-managed topic pages.")
+    parser = argparse.ArgumentParser(description="Headless LLM refresh for LLM-wiki topic pages.")
     parser.add_argument("--date", default=date.today().isoformat(), help="Target date YYYY-MM-DD (default: today)")
     parser.add_argument("--provider", default=DEFAULT_PROVIDER, choices=["gemini"], help="LLM provider")
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Model name")
@@ -111,7 +111,7 @@ def topic_context(topic: Any) -> dict[str, Any]:
     return {
         "topic_slug": topic.slug,
         "topic_title": topic.title,
-        "page_path": path.relative_to(PRIVATE_REPO_ROOT).as_posix(),
+        "page_path": path.relative_to(AGENT_MANAGED_DIR).as_posix(),
         "description": description or "",
         "keywords": topic.keywords[:16],
         "source_seed_paths": source_seed_paths_for_page(path)[:10],
@@ -356,7 +356,7 @@ def log_llm_apply(date_text: str, applied_slugs: list[str], provider: str, model
     if not log_path.exists():
         return
     lines = [
-        f"## [{date_text}] llm-auto-apply | Headless Agent Managed Refresh",
+        f"## [{date_text}] llm-auto-apply | Headless LLM Wiki Refresh",
         f"- Applied LLM updates to {len(applied_slugs)} canonical pages via `{provider}` / `{model}`.",
     ]
     for slug in applied_slugs:
@@ -422,7 +422,7 @@ def main() -> int:
         },
     )
 
-    print(f"llm agent-managed candidates [{date_text}]: {candidate_path.relative_to(PRIVATE_REPO_ROOT).as_posix()}")
+    print(f"llm LLM wiki candidates [{date_text}]: {candidate_path}")
 
     applied_slugs: list[str] = []
     if args.apply:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Initialize the Karpathy LLM-Wiki structure in agent-managed layer.
+Initialize the Karpathy LLM-wiki structure.
 Creates index.md, log.md, and migrates references from knowledge-map.md
 """
 
@@ -32,7 +32,9 @@ def frontmatter_scalar(header: str, key: str):
 
 def main():
     workspace = get_workspace_root()
-    agent_managed = workspace / "georgerepo" / "agent-managed"
+    agent_managed = Path(os.environ.get("LLM_WIKI_ROOT", workspace / "llm-wiki")).expanduser()
+    if not agent_managed.is_absolute():
+        agent_managed = (workspace / agent_managed).resolve()
     topics_dir = agent_managed / "topics"
     projects_dir = agent_managed / "projects"
     entities_dir = agent_managed / "entities"
@@ -71,18 +73,15 @@ def main():
     # Step 3: Write index.md
     index_lines = [
         "---",
-        'doc_schema: "doc-frontmatter-v1"',
-        'doc_id: "georgerepo/agent-managed/index"',
-        'doc_type: "knowledge_index"',
-        'doc_status: "active"',
-        'title: "LLM-Wiki Index"',
-        'description: "Canonical entry point for agent-managed knowledge. L1 Progressive Disclosure."',
-        "doc_tags:",
-        '  - "domain:knowledge"',
-        '  - "visibility:private"',
-        '  - "type:knowledge_index"',
+        'title: "LLM Wiki Index"',
+        "type: index",
+        "status: active",
+        f"created: {datetime.now().strftime('%Y-%m-%d')}",
+        f"updated: {datetime.now().strftime('%Y-%m-%d')}",
+        'sources: ["topics/"]',
+        'tags: ["wiki", "index"]',
         "---",
-        "# LLM-Wiki Index",
+        "# LLM Wiki Index",
         "",
         "> **Agent Instruction:** Always read this file first (L1) before loading full topic pages (L3).",
         ""
@@ -109,18 +108,15 @@ def main():
     if not log_file.exists():
         log_lines = [
             "---",
-            'doc_schema: "doc-frontmatter-v1"',
-            'doc_id: "georgerepo/agent-managed/log"',
-            'doc_type: "knowledge_log"',
-            'doc_status: "active"',
-            'title: "LLM-Wiki Log"',
-            'description: "Chronological append-only registry of wiki modifications."',
-            "doc_tags:",
-            '  - "domain:knowledge"',
-            '  - "visibility:private"',
-            '  - "type:knowledge_log"',
+            'title: "LLM Wiki Log"',
+            "type: log",
+            "status: active",
+            f"created: {today}",
+            f"updated: {today}",
+            "sources: []",
+            'tags: ["wiki", "log"]',
             "---",
-            "# LLM-Wiki Operations Log",
+            "# LLM Wiki Log",
             "",
             log_content
         ]

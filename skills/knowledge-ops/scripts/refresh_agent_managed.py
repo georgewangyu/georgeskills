@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Refresh and backfill agent-managed compiled knowledge pages.
+Refresh and backfill compiled LLM-wiki pages.
 
 This script intentionally mirrors the existing journal/memory pattern:
 - use the daily summary as the stable chronological input
@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 from collections import Counter
@@ -25,7 +26,19 @@ from repo_paths import resolve_private_repo_root
 
 PRIVATE_REPO_ROOT = resolve_private_repo_root()
 WORKSPACE_ROOT = PRIVATE_REPO_ROOT.parent
-AGENT_MANAGED_DIR = PRIVATE_REPO_ROOT / "agent-managed"
+
+
+def resolve_llm_wiki_root() -> Path:
+    raw = os.environ.get("LLM_WIKI_ROOT", "").strip()
+    if raw:
+        candidate = Path(raw).expanduser()
+        if not candidate.is_absolute():
+            candidate = (WORKSPACE_ROOT / candidate).resolve()
+        return candidate
+    return WORKSPACE_ROOT / "llm-wiki"
+
+
+AGENT_MANAGED_DIR = resolve_llm_wiki_root()
 TOPICS_DIR = AGENT_MANAGED_DIR / "topics"
 CANDIDATES_DIR = AGENT_MANAGED_DIR / "_candidates"
 INDEXES_DIR = AGENT_MANAGED_DIR / "indexes"
@@ -49,7 +62,14 @@ CONVERSATION_NOTE_SECTIONS = {
     "Concrete Takeaways",
     "Relationship Signal",
 }
-WORKSPACE_REPOS = ("georgerepo", "liferepo", "georgeskills")
+WORKSPACE_REPOS = tuple(
+    repo.strip()
+    for repo in os.environ.get(
+        "KNOWLEDGE_WORKSPACE_REPOS",
+        f"{PRIVATE_REPO_ROOT.name},liferepo,georgeskills",
+    ).split(",")
+    if repo.strip()
+)
 SEED_SCAN_ROOTS = (
     PRIVATE_REPO_ROOT / "knowledge",
     PRIVATE_REPO_ROOT / "deep-exploration" / "frameworks",
@@ -432,7 +452,7 @@ def load_topic_pages() -> list[TopicPage]:
 def source_seed_paths_for_page(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8")
     header = parse_frontmatter_header(text)
-    return frontmatter_list(header, "source_seed_paths")
+    return frontmatter_list(header, "source_seed_paths") or frontmatter_list(header, "sources")
 
 
 def readable_path_label(path: str) -> str:
@@ -647,7 +667,7 @@ def build_health_report(topic_pages: list[TopicPage]) -> Path:
                 source_seed_count=len(source_seed_paths_for_page(topic.path)),
                 summary_quality=quality_for_section(
                     [strip_source_suffix(b) for b in section_bullets(text, "Summary")],
-                    ["seeded from", "canonical agent-managed synthesis"],
+                    ["seeded from", "canonical synthesis"],
                 ),
                 current_understanding_quality=quality_for_section(
                     [strip_source_suffix(b) for b in section_bullets(text, "Current Understanding")],
@@ -659,20 +679,15 @@ def build_health_report(topic_pages: list[TopicPage]) -> Path:
     entries.sort(key=lambda item: (item.current_understanding_quality, -item.evidence_count, item.title.lower()))
     lines = [
         "---",
-        'doc_schema: "doc-frontmatter-v1"',
-        'doc_id: "georgerepo/agent-managed/reports/health-report"',
-        'doc_type: "knowledge_report"',
-        'doc_status: "active"',
-        'title: "Agent-Managed Health Report"',
-        'description: "Quick quality report for canonical agent-managed topic pages."',
-        "doc_tags:",
-        '  - "domain:agent-managed"',
-        '  - "visibility:private"',
-        '  - "type:knowledge_report"',
-        "memory_eligible: false",
-        'memory_priority: "low"',
+        'title: "LLM Wiki Health Report"',
+        "type: report",
+        "status: active",
+        f"created: {date.today().isoformat()}",
+        f"updated: {date.today().isoformat()}",
+        'sources: ["topics/"]',
+        'tags: ["wiki", "report", "health"]',
         "---",
-        "# Agent-Managed Health Report",
+        "# LLM Wiki Health Report",
         "",
         "## Summary",
         "",
@@ -801,24 +816,20 @@ def seed_page_content(seed: SeedTopic) -> str:
     )
     return (
         "---\n"
-        'doc_schema: "doc-frontmatter-v1"\n'
-        f'doc_id: "georgerepo/agent-managed/topics/{seed.slug}"\n'
-        'doc_type: "knowledge_doc"\n'
-        'doc_status: "active"\n'
         f'title: "{seed.title}"\n'
-        f'description: "{seed.description}"\n'
-        "memory_eligible: true\n"
-        'memory_priority: "medium"\n'
-        "doc_tags:\n"
-        '  - "domain:knowledge"\n'
-        '  - "visibility:private"\n'
-        '  - "type:knowledge_doc"\n'
-        f"{frontmatter_block('agent_managed_keywords', seed.keywords)}\n"
-        f"{frontmatter_block('source_seed_paths', seed.source_paths)}\n"
+        "type: topic\n"
+        "status: active\n"
+        f"created: {date.today().isoformat()}\n"
+        f"updated: {date.today().isoformat()}\n"
+        f"{frontmatter_block('sources', seed.source_paths)}\n"
+        "tags:\n"
+        '  - "wiki"\n'
+        '  - "topic"\n'
+        f'  - "{seed.slug}"\n'
         "---\n"
         f"# {seed.title}\n\n"
         "## Summary\n\n"
-        f"- This page is the canonical agent-managed synthesis for `{seed.title}`.\n"
+        f"- This page is the canonical LLM-wiki synthesis for `{seed.title}`.\n"
         f"- It was seeded from {len(seed.source_paths)} existing organized documents and should absorb future cross-session understanding.\n\n"
         "## Current Understanding\n\n"
         "- This topic already exists across prior knowledge and exploration artifacts, which makes it a good candidate for a maintained canonical page.\n"
@@ -830,7 +841,7 @@ def seed_page_content(seed: SeedTopic) -> str:
         "- What parts of this topic are stable enough to promote into tighter current-understanding bullets?\n"
         "- Which recurring subtopics deserve their own canonical child pages later?\n\n"
         "## Related Pages\n\n"
-        "- `agent-managed/index.md`\n\n"
+        "- `index.md`\n\n"
         "## Source Map\n\n"
         f"{source_map}\n"
     )
@@ -852,27 +863,22 @@ def rebuild_index_page(topic_pages: list[TopicPage]) -> Path:
     ensure_dir(INDEXES_DIR)
     path = INDEXES_DIR / "knowledge-map.md"
     entries = "\n".join(
-        f"- `{topic.path.relative_to(PRIVATE_REPO_ROOT).as_posix()}` - canonical page for {topic.title}."
+        f"- `{topic.path.relative_to(AGENT_MANAGED_DIR).as_posix()}` - canonical page for {topic.title}."
         for topic in sorted(topic_pages, key=lambda item: item.title.lower())
     )
     text = (
         "---\n"
-        'doc_schema: "doc-frontmatter-v1"\n'
-        'doc_id: "georgerepo/agent-managed/indexes/knowledge-map"\n'
-        'doc_type: "knowledge_index"\n'
-        'doc_status: "active"\n'
         'title: "Knowledge Map"\n'
-        'description: "Index of canonical agent-managed topic pages."\n'
-        "memory_eligible: true\n"
-        'memory_priority: "medium"\n'
-        "doc_tags:\n"
-        '  - "domain:knowledge"\n'
-        '  - "visibility:private"\n'
-        '  - "type:knowledge_index"\n'
+        "type: index\n"
+        "status: active\n"
+        f"created: {date.today().isoformat()}\n"
+        f"updated: {date.today().isoformat()}\n"
+        'sources: ["topics/"]\n'
+        'tags: ["wiki", "index", "knowledge-map"]\n'
         "---\n"
         "# Knowledge Map\n\n"
         "## Summary\n\n"
-        "- This index lists the canonical topic pages in `agent-managed/topics/`.\n"
+        "- This index lists the canonical topic pages in `topics/`.\n"
         "- Topic pages should hold current-best synthesis, while day-by-day chronology remains in `journal/`.\n\n"
         "## Topic Pages\n\n"
         f"{entries}\n"
@@ -955,6 +961,11 @@ def changed_files_for_date(date_text: str) -> list[str]:
     target = datetime.strptime(date_text, "%Y-%m-%d").date()
     next_day = target + timedelta(days=1)
     changed: list[str] = []
+    private_repo_prefix = f"{PRIVATE_REPO_ROOT.name}/"
+    legacy_agent_managed_prefixes = (
+        f"{private_repo_prefix}agent-managed/",
+        f"{private_repo_prefix}knowledge/agent-managed/",
+    )
     for repo_name in WORKSPACE_REPOS:
         repo_dir = WORKSPACE_ROOT / repo_name
         if not (repo_dir / ".git").exists():
@@ -980,19 +991,13 @@ def changed_files_for_date(date_text: str) -> list[str]:
             rel = line.strip()
             if rel:
                 full_rel = f"{repo_name}/{rel}"
-                if (
-                    full_rel.startswith("georgerepo/agent-managed/")
-                    or full_rel.startswith("georgerepo/knowledge/agent-managed/")
-                ):
+                if full_rel.startswith(legacy_agent_managed_prefixes):
                     continue
                 changed.append(full_rel)
         if target == date.today():
             for rel in current_workspace_changes(repo_dir):
                 full_rel = f"{repo_name}/{rel}"
-                if (
-                    full_rel.startswith("georgerepo/agent-managed/")
-                    or full_rel.startswith("georgerepo/knowledge/agent-managed/")
-                ):
+                if full_rel.startswith(legacy_agent_managed_prefixes):
                     continue
                 changed.append(full_rel)
     deduped: list[str] = []
@@ -1049,7 +1054,7 @@ def build_candidate(topic: TopicPage, signals: list[dict[str, str]], changed_fil
     return {
         "topic_slug": topic.slug,
         "topic_title": topic.title,
-        "page_path": topic.path.relative_to(PRIVATE_REPO_ROOT).as_posix(),
+        "page_path": topic.path.relative_to(AGENT_MANAGED_DIR).as_posix(),
         "score": score,
         "matched_signal_count": len(matched_signals),
         "matched_file_count": len(matched_files),
@@ -1070,7 +1075,7 @@ def write_candidates(date_text: str, payload: dict[str, object]) -> Path:
 
 
 def apply_safe_updates(candidate: dict[str, object], *, date_text: str) -> bool:
-    page_path = PRIVATE_REPO_ROOT / str(candidate["page_path"])
+    page_path = AGENT_MANAGED_DIR / str(candidate["page_path"])
     if not page_path.exists():
         return False
     text = page_path.read_text(encoding="utf-8")
@@ -1095,13 +1100,13 @@ def apply_safe_updates(candidate: dict[str, object], *, date_text: str) -> bool:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Refresh agent-managed compiled knowledge from daily-summary signal.")
+    parser = argparse.ArgumentParser(description="Refresh compiled LLM-wiki knowledge from daily-summary signal.")
     parser.add_argument("--date", default=date.today().isoformat(), help="Target date YYYY-MM-DD (default: today)")
     parser.add_argument("--apply-safe", action="store_true", help="Apply low-risk updates directly to matched topic pages.")
     parser.add_argument("--print", action="store_true", dest="print_payload", help="Print candidate payload to stdout.")
     parser.add_argument("--seed-organized", action="store_true", help="Seed topic pages from organized knowledge and framework documents.")
     parser.add_argument("--refresh-seeds", action="store_true", help="Overwrite existing seeded topic pages with regenerated frontmatter and baseline content.")
-    parser.add_argument("--rebuild-index", action="store_true", help="Rebuild the agent-managed knowledge index page.")
+    parser.add_argument("--rebuild-index", action="store_true", help="Rebuild the LLM-wiki knowledge index page.")
     parser.add_argument("--backfill-all", action="store_true", help="Replay all available historical summaries.")
     parser.add_argument("--compile-synthesis", action="store_true", help="Rewrite `Summary` and `Current Understanding` for current topic pages.")
     parser.add_argument("--compile-all", action="store_true", help="Compile synthesis for all topic pages after any refresh/backfill work.")
@@ -1141,7 +1146,7 @@ def run_for_date(date_text: str, *, apply_safe: bool, print_payload: bool) -> tu
             if apply_safe_updates(candidate, date_text=date_text):
                 applied_pages.append(str(candidate["page_path"]))
 
-    print(f"agent-managed candidates [{date_text}]: {len(candidates)} -> {candidate_path}")
+    print(f"LLM wiki candidates [{date_text}]: {len(candidates)} -> {candidate_path}")
     if applied_pages:
         print("applied safe updates:")
         for page in applied_pages:
@@ -1149,7 +1154,7 @@ def run_for_date(date_text: str, *, apply_safe: bool, print_payload: bool) -> tu
 
         log_path = AGENT_MANAGED_DIR / "log.md"
         if log_path.exists():
-            log_entry = [f"## [{date_text}] auto-apply | Refresh Agent Managed", f"- Applied safe updates to {len(applied_pages)} canonical pages."]
+            log_entry = [f"## [{date_text}] auto-apply | Refresh LLM Wiki", f"- Applied safe updates to {len(applied_pages)} canonical pages."]
             for page in applied_pages:
                 log_entry.append(f"  - `{Path(page).stem}`")
             with log_path.open("a", encoding="utf-8") as f:
@@ -1175,7 +1180,7 @@ def main() -> int:
     topic_pages = load_topic_pages()
     if args.rebuild_index or args.seed_organized or args.refresh_seeds:
         index_path = rebuild_index_page(topic_pages)
-        print(f"rebuilt knowledge index: {index_path.relative_to(PRIVATE_REPO_ROOT).as_posix()}")
+        print(f"rebuilt knowledge index: {index_path.relative_to(AGENT_MANAGED_DIR).as_posix()}")
 
     if args.backfill_all:
         dates = summary_dates()
@@ -1212,7 +1217,7 @@ def main() -> int:
 
     if args.health_report or args.compile_all:
         report_path = build_health_report(load_topic_pages())
-        print(f"wrote health report: {report_path.relative_to(PRIVATE_REPO_ROOT).as_posix()}")
+        print(f"wrote health report: {report_path.relative_to(AGENT_MANAGED_DIR).as_posix()}")
     return 0
 
 
