@@ -150,6 +150,12 @@ rewriting public book recommendations, not something to publish directly.
 - Do not print raw highlights or notes into chat unless the user explicitly asks
   for a small excerpt from a specific file.
 - Do not quote long copyrighted passages.
+- Do not treat Apple Books ownership or a library match as permission to
+  reproduce paragraph-length copyrighted text in chat or notes. Highlights can
+  be used as private source material for short snippets, passage cues, and
+  analysis.
+- Distinguish selected-text highlights from bookmarks. A bookmark/location row
+  confirms a reading artifact, but it does not provide quote text.
 - Do not commit generated drafts by default.
 - Do not copy Apple Books databases into git-tracked folders.
 - Do not assume old annotation asset IDs still map to current library titles;

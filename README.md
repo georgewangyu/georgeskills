@@ -58,7 +58,8 @@ These are the skill clusters that have been moving fastest recently:
 
 - **Books and reading workflows:** `apple-books-export-ops` exports Apple Books
   annotations; `book-note-quality-ops` checks whether book notes are
-  public-ready before they feed a catalog or Books Radar-style site.
+  public-ready before they feed a catalog or Books Radar-style site. Private
+  live reading-note workflows should live in private overlay repos.
 - **Social video production:** `weekly-video-batch-ops`,
   `capcut-ai-edit-reel-ops`, `shortform-rough-cut-ops`, and
   `social-video-archive-ops` cover batch planning, edit preparation, final
@@ -71,10 +72,10 @@ These are the skill clusters that have been moving fastest recently:
   rubrics, proof gates, and README/onboarding passes.
 - **Local operations:** `mac-storage-cleanup-ops` and `disk-space-ops` separate
   safe-ish cleanup candidates from review-first app data.
-- **Frontend and catalog work:** `frontend-catalog-design-ops`,
-  `frontend-art-direction-ops`, `frontend-polish-pass-ops`, and
-  `video-companion-page-ops` support public catalogs, companion pages, and
-  polished frontend prototypes.
+- **Frontend and catalog work:** `public-website-foundation-ops`,
+  `frontend-catalog-design-ops`, `frontend-art-direction-ops`,
+  `frontend-polish-pass-ops`, and `video-companion-page-ops` support public
+  websites, catalogs, companion pages, and polished frontend prototypes.
 
 ### Data Exports
 
@@ -155,6 +156,7 @@ These are the skill clusters that have been moving fastest recently:
 
 | Skill | Description |
 |---|---|
+| `public-website-foundation-ops` | Start or harden public websites with the required README, design, AGENTS, env, source/data, intake/lead capture, and verification contracts before implementation drifts. |
 | `website-page-planning-ops` | Turn a rough site concept into a concrete page plan with section structure and CTA map before design starts. |
 | `frontend-art-direction-ops` | Build visual direction for a product UI: style references, typography, color tokens, layout and motion rules. |
 | `frontend-catalog-design-ops` | Start catalog-first frontend prototypes for searchable indexes, libraries, radars, directories, and contribution-backed resource hubs. |

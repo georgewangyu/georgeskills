@@ -1,15 +1,41 @@
-# X-Native (xbot) Improvements
+# X-Native Xbot Improvements
 
-## Bot Detection Strategy (Anti-Bot Phase 2)
+## Bot Detection Strategy
 
-To address the recurring `Error 226` (Automated Bot Detection), we are moving to a **Hybrid Stealth Architecture** in the `xbot` repository:
+**Captured**: 2026-07-04
+**Status**: open
+**Priority**: high
 
-1.  **Browserless-First (Efficiency)**: By default, the client sends raw HTTP requests with optimized headers (matching real browser signatures) and uses stored session tokens. This is the fastest method for daily exports.
-2.  **Browser Fallback (Resilience)**: If a raw request is flagged or blocked, the system automatically escalates to **Full Browser Automation**.
-3.  **Chrome Profile Reuse**: The native implementation reuses your actual Google Chrome profile (`Default`). This includes real cookies, active session history, and consistent device fingerprinting, making the automation indistinguishable from a human user.
-4.  **Stealth Plugin**: Utilizes `playwright-extra-plugin-stealth` to hide automation signals (like the `navigator.webdriver` flag).
+### User Problem
 
-## Next Steps
-- [ ] **Adaptive Scheduling**: Implement randomized delays between actions to mimic human typing and reading patterns.
-- [ ] **Automatic Token Refresh**: Add a module to extract fresh tokens from the browser session automatically when they expire.
-- [ ] **Headless Preference**: Optimize the "headless" flag to ensure it doesn't leak automation markers while keeping the UI hidden.
+X can return `Error 226` automated-bot-detection failures during daily feed
+checks. When that happens, the workflow loses its low-friction public-notebook
+input surface.
+
+### Product Principle
+
+X checking should be resilient but conservative: use the native xbot path first,
+escalate only when blocked, and avoid noisy or risky public actions.
+
+### V1 Improvement
+
+Move toward a hybrid stealth architecture:
+
+- Browserless-first requests for fast daily exports.
+- Full browser automation fallback only when raw requests are blocked.
+- Chrome profile reuse for session continuity when browser fallback is needed.
+- Stealth hardening for obvious automation markers.
+
+### Future Builds
+
+- Adaptive scheduling with randomized delays between actions.
+- Automatic token refresh from the browser session when tokens expire.
+- Headless-mode tuning that does not leak automation markers.
+
+### Acceptance Criteria
+
+- Daily feed checks prefer the xbot CLI path.
+- Bot-detection failures are reported with the fallback attempted.
+- The workflow does not silently switch to posting, liking, replying, or other
+  public actions.
+- Failures preserve enough diagnostics for the next maintenance pass.
