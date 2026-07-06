@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend E2E Evaluator"
+  short_description: "Evaluate real frontend behavior and visual fit"
+  default_prompt: "Use $frontend-e2e-evaluator-ops to evaluate this frontend before launch."

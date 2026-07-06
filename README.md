@@ -163,6 +163,7 @@ These are the skill clusters that have been moving fastest recently:
 | `website-github-issue-form-ops` | Add or retrofit bottom-page GitHub-backed request, contribution, feedback, or audience intake forms with server-side issue creation. |
 | `installable-skill-lead-gate-ops` | Add a Books/Loops-style email unlock before showing installable skill commands, with Supabase lead storage and repo-star activation. |
 | `frontend-polish-pass-ops` | Final polish pass: responsiveness, accessibility, hierarchy, interaction quality, and perceived performance. |
+| `frontend-e2e-evaluator-ops` | End-to-end frontend evaluation for real user journeys, fake controls, link integrity, screenshots, responsive fit, and launch confidence. |
 | `pencil-design-orchestration-ops` | Run a repeatable Pencil MCP design workflow from the coding agent through to frontend handoff. |
 | `disk-space-ops` | Inspect disk usage, highlight large folders/files, and suggest conservative cleanup targets with risk framing. |
 | `mac-storage-cleanup-ops` | Evaluate recurring macOS cleanup candidates, separate safe-ish caches/logs from review-first app data, and guide conservative cleanup passes. |
