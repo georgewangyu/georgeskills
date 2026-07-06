@@ -8,6 +8,7 @@ LOG_PREFIX="${PRIVATE_REPO_LOG_PREFIX:-private-repo}"
 LEGACY_LOG_PREFIX="${LEGACY_LOG_PREFIX:-liferepo}"
 KNOWLEDGE_JOB_SUFFIX="${PRIVATE_REPO_KNOWLEDGE_JOB_SUFFIX:-llm-wiki-refresh}"
 LEGACY_KNOWLEDGE_JOB_SUFFIX="${PRIVATE_REPO_LEGACY_KNOWLEDGE_JOB_SUFFIX:-agent-managed-refresh}"
+KNOWLEDGE_CODEX_AUTOMATION_ID="${PRIVATE_REPO_KNOWLEDGE_CODEX_AUTOMATION_ID:-}"
 
 echo "=== Private Repo Automation Jobs ==="
 echo ""
@@ -64,7 +65,14 @@ print_job_status "📝 Apple Notes Export" "${JOB_PREFIX}.export-apple-notes" "$
 print_job_status "📬 Email Export" "${JOB_PREFIX}.export-emails" "${LEGACY_JOB_PREFIX}.export-emails"
 print_job_status "📅 Calendar Export" "${JOB_PREFIX}.export-calendar" "${LEGACY_JOB_PREFIX}.export-calendar"
 print_job_status "🧠 Memory Dream" "${JOB_PREFIX}.memory-dream" "${LEGACY_JOB_PREFIX}.memory-dream"
-print_job_status "📚 LLM Wiki Refresh" "${JOB_PREFIX}.${KNOWLEDGE_JOB_SUFFIX}" "${JOB_PREFIX}.${LEGACY_KNOWLEDGE_JOB_SUFFIX}"
+if [ -n "$KNOWLEDGE_CODEX_AUTOMATION_ID" ]; then
+  echo "📚 Knowledge Refresh:"
+  echo "  Managed by Codex automation: ${KNOWLEDGE_CODEX_AUTOMATION_ID}"
+  echo "  Not expected in launchctl."
+  echo ""
+else
+  print_job_status "📚 Knowledge Refresh" "${JOB_PREFIX}.${KNOWLEDGE_JOB_SUFFIX}" "${JOB_PREFIX}.${LEGACY_KNOWLEDGE_JOB_SUFFIX}"
+fi
 
 echo "📋 Recent Log Activity:"
 echo ""
@@ -73,7 +81,9 @@ print_log_tail "Apple Notes Export" "/tmp/${LOG_PREFIX}-apple-notes-export.log" 
 print_log_tail "Email Export" "/tmp/${LOG_PREFIX}-email-export.log" "/tmp/${LEGACY_LOG_PREFIX}-email-export.log"
 print_log_tail "Calendar Export" "/tmp/${LOG_PREFIX}-calendar-export.log" "/tmp/${LEGACY_LOG_PREFIX}-calendar-export.log"
 print_log_tail "Memory Dream" "/tmp/${LOG_PREFIX}-memory-dream.log" "/tmp/${LEGACY_LOG_PREFIX}-memory-dream.log"
-print_log_tail "LLM Wiki Refresh" "/tmp/${LOG_PREFIX}-${KNOWLEDGE_JOB_SUFFIX}.log" "/tmp/${LOG_PREFIX}-${LEGACY_KNOWLEDGE_JOB_SUFFIX}.log"
+if [ -z "$KNOWLEDGE_CODEX_AUTOMATION_ID" ]; then
+  print_log_tail "Knowledge Refresh" "/tmp/${LOG_PREFIX}-${KNOWLEDGE_JOB_SUFFIX}.log" "/tmp/${LOG_PREFIX}-${LEGACY_KNOWLEDGE_JOB_SUFFIX}.log"
+fi
 
 echo "=== Quick Commands ==="
 echo "  Start metrics:    launchctl start ${JOB_PREFIX}.visualize-metrics"
@@ -81,10 +91,14 @@ echo "  Start notes:      launchctl start ${JOB_PREFIX}.export-apple-notes"
 echo "  Start email:      launchctl start ${JOB_PREFIX}.export-emails"
 echo "  Start calendar:   launchctl start ${JOB_PREFIX}.export-calendar"
 echo "  Start memory:     launchctl start ${JOB_PREFIX}.memory-dream"
-echo "  Start knowledge:  launchctl start ${JOB_PREFIX}.${KNOWLEDGE_JOB_SUFFIX}"
+if [ -z "$KNOWLEDGE_CODEX_AUTOMATION_ID" ]; then
+  echo "  Start knowledge:  launchctl start ${JOB_PREFIX}.${KNOWLEDGE_JOB_SUFFIX}"
+fi
 echo "  View metrics log: tail -f /tmp/${LOG_PREFIX}-metrics-visualization.log"
 echo "  View notes log:   tail -f /tmp/${LOG_PREFIX}-apple-notes-export.log"
 echo "  View email log:   tail -f /tmp/${LOG_PREFIX}-email-export.log"
 echo "  View calendar log: tail -f /tmp/${LOG_PREFIX}-calendar-export.log"
 echo "  View memory log:  tail -f /tmp/${LOG_PREFIX}-memory-dream.log"
-echo "  View knowledge log: tail -f /tmp/${LOG_PREFIX}-${KNOWLEDGE_JOB_SUFFIX}.log"
+if [ -z "$KNOWLEDGE_CODEX_AUTOMATION_ID" ]; then
+  echo "  View knowledge log: tail -f /tmp/${LOG_PREFIX}-${KNOWLEDGE_JOB_SUFFIX}.log"
+fi
