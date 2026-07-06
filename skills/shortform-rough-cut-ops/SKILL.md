@@ -53,13 +53,16 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
    - Transcribe speech clips with available local tools.
    - Mark clips without useful speech as visual/B-roll candidates.
    - Preserve exact phrases that identify anchor moments, transitions, progress updates, jokes, or twists.
-   - For voiceover or A-roll cleanup, cut dead air, long silences, false starts,
-     repeated takes, filler-only fragments, and abandoned sentences. Do not speed
-     narration up by default; only apply speed changes when the user asks for
-     that style or a format runbook explicitly calls for it.
-   - Keep the cleaned speech timeline as an edit decision list of source ranges,
-     not only as a baked audio export, so captions, overlays, effects, and B-roll
-     can be retimed to the final narration.
+   - For voiceover or A-roll-driven edits, use a staged A-cut workflow:
+     first choose the spoken story ranges for the hook, setup, progression
+     beats, twist, and ending; then run a separate tightening pass for dead air,
+     long silences, false starts, repeated takes, filler-only fragments,
+     abandoned sentences, duplicate ideas, and weak tangents.
+   - Do not speed narration up by default; only apply speed changes when the
+     user asks for that style or a format runbook explicitly calls for it.
+   - Keep the cleaned speech timeline as an edit decision list of source ranges
+     and removed ranges, not only as a baked audio export, so captions, overlays,
+     effects, and B-roll can be retimed to the final narration.
 4. Classify by story function.
    Use categories such as:
    - hook / anchor
@@ -76,8 +79,8 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
    - Flag whether the planned sequence is likely under or over the target duration.
    - Prefer two options when ambiguity is real: story-forward and montage-forward.
    - When speech drives the edit, lock the cleaned voiceover/A-roll timeline
-     first, then place captions, overlays, sound effects, proof assets, and B-roll
-     against that cleaned timeline.
+     first, then place B-roll bridges, captions, overlays, sound effects, and
+     proof assets against that cleaned timeline.
 6. Plan editor automation only after structure exists.
    - Use CapCut or another draft writer as the timeline assembly layer, not the editing brain.
    - Generate a draft only from selected clips and rough trims.
