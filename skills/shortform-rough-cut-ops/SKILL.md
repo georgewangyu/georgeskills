@@ -58,6 +58,9 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
      beats, twist, and ending; then run a separate tightening pass for dead air,
      long silences, false starts, repeated takes, filler-only fragments,
      abandoned sentences, duplicate ideas, and weak tangents.
+   - Treat narration cleanup as iterative: rough story selection first,
+     cleanup second, compression third. Do not use B-roll, captions, effects,
+     or music to hide an unresolved spoken story.
    - Do not speed narration up by default; only apply speed changes when the
      user asks for that style or a format runbook explicitly calls for it.
    - Keep the cleaned speech timeline as an edit decision list of source ranges
@@ -81,6 +84,8 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
    - When speech drives the edit, lock the cleaned voiceover/A-roll timeline
      first, then place B-roll bridges, captions, overlays, sound effects, and
      proof assets against that cleaned timeline.
+   - Surface removed ranges and alternate takes before drafting when the
+     narration decision is ambiguous.
 6. Plan editor automation only after structure exists.
    - Use CapCut or another draft writer as the timeline assembly layer, not the editing brain.
    - Generate a draft only from selected clips and rough trims.
