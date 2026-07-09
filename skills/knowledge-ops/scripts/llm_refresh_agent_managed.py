@@ -347,7 +347,7 @@ def apply_topic_update(update: dict[str, Any]) -> bool:
 
     if updated == text:
         return False
-    path.write_text(updated, encoding="utf-8")
+    path.write_text(updated.rstrip("\n") + "\n", encoding="utf-8")
     return True
 
 

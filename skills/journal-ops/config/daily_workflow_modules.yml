@@ -57,3 +57,6 @@ output_contract:
   default_must_remain_comparable_to_current_daily_workflow: true
   omitted_modules_must_be_labeled: true
   modules_should_emit_typed_blocks_before_summary_prose: true
+  external_market_radar_detail_home_template: "journal/external-signal-scans/YYYY/MM/YYYY-MM-DD-market-radar.md"
+  external_market_radar_detail_home_can_be_overridden_by: "JOURNAL_OPS_MARKET_RADAR_SCAN_TEMPLATE or --market-radar-scan-path"
+  daily_summary_gets_external_radar_rollup_only: true
