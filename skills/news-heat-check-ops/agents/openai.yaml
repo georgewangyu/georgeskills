@@ -1,0 +1,4 @@
+interface:
+  display_name: "News Heat Check"
+  short_description: "Score live news virality and editorial timing"
+  default_prompt: "Use $news-heat-check-ops to compare how hot these stories are and recommend whether to cover them now."

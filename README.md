@@ -108,6 +108,7 @@ These are the skill clusters that have been moving fastest recently:
 | `social-hook-selection-ops` | Select and adapt high-fit hooks for TikTok, Instagram Reels, YouTube Shorts, and short-form video ideas. |
 | `shortform-talking-points-ops` | Create natural point-form talking outlines for TikTok, Instagram Reels, and Shorts using a sourced hook, hot take beats, and final twist. |
 | `capcut-ai-edit-reel-ops` | Create list-style short-form reels by duplicating a proven CapCut AI-edit template, updating the title, and drafting the numbered caption/comment copy. |
+| `raw-video-clip-intake-ops` | Sort raw camera-card clips into weekly video project folders with sidecar preservation, contact sheets, and intake manifests. |
 | `weekly-video-batch-ops` | Organize recurring short-form video batch folders, CapCut final export inboxes, canonical final names, quick-access final-video indexes, and weekly phone-transfer bundles. |
 | `youtube-check-ops` | Check YouTube channel or video public metadata. Falls back to lightweight public probes. |
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
@@ -125,6 +126,7 @@ These are the skill clusters that have been moving fastest recently:
 
 | Skill | Description |
 |---|---|
+| `news-heat-check-ops` | Score current news virality, follower-adjusted breakout, cross-platform spread, and audience fit to decide whether a story is worth covering now. |
 | `market-landscape-research-ops` | Map a software or app market: categories, leading products, pricing, user segments, upstarts. |
 | `revenue-signal-research-ops` | Estimate which apps or SaaS products are likely making meaningful revenue from public signals. |
 | `asymmetric-revenue-case-study-ops` | Produce single-company case studies for small-team or under-the-radar products with disproportionate revenue signals. |

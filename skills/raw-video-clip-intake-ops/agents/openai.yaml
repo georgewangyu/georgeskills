@@ -1,0 +1,4 @@
+interface:
+  display_name: "Raw Video Clip Intake"
+  short_description: "Sort raw camera clips into project folders"
+  default_prompt: "Use $raw-video-clip-intake-ops to group raw camera-card clips into the correct weekly video project folders."
