@@ -50,6 +50,18 @@ but state why.
 - `peaking`: very high attention, but acceleration is flattening.
 - `cooling`: attention remains visible while recent velocity declines.
 
+Use this default mapping when component scores are available:
+
+1. Heat below `45` is `watch`.
+2. Heat of at least `45` with acceleration below `25` is `cooling`.
+3. Heat of at least `80` with acceleration below `50` is `peaking`.
+4. Remaining heat of at least `70` is `hot`.
+5. Remaining heat of at least `45` with acceleration of at least `50` is
+   `rising`; otherwise it is `watch`.
+
+Do not call a low-heat owned spike `peaking` merely because its early velocity
+flattened. `Peaking` requires high overall attention.
+
 ## Confidence
 
 - `high`: primary links plus multiple independent surfaces and comparable-age

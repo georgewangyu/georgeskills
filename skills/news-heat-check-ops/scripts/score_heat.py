@@ -61,7 +61,9 @@ def stage(heat, acceleration):
         return "peaking"
     if heat >= 70:
         return "hot"
-    return "rising"
+    if acceleration >= 50:
+        return "rising"
+    return "watch"
 
 
 def score_item(item):
