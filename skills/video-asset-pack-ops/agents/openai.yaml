@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video Asset Pack"
+  short_description: "Build sourced edit assets from a locked script"
+  default_prompt: "Use $video-asset-pack-ops to turn this settled video script into a sourced, editor-ready asset pack."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video Visual Assets"
+  short_description: "Design and produce richer video visuals"
+  default_prompt: "Use $video-visual-assets-ops to design and produce high-impact visual assets for this video."
