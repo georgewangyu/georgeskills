@@ -13,16 +13,16 @@ memory_tags:
 
 # Video Visual Director Ops
 
-Turn a locked A-cut into one coherent visual treatment instead of a pile of disconnected assets. Own the creative visual pass while leaving George's story selection and taste-sensitive speech cuts intact.
+Turn a locked A-cut into one coherent visual treatment instead of a pile of disconnected assets. Own the creative visual pass while leaving the creator's story selection and taste-sensitive speech cuts intact.
 
 ## Operating Boundary
 
 Start only after the spoken story is locked enough to create a versioned export. The default boundary is:
 
-- George owns the final A-cut, performance choices, silence/filler decisions, and story lock.
+- The creator owns the final A-cut, performance choices, silence/filler decisions, and story lock.
 - This skill owns visual pacing, A-roll scale and framing treatments, proof placement, B-roll, captions and text emphasis, sound design cues, transitions, diagrams, animation, and decisions to leave a beat visually quiet.
-- Do not reopen the spoken story unless George explicitly asks for A-cut recommendations. If a visual problem actually originates in the A-cut, flag it separately.
-- Never mutate a live CapCut project while George is editing it. Work from a versioned export or a safe copy.
+- Do not reopen the spoken story unless the creator explicitly asks for A-cut recommendations. If a visual problem actually originates in the A-cut, flag it separately.
+- Never mutate a live CapCut project while the creator is editing it. Work from a versioned export or a safe copy.
 
 ## Required Intake And Lock Gate
 
@@ -45,7 +45,7 @@ Also set a density ceiling. A useful default for talking-head shorts is one mean
 
 ## Step 2: Scout Trend Mechanics When Useful
 
-Invoke `broad-video-trend-radar-ops` and/or `video-breakout-research-ops` when George asks for current editing references, names a trending format, or the treatment needs a fresh pattern interrupt. Have a dedicated trend-mechanics scout deconstruct the reference rather than return only links.
+Invoke `broad-video-trend-radar-ops` and/or `video-breakout-research-ops` when the creator asks for current editing references, names a trending format, or the treatment needs a fresh pattern interrupt. Have a dedicated trend-mechanics scout deconstruct the reference rather than return only links.
 
 Read [trend-mechanics-brief.md](references/trend-mechanics-brief.md) for the required analysis. Borrow portable mechanics, not the exact style or identity of a living creator. Prefer evidence of repeated performance across several posts or creators over a single unexplained hit.
 
@@ -90,8 +90,8 @@ Compose existing skills:
 Select the lightest mode that satisfies the plan:
 
 1. **Full composite:** Use when the treatment changes A-roll scale, crop, position, timing, background, or layering. Render the A-cut and all overlays together.
-2. **Transparent overlay track:** Use when George wants the A-roll untouched in CapCut or another editor. Render alpha video for overlays only. This mode cannot perform A-roll punch-ins or reframes.
-3. **Individual editor assets:** Use when George wants manual placement or only a few custom sequences. Return editor-safe clips, stills, and exact timecodes.
+2. **Transparent overlay track:** Use when the creator wants the A-roll untouched in CapCut or another editor. Render alpha video for overlays only. This mode cannot perform A-roll punch-ins or reframes.
+3. **Individual editor assets:** Use when the creator wants manual placement or only a few custom sequences. Return editor-safe clips, stills, and exact timecodes.
 4. **Live timeline integration:** Use Premiere or another editor bridge only when it has been separately configured and audited. Work on a duplicate sequence and dedicated tracks with an explicit apply gate. It is not the default path.
 
 Read [remotion-handoff.md](references/remotion-handoff.md) before executing the default Remotion workflow.
@@ -112,7 +112,7 @@ Do not claim that a live preview is running unless it is actually accessible. Do
 
 Verify dimensions, duration, audio sync, frame rate, alpha behavior when relevant, missing media, and representative frame samples. Then invoke `video-visual-coverage-qa-ops` against the render, timed transcript, asset manifest, and visual-edit plan.
 
-Fix required evidence, legibility, timing, and technical defects before optional polish. Re-render until required issues are resolved or explicitly accepted. Taste notes remain recommendations for George, not hidden mutations.
+Fix required evidence, legibility, timing, and technical defects before optional polish. Re-render until required issues are resolved or explicitly accepted. Taste notes remain recommendations for the creator, not hidden mutations.
 
 ## Output Contract
 
