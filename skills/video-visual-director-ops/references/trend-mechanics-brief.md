@@ -19,9 +19,11 @@ For each reference, capture:
 - portable mechanics to borrow
 - elements to avoid because they are identity-specific, deceptive, illegible, or too expensive
 
-End with a short recommendation:
+Record a `mechanic_budget` before recommending a treatment. Default to `1` for
+a short-form video unless the creator asks for more. End with a short
+recommendation that stays within that budget:
 
-1. two or three mechanics worth testing in this video
+1. the chosen mechanic or mechanics worth testing in this video
 2. one mechanic to omit
 3. the exact beats where each test belongs
 4. a low-cost implementation path and a higher-upside alternative

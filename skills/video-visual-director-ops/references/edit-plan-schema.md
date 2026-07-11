@@ -16,7 +16,10 @@ Use one project header and one entry per meaningful timed beat. JSON is preferre
   },
   "canvas": {"width": 1080, "height": 1920},
   "delivery_mode": "full_composite",
+  "mechanic_budget": 1,
   "visual_rules": ["proof-first", "restrained punch-ins"],
+  "supplied_asset_inventory": "plan/SUPPLIED_ASSETS.md",
+  "srt_sync_status": "spot_checked",
   "beats": []
 }
 ```

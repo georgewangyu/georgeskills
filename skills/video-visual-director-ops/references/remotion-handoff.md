@@ -22,6 +22,9 @@ Use one shared composition-level timebase. Convert seconds to frames once and pr
 - Full composite: include the A-cut with Remotion's video component, then apply crops, scale, position, overlays, captions, audio, and motion.
 - Alpha overlay: render only transparent layers. For ProRes 4444, use PNG image frames and an alpha-capable pixel format/profile as required by the installed Remotion skill.
 - Individual assets: render named sequences with handles when manual placement benefits from them.
+- CapCut finishing bundle: render a review composite plus reusable alpha or
+  individual layers, then describe unbaked A-roll moves and every placement in
+  `CAPCUT_HANDOFF.md` so editability is explicit.
 
 ## Live Review Loop
 

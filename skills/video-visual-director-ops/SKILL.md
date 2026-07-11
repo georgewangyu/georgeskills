@@ -33,9 +33,16 @@ Collect or derive:
 3. The script, hook intent, and any non-negotiable claims.
 4. Existing asset manifest, screenshots, source links, and brand references.
 5. Target aspect ratio, resolution, frame rate, and maximum duration.
-6. Optional trend reference, creator example, or desired energy.
+6. Optional trend reference, creator example, desired energy, and mechanic
+   budget. Default to one borrowed mechanic for a short unless asked otherwise.
 
 Record the A-cut filename, byte size, duration, frame rate, and a SHA-256 fingerprint in the visual-edit plan. If the A-cut changes, stop rendering against stale timings, create a new version, and reconcile every timed treatment before continuing.
+
+Spot-check the supplied SRT against the fingerprinted export at the opening,
+middle, and ending; do not trust a filename or "matching" label alone. Inventory
+supplied assets before acquiring anything new. Number them, verify provenance,
+rights, privacy, legibility, and claim fit, and invoke `video-asset-pack-ops` only
+for missing, weak, or unusable proof.
 
 ## Step 1: Establish The Visual Language
 
@@ -47,7 +54,7 @@ Also set a density ceiling. A useful default for talking-head shorts is one mean
 
 Invoke `broad-video-trend-radar-ops` and/or `video-breakout-research-ops` when the creator asks for current editing references, names a trending format, or the treatment needs a fresh pattern interrupt. Have a dedicated trend-mechanics scout deconstruct the reference rather than return only links.
 
-Read [trend-mechanics-brief.md](references/trend-mechanics-brief.md) for the required analysis. Borrow portable mechanics, not the exact style or identity of a living creator. Prefer evidence of repeated performance across several posts or creators over a single unexplained hit.
+Read [trend-mechanics-brief.md](references/trend-mechanics-brief.md) for the required analysis. Honor the project's mechanic budget; the default is one portable mechanic, not a sampler of every observed technique. Borrow mechanics, not the exact style or identity of a living creator. Prefer evidence of repeated performance across several posts or creators over a single unexplained hit.
 
 ## Step 3: Build The Timed Beat Map
 
@@ -94,6 +101,13 @@ Select the lightest mode that satisfies the plan:
 3. **Individual editor assets:** Use when the creator wants manual placement or only a few custom sequences. Return editor-safe clips, stills, and exact timecodes.
 4. **Live timeline integration:** Use Premiere or another editor bridge only when it has been separately configured and audited. Work on a duplicate sequence and dedicated tracks with an explicit apply gate. It is not the default path.
 
+When the creator says only that they want to finish in CapCut, default to a
+**CapCut finishing bundle** instead of silently baking away editability. Return
+a review composite, alpha overlays and/or individual assets, and
+`CAPCUT_HANDOFF.md` with exact timecodes. Express A-roll punch-ins and reframes
+as timecoded CapCut instructions. Ask once before baking those A-roll changes
+into the only delivery, and state exactly which layers remain editable.
+
 Read [remotion-handoff.md](references/remotion-handoff.md) before executing the default Remotion workflow.
 
 ## Step 6: Run The Live Remotion Loop
@@ -124,6 +138,8 @@ Return:
 - the exact A-cut identity and fingerprint used for timing
 - Remotion source/project path and preview instructions
 - full composite, transparent overlay, and/or individual assets requested
+- `CAPCUT_HANDOFF.md` when the creator will finish in CapCut, including exact
+  placement instructions and an editability inventory
 - render validation notes and the final visual-coverage QA report
 - explicit manual handoff steps, unresolved blockers, and any A-cut observations kept outside the visual pass
 
