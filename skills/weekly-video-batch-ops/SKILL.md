@@ -1,6 +1,6 @@
 ---
 name: weekly-video-batch-ops
-description: Organize recurring short-form video batch production folders, final-export handling, and owned-platform posting audits. Use when planning weekly TikTok, Instagram Reels, or YouTube Shorts batches; setting up batch/project media folders; handling CapCut export inboxes with awkward default names; normalizing final video names; creating quick-access final-video indexes; refreshing weekly phone-transfer bundles; or checking which final videos have already been posted.
+description: Organize recurring short-form video batch production folders, correctly named empty CapCut draft shells, final-export handling, and owned-platform posting audits. Use when planning weekly TikTok, Instagram Reels, or YouTube Shorts batches; setting up a canonical video project; the creator says they are about to start editing; handling CapCut export inboxes with awkward default names; normalizing final video names; creating quick-access final-video indexes; refreshing weekly phone-transfer bundles; or checking which final videos have already been posted.
 memory_tags:
   - domain:social-media
   - workflow:weekly-video-batch
@@ -61,10 +61,11 @@ Rules:
 - Treat each project's `final-videos/` folder as the source of truth for final
   renders.
 - Use `editor-projects/` for editor-side project shells, draft pointers, or
-  import instructions. When creating a project folder, create a same-name empty
-  editor project/shell when the local editor workflow supports it, or record the
-  exact manual project name to create. Keep the shell empty until raw footage
-  has been imported and the rough-cut direction is clear.
+  import instructions. When creating a canonical project folder, or as soon as
+  the creator says editing is about to begin, create a same-name empty editor
+  project/shell when the verified local workflow supports it. Do this before
+  the editor creates a date-only default. Keep the shell empty until raw footage
+  is imported and the creator has chosen the A-roll/story cut.
 - Treat `<media-root>/final-videos/index/` as quick access only. Prefer
   symlinks to project-owned final files.
 - Treat `<media-root>/final-videos/by-week/YYYY-Www_video-batch/` as the
@@ -102,6 +103,78 @@ Preferred pattern:
 
 Never silently guess when two projects could plausibly own the same export.
 
+## CapCut Draft Bootstrap
+
+Treat empty named draft creation as project setup, not timeline editing.
+Creating the shell establishes the canonical name early; it does not import
+media, cut silence, arrange A-roll, add captions, place assets, or make creative
+edit decisions.
+
+Use the local `capcutbot` duplicate command only after verifying its current
+environment and an actually empty source template:
+
+1. Resolve the editor-owned draft library with `capcutbot env` or
+   `CAPCUTBOT_DRAFTS_DIR`. The root may be outside the media batch and may be on
+   an external volume; pass the resolved absolute root rather than assuming the
+   default CapCut location.
+2. Select a trusted empty template whose draft JSON has zero duration and no
+   timeline tracks. Do not infer emptiness from a filename containing
+   `template`, `blank`, or `empty`.
+3. Close CapCut before applying. A dry-run may be performed while it is open,
+   but do not create or mutate a draft while CapCut is running because the app
+   can rescan or overwrite editor-owned state.
+4. Run the bundled wrapper first with `--dry-run`, inspect the source, target,
+   collision state, and resolved draft root, then rerun with `--apply`:
+
+```bash
+python3 scripts/prepare_capcut_draft.py \
+  --project-dir <batch-dir>/YYYY-MM-DD_video-slug \
+  --drafts-root <resolved-capcut-drafts-root> \
+  --empty-template <empty-template-name-or-path> \
+  --capcutbot-dir <capcutbot-repo> \
+  --dry-run
+
+python3 scripts/prepare_capcut_draft.py \
+  --project-dir <batch-dir>/YYYY-MM-DD_video-slug \
+  --drafts-root <resolved-capcut-drafts-root> \
+  --empty-template <empty-template-name-or-path> \
+  --capcutbot-dir <capcutbot-repo> \
+  --apply
+```
+
+The wrapper must stop on a noncanonical project name, nonempty template,
+existing target, existing receipt, missing draft root, or open CapCut process.
+Successful creation leaves `editor-projects/capcut-draft.json` as the durable
+pointer/receipt. Draft creation is copy-only: the template is not modified, the
+destination is never overwritten, and therefore no backup is necessary for the
+new shell. Any later JSON mutation is a separate timeline-editing operation and
+must use CapCutBot's dry-run plus timestamped backup behavior.
+
+For an existing date-only or otherwise legacy CapCut draft, do not repair the
+name by renaming only its folder. Use the migration helper so the folder,
+`draft_meta_info.json`, and embedded absolute draft paths stay in sync while
+the untouched original becomes a timestamped backup:
+
+```bash
+python3 scripts/migrate_capcut_draft_name.py \
+  --drafts-root <absolute-active-drafts-root> \
+  --current-name '<legacy-name>' \
+  --canonical-name YYYY-MM-DD_video-slug \
+  --project-dir <batch-dir>/YYYY-MM-DD_video-slug \
+  --backup-root <same-volume-capcut-backup-root> \
+  --dry-run
+```
+
+Review the JSON change list, close CapCut, confirm the draft has no `.locked`
+marker, then repeat with `--apply`. The helper refuses collisions, an open
+CapCut process, locked drafts, mismatched metadata, cross-volume backup moves,
+and noncanonical project names. It writes or replaces
+`editor-projects/capcut-draft-migration.json` only after validation succeeds.
+
+If no trusted empty template or safe automation is available, do not duplicate
+an arbitrary old draft. Write the exact canonical project name into
+`editor-projects/` as a manual creation instruction and report the blocker.
+
 ## Weekly Workflow
 
 1. Resolve local paths.
@@ -118,14 +191,13 @@ Never silently guess when two projects could plausibly own the same export.
      then run the same command without `--dry-run` when it points at the
      intended batch.
    - Add one project folder per selected video.
-   - For each selected video, also prepare a same-name empty editor project
-     shell or editor-project pointer:
-     `YYYY-MM-DD_video-slug`. Store shell metadata, links, or notes under that
-     project's `editor-projects/` folder rather than scattering editor state.
-     If the local editor automation can duplicate an empty template, run its
-     dry-run first, then apply it only when the destination name is unambiguous.
-     If no automation is available, leave a short manual instruction such as
-     `Create empty editor project named YYYY-MM-DD_video-slug`.
+   - For each selected video, immediately prepare the same-name empty CapCut
+     shell `YYYY-MM-DD_video-slug` and its pointer receipt. Also do this when an
+     existing canonical project moves into `about to edit` state. Follow the
+     CapCut Draft Bootstrap gate above: inspect the configured draft root and
+     empty template, dry-run, collision-check, require CapCut closed, then
+     apply. If the gate cannot pass, leave the exact manual project name under
+     `editor-projects/` and report the blocker.
    - When a weekday show calendar exists, keep each candidate tied to its slot
      in the weekly plan. Treat the slots as coverage guidance, not as required
      folders or a forced posting quota.
@@ -298,6 +370,8 @@ Return:
 - current-week symlink path and refresh status
 - per-video project folder list
 - per-video editor project shell or manual editor-project creation status
+- resolved CapCut draft root, empty-template source, dry-run result, and
+  `editor-projects/capcut-draft.json` receipt path when a shell was created
 - show-slot coverage status, when a weekday show calendar exists
 - pre-filming reaction packet status, when the task involves a reaction batch
 - CapCut export inbox path
@@ -316,6 +390,11 @@ Return:
 - Do not create or overwrite editor projects in an application's private
   library unless the local workflow explicitly supports safe project creation,
   dry-run/backup, and same-name collision handling.
+- Do not apply CapCut draft creation while CapCut is open. Do not use a
+  nonempty project as the empty-shell template.
+- Do not describe an empty named draft as an edited timeline. A-roll assembly,
+  silence cuts, asset placement, captions, and creative pacing remain separate
+  work.
 - Do not rename project folders that may still be referenced by an active editor
   project unless the user explicitly calls the video done or the local runbook
   says the closeout rename is safe.

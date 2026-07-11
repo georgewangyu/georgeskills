@@ -1,4 +1,4 @@
 interface:
   display_name: "Weekly Video Batch Ops"
-  short_description: "Organize short-form video batch folders"
-  default_prompt: "Use $weekly-video-batch-ops to set up a weekly short-form video batch and organize final exports."
+  short_description: "Set up named drafts and video batches"
+  default_prompt: "Use $weekly-video-batch-ops to create a canonical video project, its correctly named empty CapCut draft, and the weekly export structure."
