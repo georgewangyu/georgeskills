@@ -24,21 +24,33 @@ Use this skill when:
 ## Workflow
 
 1. **Information Extraction:**
-   - Locate the current day's summary in `georgerepo/journal/summaries/YYYY/MM/YYYY-MM-DD_Summary.md`.
+   - Resolve the private repo with `--private-repo`,
+     `LIFEREPO_PRIVATE_ROOT`, or `PRIVATE_REPO_ROOT`; never assume a specific
+     repo name or home directory.
+   - By default, locate the current day's summary at
+     `<private-repo>/journal/summaries/YYYY/MM/YYYY-MM-DD_Summary.md`.
+   - For reusable or fixture-based runs, pass `--summary-path` and optional
+     `--feed-path`; the equivalent environment variables are
+     `X_POST_SUMMARY_PATH` and `X_POST_FEED_PATH`.
    - Parse `## Conversation Milestones` or `## Highlights`.
 2. **Draft Generation:**
-   - Execute `python3 skills/x-post-ops/scripts/generate_x_posts.py`.
+   - Execute `python3 skills/x-post-ops/scripts/generate_x_posts.py --private-repo <private-repo>`.
    - Ensure drafts follow the **2026 Viral Framework** (Strong hook, high shareability, no external links in body).
 3. **User Approval:**
    - Present 3-5 variants to the user.
 4. **Publishing:**
-   - Upon approval, execute `python3 skills/x-post-ops/scripts/post_to_x.py --tweet "<content>"`.
+   - Resolve Bird credentials from `--token-file`, `X_TWITTER_TOKEN_FILE`, or
+     `<private-repo>/.tokens/x-twitter.env`. Existing process environment
+     credentials are preserved when no token file is configured.
+   - Upon approval, execute `python3 skills/x-post-ops/scripts/post_to_x.py --private-repo <private-repo> --tweet "<content>"`.
    - **Stealth Mode (Recommended)**: If encountering "Error 226" (bot detection), use the `--stealth` flag to post via AppleScript and Chrome:
      `python3 skills/x-post-ops/scripts/post_to_x.py --stealth --tweet "<content>"`
 
 ## Guardrails
 
 - **Auth check:** Verify `bird` authentication via `bird whoami` before attempting to post.
+- **Portable credentials:** Never assume credentials live under a particular
+  user's home directory. Keep token values out of commands, logs, and output.
 - **Privacy:** Do not include sensitive information or private keys in the public tweet content.
 - **Suppression avoidance:** Place links in the first reply of the post, NOT the main body.
 
