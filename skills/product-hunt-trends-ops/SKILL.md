@@ -31,23 +31,31 @@ Do not use when:
 
 ## Workflow
 
-1. Browse current Product Hunt pages or an available Product Hunt API path. This data changes daily, so always fetch fresh data.
-2. Collect a compact launch set:
+1. Define the candidate universe before ranking:
+   - Record the target date/window, category or topic filters, fetch time, and Product Hunt surfaces included.
+   - For a daily or category scan, collect the complete visible ranked set (or all API results in the bounded query), not only launches already known from social posts.
+   - If pagination, login, API limits, or unavailable categories truncate the universe, record that as a source gap.
+2. Browse current Product Hunt pages or an available Product Hunt API path. This data changes daily, so always fetch fresh data.
+3. Collect a compact launch set:
    - product name and URL
    - tagline and category/tags
    - rank, votes, comments, and launch date when visible
    - maker/company context when relevant
-3. Separate signal from launch hype:
+4. Resolve each shortlisted launch to its canonical Product Hunt page and, when claims need confirmation, the official product or maker page. Treat roundups and social reactions as discovery context rather than rank evidence.
+5. Separate signal from launch hype:
    - Treat votes as attention, not revenue or retention.
    - Prefer launches with specific positioning, clear user pain, and thoughtful comments.
    - Discount generic AI wrappers unless the workflow, distribution, or wedge is unusually sharp.
-4. Cluster findings by job-to-be-done, buyer, workflow, and distribution channel.
-5. Call out:
+6. Cluster findings by job-to-be-done, buyer, workflow, and distribution channel. Merge duplicate/relaunched listings when they represent the same product event.
+7. Run a coverage gate before publishing the shortlist:
+   - Confirm every launch above the chosen rank/vote/comment threshold was either included or intentionally omitted.
+   - Record omitted high-signal launches with a short reason such as `duplicate`, `off-scope`, `weak evidence`, or `already tracked`.
+8. Call out:
    - personally useful tools worth trying
    - product ideas or wedge patterns worth stealing
    - outbound or content angles
    - weak signals that should not drive decisions yet
-6. If the user asks for durable tracking, save a dated note in the private repo, for example:
+9. If the user asks for durable tracking, save a dated note in the private repo, for example:
    - `<private-repo>/captures/social-media/product-hunt/trends/YYYY-MM-DD.md`
 
 ## Outputs
@@ -55,6 +63,7 @@ Do not use when:
 - A short ranked list of interesting launches.
 - A cluster read: what Product Hunt builders are shipping right now.
 - Clear next actions: try, track, ignore, research deeper, or convert into content/outreach.
+- Snapshot scope, source gaps, and a compact omitted-candidate audit.
 
 ## Source Guidance
 
