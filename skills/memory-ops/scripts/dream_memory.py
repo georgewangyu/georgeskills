@@ -159,6 +159,16 @@ def report_path_for(anchor: str, explicit: str | None) -> Path:
     return REPORTS_DIR / f"{anchor}_dream.md"
 
 
+def report_doc_id(target: Path) -> str:
+    """Build a portable doc id from the configured repo and report path."""
+    resolved_target = target.expanduser().resolve()
+    try:
+        relative = resolved_target.relative_to(PRIVATE_REPO_ROOT.resolve())
+    except ValueError:
+        relative = Path("memory") / "reports" / resolved_target.name
+    return f"{PRIVATE_REPO_ROOT.name}/{relative.with_suffix('').as_posix()}"
+
+
 def render_report(
     *,
     anchor: str,
@@ -166,6 +176,7 @@ def render_report(
     validation_ok: bool,
     validation_output: str,
     recent_records: list[dict[str, object]],
+    doc_id: str,
 ) -> str:
     by_type = Counter(str(record.get("type", "")) for record in recent_records)
     accepted = accepted_index()
@@ -197,7 +208,7 @@ def render_report(
     lines: list[str] = []
     lines.append("---")
     lines.append('doc_schema: "doc-frontmatter-v1"')
-    lines.append(f'doc_id: "georgerepo/memory/reports/{anchor}_dream"')
+    lines.append(f'doc_id: "{doc_id}"')
     lines.append('doc_type: "memory_report"')
     lines.append('doc_status: "active"')
     lines.append(f'title: "Memory Dream Report - {anchor}"')
@@ -275,6 +286,7 @@ def main() -> int:
             validation_ok=validation_ok,
             validation_output=validation_output,
             recent_records=recent_records,
+            doc_id=report_doc_id(target),
         ),
         encoding="utf-8",
     )

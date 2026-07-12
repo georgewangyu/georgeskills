@@ -34,6 +34,8 @@ Current focus:
   - Refreshes recent candidate extraction
   - Validates memory files
   - Writes a review report under `memory/reports/`
+  - Derives report `doc_id` values from the configured private repo and report
+    output path rather than assuming a repository name
 
 ## Operating Model
 
