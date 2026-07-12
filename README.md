@@ -154,6 +154,7 @@ These are the skill clusters that have been moving fastest recently:
 | `naming-ops` | Generate and screen brandable company, product, and SaaS names with domain and trademark checks. |
 | `sales-discovery-email-ops` | Generate respectful first-touch outbound lead messages for sales discovery and consulting outreach. |
 | `sales-message-evaluator-ops` | Evaluate first-touch lead messages against buyer specificity, pain clarity, offer strength, CTA, tone, and reply likelihood. |
+| `calcom-consultation-offer-ops` | Create, update, publish, and live-verify Cal.com consultation offers, recurring schedules, intake fields, conferencing, and payment wording. |
 | `resend-ops` | Set up or maintain Resend email integration, env wiring, and deployment-secret configuration. |
 | `stripe-ops` | Reusable local Stripe setup workflow using shared private credentials, Stripe CLI, and the installed upstream Stripe skills. |
 | `tax-filing-ops` | Build a repeatable tax-prep workflow with checklist automation, product-specific filing runbooks, and human-reviewed submission gates. |

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cal.com Consultation Offer Ops"
+  short_description: "Create and verify Cal.com consultation offers"
+  default_prompt: "Use $calcom-consultation-offer-ops to create or update a consultation offer and verify its live availability."
