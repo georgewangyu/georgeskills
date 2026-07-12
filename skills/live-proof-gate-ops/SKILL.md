@@ -59,6 +59,17 @@ Do not use when:
    - artifact or link
    - residual risk
    - next action if blocked
+6. When durable or cross-run evidence is useful, optionally emit a
+   provider-neutral machine-readable receipt:
+   - Use any installed generic receipt runner; AI Task Receipt is one example,
+     not a required dependency.
+   - Capture task/run id, boundary, permissions, command or action type,
+     timestamps/duration, exit status, bounded/redacted output, verifier and
+     result, gate state, artifact reference, and residual risk.
+   - Keep a concise JSON representation suitable for automation and an
+     optional Markdown rendering for humans.
+   - Do not require paid multi-model execution. A receipt can wrap the single
+     authorized run that actually proves the boundary.
 
 ## Outputs
 
@@ -70,6 +81,7 @@ Return:
 - missing access or exact owner question
 - residual risk
 - recommended next action
+- optional machine-readable receipt path/id when durable evidence was requested
 
 For queue items, add or update a `proof` field. For PRs or commits, include proof in the final report or landing comment.
 
@@ -79,3 +91,5 @@ For queue items, add or update a `proof` field. For PRs or commits, include proo
 - Do not expose secrets, private data, internal identifiers, or credential values in receipts.
 - Do not perform public, financial, account-mutating, or destructive actions unless the user explicitly approved that exact action.
 - If live proof is blocked, finish safe prep work and ask for the exact missing access, waiver, or decision.
+- A receipt is evidence packaging, not proof by itself; its verifier and
+  observed postcondition still determine the gate state.

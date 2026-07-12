@@ -63,6 +63,19 @@ Do not use when:
    - prompt changes
    - tool workflow changes
    - deterministic checks or scripts worth adding
+7. Optionally record an execution receipt when runs need to be compared or
+   audited:
+   - Use any installed provider-neutral receipt runner; AI Task Receipt is one
+     example, not a required dependency.
+   - Prefer a machine-readable JSON receipt plus a concise human-readable view.
+   - Capture task/case id, runner and provider/model when known, permissions,
+     start/end or duration, exit status, bounded/redacted output, verifier
+     result, and residual risk.
+   - A receipt records what ran; it does not turn one run into a statistically
+     meaningful benchmark.
+   - Do not require paid multi-model runs. Use the smallest run set that can
+     answer the evaluation question, including a single local or existing
+     provider when appropriate.
 
 ## Output Contract
 
@@ -74,10 +87,13 @@ Return:
 - observed or hypothetical failure taxonomy
 - recommended fixes ranked by leverage
 - next action: run manually, automate, or defer
+- optional receipt path/id and verifier result when a receipt was requested
 
 ## Boundaries
 
 - Keep evals small enough to run in real work.
 - Separate model capability failures from instruction/design failures.
 - Do not claim statistical benchmark certainty from a tiny harness.
+- Keep receipt tooling optional and provider-neutral; do not make a paid model
+  or a specific runner a prerequisite for lightweight evaluation.
 - Keep examples public-safe: no private paths, credentials, account IDs, or real personal identifiers.
