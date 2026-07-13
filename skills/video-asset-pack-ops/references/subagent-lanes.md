@@ -35,6 +35,14 @@ Return:
 
 This lane should not write image files.
 
+When a separate transcript/alignment lane exists, consume its declared
+transcript and A-cut fingerprint as the timing authority. Do not create a
+second audio extraction or transcript inside a proof lane merely for
+convenience. If temporary transcription is unavoidable, label it diagnostic,
+spot-check opening/middle/ending for coherent changing speech, and reject it
+immediately when it repeats short phrases, loses most narration, or disagrees
+with the locked A-cut.
+
 ## Lane D — Visual opportunity scout
 
 Objective: identify no more than three beats where custom motion, a screen recording, an official promo excerpt, or generated media would outperform a screenshot.
@@ -55,6 +63,8 @@ Every worker receives:
 - exact output directory
 - reserved filenames
 - allowed source URLs or search lane
+- the authoritative transcript/A-cut path, or an explicit statement that none
+  exists yet
 - a no-install/no-fabrication rule
 - a short completion format: files, sources, dimensions, blockers
 

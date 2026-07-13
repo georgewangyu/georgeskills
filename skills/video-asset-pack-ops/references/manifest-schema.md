@@ -10,10 +10,13 @@ List corrected wording for history, rankings, pricing, live metrics, opinions, a
 
 ### Asset index
 
-| # | Filename | Source | Claim supported | Capture state | Rights/provenance | Recommended use |
-|---|---|---|---|---|---|---|
+| # | Filename | Source | Claim supported | Capture state | Technical probe | Rights/provenance | Recommended use |
+|---|---|---|---|---|---|---|---|
 
 Use `capture state` values such as `static`, `captured <date/time>`, `mutable`, `generated`, or `unavailable`.
+For motion and video assets, link the `inspect_asset_pack.py` probe output or
+record codec, dimensions, duration, frame rate, audio streams, and rotation
+directly. Do not infer these values from the extension or editor thumbnail.
 
 ### Spoken-beat map
 

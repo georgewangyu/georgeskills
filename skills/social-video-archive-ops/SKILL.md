@@ -1,13 +1,6 @@
 ---
 name: social-video-archive-ops
 description: Archive reference videos from social platforms without putting large media inside active repos. Use when a user wants to download, preserve, transcribe, or keep a reference copy of an X/Twitter, YouTube, TikTok, Instagram, LinkedIn, Product Hunt, or other social/web video; when extracting direct MP4/HLS media URLs from platform metadata; or when creating repo-side provenance notes and symlinks that point to an external raw-media archive.
-memory_tags:
-  - domain:social-media
-  - domain:transcripts
-  - workflow:video-archive
-  - skill_role:operator
-  - repo_boundary:tools
-  - risk:medium
 ---
 
 # Social Video Archive Ops
@@ -139,9 +132,7 @@ For Mac-local long-form video, use the native ARM64 MLX transcription path when
 the project has one:
 
 ```bash
-source <skills-repo>/scripts/transcription/venv/bin/activate
-HF_HOME="<stable-huggingface-cache>" \
-  python <skills-repo>/scripts/transcription/mlx_transcriber.py \
+<skills-repo>/scripts/transcription/run_mlx_transcriber.sh \
   "<private-repo>/areas/transcripts/raw/<platform>/<source-id>/audio.mp3" \
   --outdir "<private-repo>/areas/transcripts/raw/<platform>/<source-id>/"
 ```
@@ -151,6 +142,9 @@ resolver reports non-ARM64 wheel constraints, do not waste time forcing the
 generic installer path and do not silently switch to CPU ASR. Fix the native
 venv/cache setup first, then rerun MLX. Record the MLX environment blocker in
 `command_notes.md` if transcription cannot proceed.
+
+Keep the configured runtime and Hugging Face cache outside disposable repo
+venvs/caches. Verify the wrapper prints `native arm64` before transcription.
 
 ## X/Twitter Direct MP4 Pattern
 

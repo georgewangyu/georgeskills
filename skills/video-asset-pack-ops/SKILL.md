@@ -34,7 +34,7 @@ If the user is merely discussing a script, offer the asset pass in one sentence.
 ### 1. Protect the project structure
 
 - Use the active video-folder convention from the invoking workspace. If the project does not exist, invoke `weekly-video-batch-ops` to create it.
-- When a canonical project is created or the creator says editing is about to begin, have `weekly-video-batch-ops` bootstrap the same-name empty CapCut draft immediately. Complete its dry-run, collision, empty-template, and CapCut-closed gates before applying. Do not wait until export or cleanup to repair a date-only editor name.
+- When a canonical project is created or the creator says editing is about to begin, have `weekly-video-batch-ops` bootstrap the same-name empty CapCut draft immediately. Complete its dry-run, collision, empty-template, unique-target, and fingerprint gates before applying. CapCut may remain open for a new uniquely named draft; surface any project-list refresh or restart needed. Do not wait until export or cleanup to repair a date-only editor name.
 - Never rename or move a folder already imported into an editor unless explicitly authorized.
 - When a canonical project name is useful, have `weekly-video-batch-ops` create it and preserve the imported path with a compatibility symlink or pointer.
 - Put gathered material in the project's `assets/` directory. Keep raw footage and final exports out of it.
@@ -53,6 +53,10 @@ For every spoken beat, identify:
 - accuracy risk: live metric, disputed claim, time-sensitive rank, or opinion
 
 Do not gather generic decoration until the proof beats are covered.
+For talking-head footage, default proof to a face-safe partial-frame overlay.
+Budget zero or one full-screen takeover for the short; it must perform a
+legibility-critical proof job or a meaningful multi-state explanation. Reject
+static full-screen cards and single-state scale loops over the speaker.
 
 ### 3. Allocate filenames before collection
 
@@ -101,13 +105,16 @@ Visually inspect every accepted image. Check:
 - no conflicting live numbers across narration and screenshots without an editor note
 - no test files or temporary profiles left in the asset folder
 
-Run:
+Probe both images and motion assets; do not infer media properties from a file
+extension, editor thumbnail, or render settings. Run:
 
 ```bash
 python3 scripts/inspect_asset_pack.py <assets-dir>
 ```
 
-Fix extension mismatches, unusable crops, and duplicate assets before marking the pack ready.
+The inspector uses `ffprobe` for video metadata. Fix extension mismatches,
+unusable crops, invalid duration or dimensions, and duplicate assets before
+marking the pack ready. Record the probe output or its path in the manifest.
 
 ### 8. Write the editor manifest
 

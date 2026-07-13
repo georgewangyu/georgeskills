@@ -33,7 +33,9 @@ Treat locked A-roll as an upstream constraint. Do not reopen story selection, de
 ## Safety Boundary
 
 - Default to read-only inspection of renders, transcripts, manifests, and source assets.
-- Never mutate a live CapCut draft. If metadata would help, close CapCut and inspect a backup or isolated snapshot, or proceed from the export only.
+- Keep this evaluator read-only. Inspect a backup or isolated snapshot when
+  editor metadata would help, or proceed from the export only. CapCut does not
+  need to close merely for read-only QA.
 - Write only the QA report and optional temporary frame samples or contact sheets to a separate `qa/` or staging directory.
 - Do not rename, move, overwrite, or re-encode source media as part of inspection.
 - Treat A-roll-only intervals as editorial choices, not automatic failures.

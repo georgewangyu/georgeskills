@@ -1,10 +1,16 @@
 # Remotion Handoff
 
-Remotion is the default post-A-cut execution layer because it can render precise, repeatable treatments while the creator watches a browser preview.
+Remotion is the precision-animation and assembly layer for treatments that need
+exact timing, repeatability, or a live browser preview. It is not the default
+generator for cinematic or metaphorical footage when an approved consumer
+Gemini video surface is the better visual fit.
 
-## Project Layout
+## Runtime And Project Layout
 
-Keep the project beside the video workspace or under its `visual-pass/` folder:
+Use the configured shared Remotion runtime and dependency installation. Do not
+create `node_modules`, install Remotion, or duplicate the runtime inside a
+video project. Keep only project-specific source and data beside the video
+workspace:
 
 ```text
 visual-pass/
@@ -14,6 +20,10 @@ visual-pass/
   outputs/
   qa/
 ```
+
+Run the shared runtime against the project-specific composition. Route
+disposable builds to the configured shared temporary-build directory, not the
+video folder.
 
 Use one shared composition-level timebase. Convert seconds to frames once and preserve the chosen frame rate. Give sequences stable beat IDs matching the edit plan.
 
@@ -26,13 +36,21 @@ Use one shared composition-level timebase. Convert seconds to frames once and pr
   individual layers, then describe unbaked A-roll moves and every placement in
   `CAPCUT_HANDOFF.md` so editability is explicit.
 
+An asset bundle is not a native CapCut edit. When native CapCut tracks are the
+declared target, use Remotion only to create the selected motion assets. Import
+those assets, text layers, and overlays into the versioned CapCut draft; verify
+the reopened timeline; and export the review candidate from that draft.
+
 ## Live Review Loop
 
 1. Start Remotion Studio from the project.
 2. Share the local preview in the available browser surface.
 3. Change data, props, or sequence components while the creator reviews.
-4. Inspect representative stills before full renders.
-5. Keep the last accepted render and never overwrite it silently.
+4. Inspect representative stills and benchmark a `5-10s` sample before full renders.
+5. Project the full-render time from the sample and switch to individual assets
+   or segmented hardware-accelerated assembly when a full Remotion composite
+   is unnecessarily expensive.
+6. Keep the last accepted render and never overwrite it silently.
 
 ## Timing Invalidation
 

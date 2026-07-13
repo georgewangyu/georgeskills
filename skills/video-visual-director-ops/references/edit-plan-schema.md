@@ -15,7 +15,25 @@ Use one project header and one entry per meaningful timed beat. JSON is preferre
     "fps": 30
   },
   "canvas": {"width": 1080, "height": 1920},
-  "delivery_mode": "full_composite",
+  "style_profile": {
+    "path": "/absolute/path/creator-shortform-style.md",
+    "version": "0.1-pilot",
+    "preset": "series-name",
+    "exceptions": []
+  },
+  "delivery_mode": "native_editor_timeline",
+  "editability_target": {
+    "editor": "CapCut",
+    "required": true,
+    "editable_layers": ["a_roll", "titles", "proof", "motion", "captions"],
+    "review_export_source": "declared editor project"
+  },
+  "render_strategy": {
+    "preflight_report": "plan/RENDER_PREFLIGHT.md",
+    "sample_seconds": 8,
+    "projected_full_render_seconds": null,
+    "retry_budget": 1
+  },
   "mechanic_budget": 1,
   "visual_rules": ["proof-first", "restrained punch-ins"],
   "supplied_asset_inventory": "plan/SUPPLIED_ASSETS.md",

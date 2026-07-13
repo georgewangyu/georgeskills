@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Inspect common image assets without third-party dependencies."""
+"""Inspect common image and video assets without Python dependencies."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import struct
+import subprocess
 from pathlib import Path
 
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".webm", ".mkv"}
 
 
 def png_dimensions(data: bytes) -> tuple[int, int] | None:
@@ -48,7 +51,7 @@ def jpeg_dimensions(data: bytes) -> tuple[int, int] | None:
     return None
 
 
-def inspect(path: Path) -> dict[str, object]:
+def inspect_image(path: Path) -> dict[str, object]:
     data = path.read_bytes()
     detected = "unknown"
     dimensions = None
@@ -73,6 +76,7 @@ def inspect(path: Path) -> dict[str, object]:
         problems.append("zero dimensions")
 
     return {
+        "kind": "image",
         "file": path.name,
         "bytes": len(data),
         "detected_type": detected,
@@ -82,21 +86,114 @@ def inspect(path: Path) -> dict[str, object]:
     }
 
 
+def inspect_video(path: Path, ffprobe: str) -> dict[str, object]:
+    command = [
+        ffprobe,
+        "-v",
+        "error",
+        "-show_entries",
+        "format=format_name,duration,size:stream=index,codec_type,codec_name,width,height,pix_fmt,r_frame_rate:stream_tags=rotate:stream_side_data=rotation",
+        "-of",
+        "json",
+        str(path),
+    ]
+    try:
+        completed = subprocess.run(
+            command, check=True, capture_output=True, text=True
+        )
+        payload = json.loads(completed.stdout)
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+        detail = getattr(exc, "stderr", "") or str(exc)
+        return {
+            "kind": "video",
+            "file": path.name,
+            "bytes": path.stat().st_size,
+            "problems": [f"ffprobe failed: {detail.strip()}"],
+        }
+
+    streams = payload.get("streams", [])
+    video_streams = [s for s in streams if s.get("codec_type") == "video"]
+    audio_streams = [s for s in streams if s.get("codec_type") == "audio"]
+    primary = video_streams[0] if video_streams else {}
+    format_data = payload.get("format", {})
+    problems = []
+    duration = float(format_data.get("duration", 0) or 0)
+    width = int(primary.get("width", 0) or 0)
+    height = int(primary.get("height", 0) or 0)
+    if not video_streams:
+        problems.append("no video stream")
+    if duration <= 0:
+        problems.append("invalid duration")
+    if width <= 0 or height <= 0:
+        problems.append("invalid dimensions")
+
+    rotation = primary.get("tags", {}).get("rotate")
+    if rotation is None:
+        for item in primary.get("side_data_list", []):
+            if "rotation" in item:
+                rotation = item["rotation"]
+                break
+
+    return {
+        "kind": "video",
+        "file": path.name,
+        "bytes": path.stat().st_size,
+        "container": format_data.get("format_name"),
+        "codec": primary.get("codec_name"),
+        "pixel_format": primary.get("pix_fmt"),
+        "width": width or None,
+        "height": height or None,
+        "duration_seconds": duration or None,
+        "frame_rate": primary.get("r_frame_rate"),
+        "audio_streams": [s.get("codec_name") for s in audio_streams],
+        "rotation": rotation,
+        "problems": problems,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("assets_dir", type=Path)
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--ffprobe", help="ffprobe binary; defaults to PATH")
     args = parser.parse_args()
 
-    files = sorted(p for p in args.assets_dir.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS)
-    results = [inspect(path) for path in files]
+    files = sorted(
+        p
+        for p in args.assets_dir.iterdir()
+        if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
+    )
+    ffprobe = args.ffprobe or shutil.which("ffprobe")
+    results = []
+    for path in files:
+        if path.suffix.lower() in IMAGE_EXTENSIONS:
+            results.append(inspect_image(path))
+        elif ffprobe:
+            results.append(inspect_video(path, ffprobe))
+        else:
+            results.append(
+                {
+                    "kind": "video",
+                    "file": path.name,
+                    "bytes": path.stat().st_size,
+                    "problems": ["ffprobe not found"],
+                }
+            )
     if args.json:
         print(json.dumps(results, indent=2))
     else:
         for item in results:
-            size = f"{item['width']}x{item['height']}" if item["width"] else "dimensions unavailable"
+            size = f"{item.get('width')}x{item.get('height')}" if item.get("width") else "dimensions unavailable"
             problems = "; ".join(item["problems"]) if item["problems"] else "ok"
-            print(f"{item['file']}: {item['detected_type']} {size}, {item['bytes']} bytes — {problems}")
+            if item["kind"] == "image":
+                summary = f"{item['detected_type']} {size}"
+            else:
+                summary = (
+                    f"{item.get('codec', 'unknown codec')} {size}, "
+                    f"{item.get('duration_seconds', 'unknown duration')}s, "
+                    f"{item.get('frame_rate', 'unknown fps')} fps"
+                )
+            print(f"{item['file']}: {summary}, {item['bytes']} bytes — {problems}")
     return 1 if any(item["problems"] for item in results) else 0
 
 

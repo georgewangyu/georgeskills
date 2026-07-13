@@ -12,6 +12,8 @@ Use these as review heuristics, not automatic style laws. Judge the rendered pix
 | Dense table or UI | Simultaneously visible rows, cells, controls, labels, and small text | More than six competing items with no zoom, crop, highlight, cursor, or callout | The narration depends on a value or rank that is unreadable or ambiguous |
 | Caption collision | Caption box overlap with a face, proof text, source/date label, CTA, or platform safe zone | Any overlap that competes with the intended focal point | The collision hides or changes the meaning of required evidence |
 | Evidence mismatch | Difference between narration and visible source, metric, date, entity, or claim strength | Any adjacent-but-not-equivalent evidence | The visual contradicts, materially overstates, or falsely attributes the spoken claim |
+| Product-demo purity | Correct product UI/action, orientation, visible people, creator branding, baked subtitles, and playback-size readability | Unrelated creator/room footage, unclear product action, filler, or UI too small to understand | The brief requires product-only footage, or the visible material misrepresents what the product does |
+| Motion boundary integrity | First, middle, final, and transition-adjacent frames | Blank, black, dim, reset, corrupt-alpha, duplicated-state, or one-frame block | Any corrupt frame interrupts or obscures required content |
 | Unused prepared asset | Manifested or prepared asset absent from the rendered timeline | Report when a prepared asset covers a currently flagged beat | Never required solely because it was prepared |
 
 For screenshot timing, count only the words the viewer must read, not every
@@ -38,6 +40,8 @@ Inspect:
 2. the first, middle, and final usable frame of every overlay
 3. every caption-layout change and every frame where proof text approaches the caption area
 4. one frame immediately before and after each proposed edit boundary
+5. every frame around a suspected one-frame corruption or alpha/compositing
+   defect until the clean boundary is proved
 
 When sampling misses an animated collision or fast transition, inspect a short local sequence rather than relying on one still.
 
