@@ -22,8 +22,8 @@ The core transcription utility is located at:
 `georgeskills/scripts/transcription/mlx_transcriber.py`
 
 ### PREREQUISITES
-1. The agent/user must use the native ARM64 virtual environment:
-   `source georgeskills/scripts/transcription/venv/bin/activate`
+1. Configure the durable native ARM64 runtime and model cache in
+   `~/.config/georgeskills/mlx-whisper.env`.
 
 ## Execution
 
@@ -33,8 +33,7 @@ workflow. If MLX fails, fix the MLX environment first: native ARM64 venv,
 working `mlx` / `mlx_whisper` imports, and a valid Hugging Face cache.
 
 ```bash
-source georgeskills/scripts/transcription/venv/bin/activate
-HF_HOME=<stable-huggingface-cache> python georgeskills/scripts/transcription/mlx_transcriber.py /path/to/file.wav --outdir /georgerepo/journal/audio/transcripts/
+georgeskills/scripts/transcription/run_mlx_transcriber.sh /path/to/file.wav --outdir /georgerepo/journal/audio/transcripts/
 ```
 
 Current defaults for the MLX path:
@@ -44,6 +43,11 @@ Current defaults for the MLX path:
 - environment: use the native ARM64 transcription venv. If the default
   Hugging Face cache is stale or points at a missing volume, set `HF_HOME` to a
   stable local cache before running the MLX script.
+
+Bootstrap or repair the runtime with
+`georgeskills/scripts/transcription/bootstrap_mlx_runtime.py`. Put the runtime
+outside disposable repo artifacts and put the model cache on durable storage.
+Do not use an x86_64 uv-managed Python on Apple Silicon.
 
 Do not use the old CPU transcriber to work around a local setup issue. Treat
 MLX import/cache/model failures as environment blockers and record the blocker

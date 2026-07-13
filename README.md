@@ -123,6 +123,7 @@ These are the skill clusters that have been moving fastest recently:
 | `video-visual-director-ops` | Direct one coherent post-A-cut treatment across A-roll reframes, proof, B-roll, motion, captions, sound, rendering, and QA. |
 | `video-visual-assets-ops` | Produce selected higher-value video visuals such as coded motion, diagrams, screen demonstrations, promo excerpts, and generated media. |
 | `video-visual-coverage-qa-ops` | Audit a first export against its transcript and asset pack for visual gaps, overlay problems, evidence mismatch, and exact timestamped fixes. |
+| `video-edit-phase-gate-ops` | Keep a video edit on one evidence-backed path from intake and A-cut lock through editor persistence, independent rendered evaluation, and final acceptance. |
 | `video-companion-page-ops` | Create local HTML/blog-style companion pages for educational videos with clickable sources, screenshots, diagrams, and talking outlines. |
 | `static-note-share-ops` | Publish selected local notes, transcripts, or research docs as sanitized static share pages with explicit redaction and deployment gates. |
 
@@ -250,13 +251,16 @@ so the skill list refreshes.
 If you want the local Whisper transcription pipeline (Apple Silicon):
 
 ```bash
-cd scripts/transcription
-python3 -m venv venv
-source venv/bin/activate
-pip install mlx-whisper
+python3 scripts/transcription/bootstrap_mlx_runtime.py \
+  --runtime-dir <durable-runtime-path> \
+  --cache-dir <durable-huggingface-cache> \
+  --python /opt/homebrew/bin/python3.13
 ```
 
-Requires ARM64 Python (`/opt/homebrew/bin/python3` on Apple Silicon).
+Record `MLX_WHISPER_RUNTIME` and `HF_HOME` in
+`~/.config/georgeskills/mlx-whisper.env`, then use
+`scripts/transcription/run_mlx_transcriber.sh`. Requires native ARM64 Python;
+do not use an x86_64 uv-managed interpreter on Apple Silicon.
 
 ---
 
