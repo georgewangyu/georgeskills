@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Normalize short-form final exports into project folders and a final index."""
+"""Normalize short-form final exports into accepted-final storage and an index."""
 
 from __future__ import annotations
 
@@ -63,19 +63,30 @@ def plan_item(
     item: dict[str, Any],
     incoming_dir: Path | None,
     batch_dir: Path | None,
+    accepted_final_dir: Path | None,
     final_index_dir: Path,
     final_subdir: str,
 ) -> dict[str, Path]:
     source_value = item.get("source")
     project_value = item.get("project")
     canonical_name = item.get("canonical_name")
-    if not all(isinstance(v, str) and v for v in [source_value, project_value]):
-        raise ValueError("each item requires non-empty source and project strings")
+    if not isinstance(source_value, str) or not source_value:
+        raise ValueError("each item requires a non-empty source string")
+    if accepted_final_dir is None and (
+        not isinstance(project_value, str) or not project_value
+    ):
+        raise ValueError("each item requires a project unless accepted_final_dir is set")
 
     source = resolve_child(incoming_dir, source_value, "source")
-    project_dir = resolve_child(batch_dir, project_value, "project")
+    project_dir = (
+        resolve_child(batch_dir, project_value, "project")
+        if isinstance(project_value, str) and project_value
+        else None
+    )
 
     if canonical_name is None:
+        if project_dir is None:
+            raise ValueError("canonical_name is required when project is omitted")
         ext = source.suffix.lower()
         if ext not in VIDEO_EXTS:
             raise ValueError(f"cannot infer canonical name for non-video source: {source}")
@@ -83,7 +94,11 @@ def plan_item(
     if not isinstance(canonical_name, str) or "/" in canonical_name:
         raise ValueError("canonical_name must be a filename, not a path")
 
-    final_path = project_dir / final_subdir / canonical_name
+    final_path = (
+        accepted_final_dir / canonical_name
+        if accepted_final_dir is not None
+        else project_dir / final_subdir / canonical_name
+    )
     index_path = final_index_dir / canonical_name
     return {"source": source, "final": final_path, "index": index_path}
 
@@ -156,7 +171,7 @@ def main() -> int:
         "--source-action",
         choices=["move", "clone", "copy"],
         default="move",
-        help="How to place incoming exports into project final folders",
+        help="How to place incoming exports into accepted-final storage",
     )
     parser.add_argument(
         "--index-mode",
@@ -174,6 +189,12 @@ def main() -> int:
     mapping = load_mapping(args.mapping.expanduser())
     incoming_dir = Path(mapping["incoming_dir"]).expanduser() if mapping.get("incoming_dir") else None
     batch_dir = Path(mapping["batch_dir"]).expanduser() if mapping.get("batch_dir") else None
+    accepted_final_value = mapping.get("accepted_final_dir")
+    accepted_final_dir = (
+        Path(accepted_final_value).expanduser()
+        if isinstance(accepted_final_value, str) and accepted_final_value
+        else None
+    )
     final_index_value = mapping.get("final_index_dir")
     if not isinstance(final_index_value, str) or not final_index_value:
         raise ValueError("mapping requires final_index_dir")
@@ -183,7 +204,14 @@ def main() -> int:
     for item in mapping["items"]:
         if not isinstance(item, dict):
             raise ValueError("each mapping item must be an object")
-        paths = plan_item(item, incoming_dir, batch_dir, final_index_dir, args.final_subdir)
+        paths = plan_item(
+            item,
+            incoming_dir,
+            batch_dir,
+            accepted_final_dir,
+            final_index_dir,
+            args.final_subdir,
+        )
         actions = apply_item(
             paths,
             source_action=args.source_action,

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -36,7 +37,7 @@ def fail(message: str) -> "NoReturn":
     raise RuntimeError(message)
 
 
-def capcut_is_open() -> bool:
+def capcut_is_open() -> bool | None:
     if platform.system() == "Darwin":
         result = subprocess.run(
             ["osascript", "-e", 'application "CapCut" is running'],
@@ -45,15 +46,25 @@ def capcut_is_open() -> bool:
             text=True,
         )
         if result.returncode != 0 or result.stdout.strip().lower() not in {"true", "false"}:
-            fail("Could not verify whether CapCut is open; refusing migration")
+            return None
         return result.stdout.strip().lower() == "true"
     try:
         result = subprocess.run(
             ["pgrep", "-x", "CapCut"], check=False, capture_output=True, text=True
         )
     except FileNotFoundError:
-        fail("Could not verify whether CapCut is open; refusing migration")
+        return None
     return result.returncode == 0
+
+
+def draft_fingerprint(draft_dir: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(draft_dir.rglob("*.json")):
+        digest.update(str(path.relative_to(draft_dir)).encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def replace_path_values(value: Any, old_path: str, new_path: str) -> tuple[Any, int]:
@@ -187,12 +198,9 @@ def run() -> dict[str, Any]:
         fail(f"Current draft does not exist: {source}")
     if target.exists():
         fail(f"Canonical target already exists: {target}")
-    if (source / ".locked").exists():
-        fail(f"Draft has a .locked marker; refusing migration: {source}")
-
+    locked_marker = (source / ".locked").exists()
     is_open = capcut_is_open()
-    if args.apply and is_open:
-        fail("CapCut is open; close it before applying draft migration")
+    source_fingerprint = draft_fingerprint(source)
 
     changes = json_change_plan(source, target, current_name, canonical_name)
     changed_files = [
@@ -213,6 +221,23 @@ def run() -> dict[str, Any]:
         "backup_path": str(backup_path),
         "receipt_path": str(receipt_path),
         "capcut_open": is_open,
+        "locked_marker_present": locked_marker,
+        "source_fingerprint": source_fingerprint,
+        "target_fingerprint": None,
+        "warnings": [
+            message
+            for condition, message in (
+                (
+                    is_open,
+                    "CapCut is open; if this source draft is active, concurrent saves may be last-writer-wins.",
+                ),
+                (
+                    locked_marker,
+                    "The source contains a .locked marker; it may be stale, but verify the migrated draft before continuing.",
+                ),
+            )
+            if condition
+        ],
         "changed_json_files": changed_files,
     }
     if args.dry_run:
@@ -242,6 +267,8 @@ def run() -> dict[str, Any]:
             shutil.rmtree(stage)
 
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    target_fingerprint = draft_fingerprint(target)
+    output["target_fingerprint"] = target_fingerprint
     receipt = {
         **output,
         "status": "migrated",

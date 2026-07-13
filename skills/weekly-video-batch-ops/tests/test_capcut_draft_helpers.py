@@ -114,6 +114,42 @@ class PrepareCapCutDraftTests(unittest.TestCase):
 
             self.assertFalse((project / "editor-projects" / "capcut-draft.json").exists())
 
+    def test_apply_allows_open_capcut_for_unique_target(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / "2026-07-10_test-video"
+            drafts = root / "drafts"
+            template = drafts / "empty-template"
+            capcutbot = root / "capcutbot"
+            project.mkdir()
+            template.mkdir(parents=True)
+            (capcutbot / "src").mkdir(parents=True)
+            write_json(template / "draft_content.json", {"duration": 0, "tracks": []})
+            (capcutbot / "src" / "cli.js").write_text("// mock\n", encoding="utf-8")
+            target = drafts / project.name
+            args = argparse.Namespace(
+                project_dir=project,
+                drafts_root=drafts,
+                empty_template="empty-template",
+                capcutbot_dir=capcutbot,
+                dry_run=False,
+                apply=True,
+            )
+
+            def duplicate(*_args, **_kwargs):
+                shutil.copytree(template, target)
+                return subprocess.CompletedProcess([], 0, stdout="{}", stderr="")
+
+            with patch.object(prepare, "parse_args", return_value=args), patch.object(
+                prepare, "capcut_is_open", return_value=(True, "mock")
+            ), patch.object(prepare.subprocess, "run", side_effect=duplicate):
+                output = prepare.run()
+
+            self.assertTrue(target.is_dir())
+            self.assertTrue(output["warnings"])
+            self.assertIsNotNone(output["source_fingerprint"])
+            self.assertIsNotNone(output["target_fingerprint"])
+
 
 class MigrateCapCutDraftTests(unittest.TestCase):
     def build_fixture(self, root: Path):
@@ -180,6 +216,30 @@ class MigrateCapCutDraftTests(unittest.TestCase):
             self.assertTrue(
                 (project / "editor-projects" / "capcut-draft-migration.json").is_file()
             )
+
+    def test_apply_allows_open_capcut_and_records_lock_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            drafts, source, target, project, backup = self.build_fixture(Path(temporary))
+            (source / ".locked").write_text("", encoding="utf-8")
+            args = argparse.Namespace(
+                drafts_root=drafts,
+                current_name="0710",
+                canonical_name=target.name,
+                project_dir=project,
+                backup_root=backup,
+                dry_run=False,
+                apply=True,
+            )
+            with patch.object(migrate, "parse_args", return_value=args), patch.object(
+                migrate, "capcut_is_open", return_value=True
+            ):
+                output = migrate.run()
+
+            self.assertTrue(target.is_dir())
+            self.assertEqual(len(output["warnings"]), 2)
+            self.assertTrue(output["locked_marker_present"])
+            self.assertIsNotNone(output["source_fingerprint"])
+            self.assertIsNotNone(output["target_fingerprint"])
 
 
 if __name__ == "__main__":

@@ -31,9 +31,6 @@ Use one stable media root chosen by the user or private repo.
         YYYY-MM-DD_video-slug/
           raw/
           assets/
-          exports/
-          final-videos/
-          editor-projects/
   final-videos/
     incoming/
     index/
@@ -50,6 +47,10 @@ Rules:
   active weekly batch. If the path exists and is not a symlink, stop and report
   it instead of replacing a real directory.
 - Keep one folder per video inside the batch.
+- Use the weekly batch folder itself as the project navigation surface. Do not
+  create or maintain an `_ACTIVE/` folder just to mirror projects that are
+  already visible in the batch. Preserve an existing `_ACTIVE/` compatibility
+  path or alias only when it is still referenced by CapCut or another tool.
 - Shared scratch or raw-materials holding folders should not use the
   `YYYY-MM-DD_video-slug` pattern. Use a plain name like
   `general-raw-materials/` so it is visibly not an active video project, and do
@@ -57,26 +58,26 @@ Rules:
 - Keep raw footage in `raw/` only after import. Do not rename raw files unless
   duplicate collisions force it.
 - Put generated overlays, screenshots, logos, and reference assets in `assets/`.
-- Treat `exports/` as working exports, not the final library.
-- Treat each project's `final-videos/` folder as the source of truth for final
-  renders.
-- Use `editor-projects/` for editor-side project shells, draft pointers, or
+- Default new project folders to only `raw/` and `assets/`. Add a working
+  subfolder only when real files require it; do not pre-create empty
+  `exports/`, `final-videos/`, or `editor-projects/` folders.
+- Treat `<media-root>/final-videos/by-week/YYYY-Www_video-batch/` as the source
+  of truth for newly accepted final renders. Existing project-owned finals may
+  remain in place for compatibility; do not migrate them just for tidiness.
+- Use an optional `editor-projects/` for editor-side project shells, draft pointers, or
   import instructions. When creating a canonical project folder, or as soon as
   the creator says editing is about to begin, create a same-name empty editor
   project/shell when the verified local workflow supports it. Do this before
   the editor creates a date-only default. Keep the shell empty until raw footage
   is imported and the creator has chosen the A-roll/story cut.
-- Treat `<media-root>/final-videos/index/` as quick access only. Prefer
-  symlinks to project-owned final files.
-- Treat `<media-root>/final-videos/by-week/YYYY-Www_video-batch/` as the
-  Finder-friendly phone-transfer bundle for that week. Prefer hard links there
-  when the bundle and project finals are on the same volume, so AirDrop/Finder
-  sees real files without duplicating storage. Use symlinks only when the user
-  explicitly wants a reference-only bundle.
-- When a video project is explicitly done, mark the project folder itself as
-  complete by renaming it with a visible completion suffix such as
-  `_complete`, unless the user or local runbook defines a different convention.
-  Keep the original date and slug intact so sorting and search still work.
+- Treat `<media-root>/final-videos/index/` as the global quick-access view.
+  Every accepted final must have one healthy symlink here, whether the backing
+  file is a legacy project final or a centrally owned weekly final.
+- Do not require a separate active/done folder state. When the creator
+  explicitly says a project is complete and a visible marker would help, the
+  project folder may be renamed with a suffix such as `_complete`, unless the
+  local runbook defines a different convention. Keep the original date and
+  slug intact so sorting and search still work.
 - If the project had old CapCut-facing paths or legacy notes, preserve those
   paths with compatibility symlinks when renaming the folder.
 
@@ -91,14 +92,11 @@ Preferred pattern:
 2. Let CapCut produce awkward date/default names there.
 3. During closeout, inspect the incoming files and map each export to the right
    batch project.
-4. Move the accepted export into that project's `final-videos/` folder with a
+4. Move the accepted export into the central weekly final folder with a
    canonical name:
    `YYYY-MM-DD_video-slug_final_vNN.ext`
 5. Create or refresh a symlink in `<media-root>/final-videos/index/`.
-6. Refresh the weekly phone-transfer bundle:
-   `<media-root>/final-videos/by-week/YYYY-Www_video-batch/`
-   from the batch's project `final-videos/` folders.
-7. Leave ambiguous exports in `final-videos/needs-review/` or report them
+6. Leave ambiguous exports in `final-videos/needs-review/` or report them
    without moving anything.
 
 Never silently guess when two projects could plausibly own the same export.
@@ -120,9 +118,10 @@ environment and an actually empty source template:
 2. Select a trusted empty template whose draft JSON has zero duration and no
    timeline tracks. Do not infer emptiness from a filename containing
    `template`, `blank`, or `empty`.
-3. Close CapCut before applying. A dry-run may be performed while it is open,
-   but do not create or mutate a draft while CapCut is running because the app
-   can rescan or overwrite editor-owned state.
+3. CapCut may remain open when the destination is a new, uniquely named draft.
+   Do not overwrite an existing destination. Record whether CapCut was running
+   and tell the creator that the new draft may require a project-list refresh
+   or app restart before it appears.
 4. Run the bundled wrapper first with `--dry-run`, inspect the source, target,
    collision state, and resolved draft root, then rerun with `--apply`:
 
@@ -143,7 +142,9 @@ python3 scripts/prepare_capcut_draft.py \
 ```
 
 The wrapper must stop on a noncanonical project name, nonempty template,
-existing target, existing receipt, missing draft root, or open CapCut process.
+existing target, existing receipt, or missing draft root. An open CapCut
+process is informational for a uniquely named destination, not an app-wide
+block.
 Successful creation leaves `editor-projects/capcut-draft.json` as the durable
 pointer/receipt. Draft creation is copy-only: the template is not modified, the
 destination is never overwritten, and therefore no backup is necessary for the
@@ -165,10 +166,12 @@ python3 scripts/migrate_capcut_draft_name.py \
   --dry-run
 ```
 
-Review the JSON change list, close CapCut, confirm the draft has no `.locked`
-marker, then repeat with `--apply`. The helper refuses collisions, an open
-CapCut process, locked drafts, mismatched metadata, cross-volume backup moves,
-and noncanonical project names. It writes or replaces
+Review the JSON change list and source fingerprint, then repeat with `--apply`.
+The helper refuses collisions, mismatched metadata, cross-volume backup moves,
+and noncanonical project names. If CapCut is open or a `.locked` marker exists,
+the helper records a warning because an actively open source draft can follow
+last-writer-wins behavior; prefer creating a new version instead of migrating
+the draft currently visible in the editor. It writes or replaces
 `editor-projects/capcut-draft-migration.json` only after validation succeeds.
 
 If no trusted empty template or safe automation is available, do not duplicate
@@ -190,14 +193,17 @@ an arbitrary old draft. Write the exact canonical project name into
      `scripts/refresh_current_week_symlink.py --media-root <media-root> --batch-dir <batch-dir> --dry-run`,
      then run the same command without `--dry-run` when it points at the
      intended batch.
-   - Add one project folder per selected video.
-   - For each selected video, immediately prepare the same-name empty CapCut
-     shell `YYYY-MM-DD_video-slug` and its pointer receipt. Also do this when an
-     existing canonical project moves into `about to edit` state. Follow the
+   - Add one project folder per selected video, with only `raw/` and `assets/`
+     by default. The operator should create the folder so its ISO date, slug,
+     week placement, and dashboard entry stay aligned.
+   - Prepare a same-name empty CapCut shell `YYYY-MM-DD_video-slug` only when
+     the creator says editing is about to begin. Follow the
      CapCut Draft Bootstrap gate above: inspect the configured draft root and
-     empty template, dry-run, collision-check, require CapCut closed, then
-     apply. If the gate cannot pass, leave the exact manual project name under
-     `editor-projects/` and report the blocker.
+     empty template, dry-run, and collision-check, then apply to a unique
+     destination. CapCut may stay open; surface the possible refresh/restart
+     step. If the gate cannot pass, record the exact manual project name in
+     the weekly plan and report the blocker; do not create an empty pointer
+     folder just to hold a note.
    - When a weekday show calendar exists, keep each candidate tied to its slot
      in the weekly plan. Treat the slots as coverage guidance, not as required
      folders or a forced posting quota.
@@ -217,9 +223,10 @@ an arbitrary old draft. Write the exact canonical project name into
      first.
    - Run the same command without `--dry-run` only after the mapping is
      coherent.
-   - Run `scripts/refresh_weekly_transfer_bundle.py --batch-dir <batch-dir>
-     --transfer-dir <media-root>/final-videos/by-week/YYYY-Www_video-batch
-     --clean --dry-run`, then apply it when the planned bundle is right.
+   - Set `accepted_final_dir` in the mapping to
+     `<media-root>/final-videos/by-week/YYYY-Www_video-batch` for the lean
+     central-final model. Use `refresh_weekly_transfer_bundle.py` only for
+     legacy batches whose finals still live inside project folders.
 5. Close the batch.
    - Record final paths, posted links, and unresolved exports in the weekly
      plan or private log.
@@ -348,12 +355,11 @@ Use this shape for final-video normalization:
 ```json
 {
   "incoming_dir": "<media-root>/final-videos/incoming",
-  "batch_dir": "<media-root>/batches/2026/2026-W26_video-batch",
+  "accepted_final_dir": "<media-root>/final-videos/by-week/2026-W26_video-batch",
   "final_index_dir": "<media-root>/final-videos/index",
   "items": [
     {
       "source": "0624.mp4",
-      "project": "2026-06-24_ai-vampire-agent-fatigue",
       "canonical_name": "2026-06-24_ai-vampire-agent-fatigue_final_v01.mp4"
     }
   ]
@@ -361,7 +367,9 @@ Use this shape for final-video normalization:
 ```
 
 `source` may be absolute or relative to `incoming_dir`.
-`project` may be absolute or relative to `batch_dir`.
+With `accepted_final_dir`, `canonical_name` is required and `project` is
+optional. For compatibility with older project-owned libraries, omit
+`accepted_final_dir` and provide `batch_dir` plus `project`.
 
 ## Output Contract
 
@@ -371,7 +379,9 @@ Return:
 - per-video project folder list
 - per-video editor project shell or manual editor-project creation status
 - resolved CapCut draft root, empty-template source, dry-run result, and
-  `editor-projects/capcut-draft.json` receipt path when a shell was created
+  `editor-projects/capcut-draft.json` receipt path when a shell was created,
+  including source/target fingerprints, whether CapCut was running, and any
+  refresh/restart warning
 - show-slot coverage status, when a weekday show calendar exists
 - pre-filming reaction packet status, when the task involves a reaction batch
 - CapCut export inbox path
@@ -390,8 +400,10 @@ Return:
 - Do not create or overwrite editor projects in an application's private
   library unless the local workflow explicitly supports safe project creation,
   dry-run/backup, and same-name collision handling.
-- Do not apply CapCut draft creation while CapCut is open. Do not use a
-  nonempty project as the empty-shell template.
+- Do not overwrite or reuse an existing CapCut destination. A uniquely named
+  new-version draft may be created while CapCut is open; retain source/target
+  fingerprints and surface any project-list refresh or restart needed. Do not
+  use a nonempty project as the empty-shell template.
 - Do not describe an empty named draft as an edited timeline. A-roll assembly,
   silence cuts, asset placement, captions, and creative pacing remain separate
   work.

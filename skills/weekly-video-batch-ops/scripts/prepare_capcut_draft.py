@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import re
@@ -60,7 +61,7 @@ def verify_empty_template(template_dir: Path) -> Path:
     return draft_file
 
 
-def capcut_is_open() -> tuple[bool, str]:
+def capcut_is_open() -> tuple[bool | None, str]:
     if platform.system() == "Darwin":
         result = subprocess.run(
             ["osascript", "-e", 'application "CapCut" is running'],
@@ -69,10 +70,10 @@ def capcut_is_open() -> tuple[bool, str]:
             text=True,
         )
         if result.returncode != 0:
-            fail("Could not verify whether CapCut is open; refusing apply")
+            return None, "osascript-unavailable"
         value = result.stdout.strip().lower()
         if value not in {"true", "false"}:
-            fail("Unexpected CapCut process-check result; refusing apply")
+            return None, "osascript-unavailable"
         return value == "true", "osascript"
 
     try:
@@ -80,8 +81,18 @@ def capcut_is_open() -> tuple[bool, str]:
             ["pgrep", "-x", "CapCut"], check=False, capture_output=True, text=True
         )
     except FileNotFoundError:
-        fail("Could not verify whether CapCut is open; refusing apply")
+        return None, "pgrep-unavailable"
     return result.returncode == 0, "pgrep"
+
+
+def draft_fingerprint(draft_dir: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(draft_dir.rglob("*.json")):
+        digest.update(str(path.relative_to(draft_dir)).encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def resolve_template(raw: str, drafts_root: Path) -> Path:
@@ -113,6 +124,7 @@ def run() -> dict:
 
     template_dir = resolve_template(args.empty_template, drafts_root)
     template_draft_file = verify_empty_template(template_dir)
+    source_fingerprint = draft_fingerprint(template_dir)
     target_dir = drafts_root / project_name
     receipt_file = project_dir / "editor-projects" / "capcut-draft.json"
     if target_dir.exists():
@@ -134,8 +146,6 @@ def run() -> dict:
     ]
     if args.dry_run:
         command.append("--dry-run")
-    elif is_open:
-        fail("CapCut is open; close it before applying empty draft creation")
 
     result = subprocess.run(command, check=False, capture_output=True, text=True)
     if result.returncode != 0:
@@ -146,10 +156,12 @@ def run() -> dict:
         fail(f"CapCutBot returned invalid JSON: {error}")
 
     created_draft_file = None
+    target_fingerprint = None
     if args.apply:
         if not target_dir.is_dir():
             fail("CapCutBot reported success but did not create the target draft")
         created_draft_file = verify_empty_template(target_dir)
+        target_fingerprint = draft_fingerprint(target_dir)
 
     output = {
         "mode": "dry-run" if args.dry_run else "apply",
@@ -163,6 +175,11 @@ def run() -> dict:
         "receipt_file": str(receipt_file),
         "capcut_open": is_open,
         "process_check": process_check,
+        "warnings": ([
+            "CapCut is open; refresh the project list or restart CapCut if the new draft does not appear."
+        ] if is_open else []),
+        "source_fingerprint": source_fingerprint,
+        "target_fingerprint": target_fingerprint,
         "source_modified": False,
         "target_overwritten": False,
         "backup_file": None,
