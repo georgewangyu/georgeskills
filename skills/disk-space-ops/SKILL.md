@@ -43,6 +43,7 @@ Do not use this skill for:
    - common cleanup hotspots and their current sizes
    - large files worth manual review
 3. Separate recommendations by risk:
+   - protected: configured MLX Whisper runtimes/model caches or other declared durable toolchains
    - safe-ish now: caches, trash, transient build outputs, Xcode derived data
    - review first: downloads, local backups, archives, old installers, VM images
    - avoid suggesting: system folders, app support data unless the user understands the consequence
@@ -76,4 +77,7 @@ Useful flags:
 - Default to read-only inspection.
 - Do not recommend deleting random items under `/System`, `/private`, `/usr`, or opaque application data without explaining the risk.
 - Treat caches and build artifacts as suggestions, not commands, unless the user explicitly asks for deletion.
+- Treat `~/.config/georgeskills/mlx-whisper.env` as a protection manifest when
+  present. Never recommend deleting its runtime/cache paths merely because they
+  are a venv or cache.
 - Keep the skill reusable: no hardcoded personal paths, repo names, account ids, or machine-specific assumptions.

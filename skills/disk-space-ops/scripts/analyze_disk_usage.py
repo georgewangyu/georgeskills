@@ -89,8 +89,8 @@ HOTSPOTS = [
     {
         "label": "Generic user cache",
         "path": "~/.cache",
-        "risk": "safe-ish",
-        "reason": "Tooling caches often become stale and are normally safe to regenerate.",
+        "risk": "review-first",
+        "reason": "Contains regenerable data but may also contain configured ML/model caches; inspect children and protection manifests first.",
     },
     {
         "label": "Bun cache",

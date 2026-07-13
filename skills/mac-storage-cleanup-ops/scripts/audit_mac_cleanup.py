@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -51,6 +52,41 @@ def candidate(home: Path, rel: str, label: str, risk: str, action: str, side_eff
     return Candidate(label, str(path), run_du(path), risk, action, side_effect)
 
 
+def configured_mlx_paths(home: Path) -> list[Candidate]:
+    values: dict[str, str] = {}
+    config_path = Path(os.environ.get("MLX_WHISPER_CONFIG", home / ".config/georgeskills/mlx-whisper.env"))
+    if config_path.exists():
+        for raw_line in config_path.read_text(errors="replace").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            if key in {"MLX_WHISPER_RUNTIME", "HF_HOME"}:
+                values[key] = value.strip().strip("'\"")
+    for key in ("MLX_WHISPER_RUNTIME", "HF_HOME"):
+        if os.environ.get(key):
+            values[key] = os.environ[key]
+
+    labels = {
+        "MLX_WHISPER_RUNTIME": "Protected MLX Whisper runtime",
+        "HF_HOME": "Protected MLX Whisper model cache",
+    }
+    rows = []
+    for key, raw_path in values.items():
+        path = Path(os.path.expandvars(raw_path)).expanduser()
+        rows.append(
+            Candidate(
+                labels[key],
+                str(path),
+                run_du(path),
+                "protected",
+                "Exclude from cache cleanup, venv pruning, and broad recursive deletion.",
+                "Deleting this causes a runtime rebuild or multi-gigabyte model redownload.",
+            )
+        )
+    return rows
+
+
 def top_children(path: Path, limit: int) -> list[Candidate]:
     if not path.exists() or not path.is_dir():
         return []
@@ -78,14 +114,12 @@ def build_candidates(home: Path, fast: bool = False) -> list[Candidate]:
         ("Library/Logs", "All user logs", "safe-ish", "Delete selected large app log folders.", "Loses diagnostic history."),
         ("Movies/CapCut/User Data/Cache", "CapCut cache", "safe-ish", "Delete with CapCut closed.", "CapCut may rebuild cache."),
         (".cache/uv", "uv cache", "safe-ish", "Delete if package redownloads are acceptable.", "Future Python installs may redownload."),
-        (".cache/whisper", "Whisper cache", "safe-ish", "Delete if model redownloads are acceptable.", "Transcription may redownload models."),
         (".cache/codex-runtimes", "Codex runtime cache", "safe-ish", "Delete if runtime redownloads are acceptable.", "Future runs may redownload runtimes."),
         (".npm", "npm cache", "safe-ish", "Prefer npm cache clean --force.", "Future npm installs may be slower."),
         ("Library/Caches/Homebrew", "Homebrew cache", "safe-ish", "Prefer brew cleanup --prune=all.", "Formula downloads may be gone."),
         ("Library/Caches/pip", "pip cache", "safe-ish", "Delete if package redownloads are acceptable.", "Future pip installs may be slower."),
         ("Library/Caches/ms-playwright", "Playwright cache", "safe-ish", "Delete if browser redownloads are acceptable.", "Tests may redownload browsers."),
         ("Library/Caches/ms-playwright-go", "Playwright Go cache", "safe-ish", "Delete if browser redownloads are acceptable.", "Tests may redownload browsers."),
-        ("Library/Caches/huggingface-codex", "Hugging Face/Codex cache", "safe-ish", "Delete if model/cache redownloads are acceptable.", "Future runs may redownload cache files."),
         ("Library/Caches/pencil-updater", "Pencil updater cache", "safe-ish", "Delete when Pencil is not updating.", "Updater may redownload package data."),
         ("Library/Caches/com.google.antigravity.ShipIt", "Antigravity ShipIt cache", "safe-ish", "Delete when the app is closed.", "Updater may redownload package data."),
         ("Library/Caches/antigravity-updater", "Antigravity updater cache", "safe-ish", "Delete when the app is closed.", "Updater may redownload package data."),
@@ -93,10 +127,12 @@ def build_candidates(home: Path, fast: bool = False) -> list[Candidate]:
         (".Trash", "Trash", "safe-ish", "Empty only after user accepts permanent deletion.", "Deletes trashed files permanently."),
     ]
     broad = [
-        ("Library/Caches", "All user caches", "safe-ish", "Prefer selected large children over broad wipe.", "Apps rebuild caches."),
-        (".cache", "CLI/tool caches", "safe-ish", "Delete selected large children.", "Tools redownload/rebuild."),
+        ("Library/Caches", "All user caches", "review-first", "Inspect and delete selected children; never wipe the broad parent.", "May contain declared runtimes or model caches."),
+        (".cache", "CLI/tool caches", "review-first", "Inspect and delete selected children; never wipe the broad parent.", "May contain declared runtimes or multi-gigabyte model caches."),
     ]
     review = [
+        (".cache/whisper", "Whisper cache", "review-first", "Preserve unless the user explicitly accepts model redownloads.", "Transcription may redownload models."),
+        ("Library/Caches/huggingface-codex", "Hugging Face/Codex cache", "review-first", "Confirm it is not an active model cache before deletion.", "Future runs may redownload multi-gigabyte models."),
         ("Downloads", "Downloads", "review-first", "Review or archive manually.", "May contain user files."),
         ("Movies/CapCut/User Data/Projects", "CapCut projects", "review-first", "Archive old projects with symlinks; do not delete blindly.", "Deleting loses drafts/projects."),
         ("Library/Messages", "Messages", "review-first", "Clean through Messages/manual attachment review.", "May delete message history/attachments."),
@@ -110,7 +146,8 @@ def build_candidates(home: Path, fast: bool = False) -> list[Candidate]:
         ("Library/Application Support/Google/DriveFS", "Google DriveFS data", "review-first", "Clean through Google Drive settings or account controls.", "May affect sync cache and offline files."),
         ("Library/Developer/CoreSimulator", "CoreSimulator data", "review-first", "Prefer xcrun simctl delete unavailable; review before deleting devices.", "May remove simulator devices and app data."),
     ]
-    rows = [candidate(home, *item) for item in safe + broad]
+    rows = configured_mlx_paths(home)
+    rows.extend(candidate(home, *item) for item in safe + broad)
     if not fast:
         rows.extend(candidate(home, *item) for item in review)
     for path in sorted((home / "Library/Application Support").glob("app_shell_cache_*")):
@@ -124,8 +161,9 @@ def build_candidates(home: Path, fast: bool = False) -> list[Candidate]:
                 "Owning app may redownload package data.",
             )
         )
-    rows = [row for row in rows if row.size_bytes > 0]
-    rows.sort(key=lambda c: (c.risk != "safe-ish", -c.size_bytes))
+    rows = [row for row in rows if row.size_bytes > 0 or row.risk == "protected"]
+    risk_order = {"protected": 0, "safe-ish": 1, "review-first": 2, "inspect": 3}
+    rows.sort(key=lambda c: (risk_order.get(c.risk, 9), -c.size_bytes))
     return rows
 
 

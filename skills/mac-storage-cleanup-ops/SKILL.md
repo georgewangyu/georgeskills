@@ -42,13 +42,17 @@ Do not use when:
    - add `--home <path>` only when inspecting a non-current user home.
 2. Check the current free space with `df -h / /System/Volumes/Data`.
 3. Present candidates by risk, not just size:
+   - protected runtimes/model caches
    - safe-ish now
    - safe-ish but causes redownload/rebuild
    - review first
    - avoid direct deletion
-4. Delete only after explicit user approval for a named category or path.
-5. After deleting, re-run the audit or at least `du -sh <cleaned-path>` and `df -h / /System/Volumes/Data`.
-6. Record any substantive cleanup in the daily log when the workspace logging rules apply.
+4. Load `~/.config/georgeskills/mlx-whisper.env` when present. Never delete its
+   `MLX_WHISPER_RUNTIME` or `HF_HOME`, their symlink targets, or directories
+   containing `.protected-mlx-whisper-*` markers as part of cleanup.
+5. Delete only after explicit user approval for a named category or path.
+6. After deleting, re-run the audit or at least `du -sh <cleaned-path>` and `df -h / /System/Volumes/Data`.
+7. Record any substantive cleanup in the daily log when the workspace logging rules apply.
 
 For active freeze or no-restart relief, keep probes narrow:
 
@@ -67,7 +71,6 @@ These are usually safe to delete when the related app is closed. They may be reg
 - `~/Library/Logs/Unity`: Unity logs can grow large and are usually disposable.
 - `~/Library/Caches/<app-or-tool>`: app caches. Prefer deleting large children rather than the whole `~/Library/Caches` tree.
 - `~/.cache/uv`: Python package/build cache; future installs may redownload.
-- `~/.cache/whisper`: model/cache files; future transcription may redownload models.
 - `~/.cache/codex-runtimes`: local runtime cache; future runs may redownload runtimes.
 - `~/.npm`: npm cache; future installs may be slower.
 - `~/Library/Caches/Homebrew`: Homebrew downloads; prefer `brew cleanup --prune=all` when available.
@@ -82,6 +85,9 @@ These are usually safe to delete when the related app is closed. They may be reg
 Do not auto-delete these. Ask the user to confirm contents, archive first, or clean through the owning app.
 
 - `~/Downloads`, especially folders named `to-process`, `delete-after-review`, `inbox`, or similar.
+- `~/.cache/whisper` and Hugging Face caches: preserve by default. Delete only
+  after proving they are not the configured MLX cache and the user explicitly
+  accepts a model redownload.
 - `~/Movies/CapCut/User Data/Projects`: CapCut project data. Archive old non-template projects with symlinks instead of deleting.
 - `~/Library/Messages`: iMessage attachments/history. Prefer Messages settings or manual attachment review.
 - `~/Library/Mail`: mail cache and local mail data. Prefer Mail app/account cleanup.
@@ -119,6 +125,8 @@ Do not disable Apple system services as a cleanup tactic. Prefer letting indexin
 - System paths under `/System`, `/usr`, `/bin`, `/sbin`, `/private`, or `/Library` unless the user asks for a specific, understood cleanup.
 - Opaque app support directories that contain databases, account state, project files, local-only documents, or sync state.
 - Symlink targets on external archives unless the user explicitly wants to remove the archived copy.
+- Configured MLX Whisper runtimes/model caches and any directory containing a
+  `.protected-mlx-whisper-runtime` or `.protected-mlx-whisper-cache` marker.
 
 ## Deletion Procedure
 
