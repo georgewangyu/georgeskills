@@ -31,4 +31,8 @@ Use when:
 Implementations currently live in:
 - `skills/knowledge-ops/scripts/`
 - `refresh_agent_managed.py` for deterministic candidate extraction and low-risk auto-apply into the configured LLM wiki
-- `llm_refresh_agent_managed.py` for headless semantic routing and topic-page rewrites via an LLM provider
+
+Scheduled refreshes are deterministic and do not call an external LLM
+provider. When semantic synthesis is needed, the calling agent should review
+the deterministic candidates and update the wiki within its already-approved
+runtime instead of delegating private source material to a second model API.
