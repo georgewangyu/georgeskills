@@ -1,6 +1,6 @@
 ---
 name: weekly-video-batch-ops
-description: Organize recurring short-form video batch production folders, correctly named empty CapCut draft shells, final-export handling, and owned-platform posting audits. Use when planning weekly TikTok, Instagram Reels, or YouTube Shorts batches; setting up a canonical video project; the creator says they are about to start editing; handling CapCut export inboxes with awkward default names; normalizing final video names; creating quick-access final-video indexes; refreshing weekly phone-transfer bundles; or checking which final videos have already been posted.
+description: Organize recurring short-form video batch production folders, lifecycle state, correctly named empty CapCut draft shells, final-export handling, and owned-platform posting audits. Use when planning weekly TikTok, Instagram Reels, or YouTube Shorts batches; setting up a canonical video project; marking a filmed project active, completed, or dropped; carrying unfinished filmed work into a new week without moving media; the creator says they have new videos or clips in Downloads and gives the video context; asks to move those clips into the current weekly batch and create a properly titled CapCut draft for A-roll; handles CapCut export inboxes with awkward default names; normalizes final video names; creates quick-access final-video indexes; refreshes weekly phone-transfer bundles; or checks which final videos have already been posted.
 memory_tags:
   - domain:social-media
   - workflow:weekly-video-batch
@@ -18,6 +18,58 @@ Use this skill to keep short-form video production boring and repeatable:
 plan a batch window, create project folders, route raw/imported media, and
 normalize CapCut final exports without breaking editor references.
 
+## Downloads-To-Draft Shorthand
+
+Treat a creator message such as `I have two videos in Downloads: <context>` as
+authorization for the standard intake sequence unless they narrow the request:
+
+1. Inspect the newest unambiguous video files in Downloads using the stated
+   count, recency, and context. If extra recent candidates make the set
+   ambiguous, stop before moving anything and ask which files belong.
+2. Resolve the active weekly batch from the configured current-week shortcut or
+   private weekly plan.
+3. Infer one concise canonical name, create
+   `YYYY-MM-DD_video-slug/{raw,assets}`, and keep that exact name for the CapCut
+   draft.
+4. Move the selected Downloads clips into `raw/`, preserving their filenames.
+   Verify sizes or hashes after a cross-volume move and confirm the Downloads
+   sources are gone. Do not use this shorthand for camera-card intake or shared
+   source media that should remain in place; route those through the raw-clip
+   intake workflow instead.
+5. Run the CapCut Draft Bootstrap dry-run and collision checks, then create the
+   same-name empty draft shell. Do not import the clips, assemble A-roll, or
+   describe the empty shell as an edited timeline.
+6. Return the project folder, moved filenames, draft name, receipt path, and any
+   CapCut refresh/restart note.
+
+Use `scripts/quick_downloads_to_capcut.py` for this mechanical fast path. Keep
+machine-specific roots in a private JSON config with `downloads_dir`,
+`current_week_link`, `drafts_root`, `empty_template`, and `capcutbot_dir`.
+Infer the canonical project name from the supplied context, then run one apply
+command; the script performs its own collision checks, empty-template dry-run,
+move verification, and draft creation:
+
+```bash
+python3 scripts/quick_downloads_to_capcut.py \
+  --config <private-video-intake-config.json> \
+  --project-name YYYY-MM-DD_video-slug \
+  --count <recent-clip-count> \
+  --max-age-minutes <stated-or-reasonable-window> \
+  --apply
+```
+
+For a pure Downloads-to-draft intake, treat the receipt as the durable record.
+Do not inspect ambient capture when the prompt already supplies enough naming
+context. Do not load rough-cut, transcription, visual-direction, or phase-gate
+workflows. Do not update weekly plans, operator ledgers, or daily summaries
+unless the creator asks, the intake changes a real production decision, or the
+mechanical operation exposes a blocker worth preserving. Stop after the empty
+draft receipt is verified; if the creator opens or edits it immediately, treat
+that as live editor state and do not re-inspect or mutate it.
+
+The creator can therefore use the shorter recurring request: `Video intake:
+<count> clips — <context>.` Treat Downloads as implicit for this exact prefix.
+
 ## Folder Model
 
 Use one stable media root chosen by the user or private repo.
@@ -28,7 +80,10 @@ Use one stable media root chosen by the user or private repo.
   batches/
     YYYY/
       YYYY-Www_video-batch/
+        _COMPLETED/ -> completed project symlinks
+        _CARRYOVER/ -> active prior-week project symlinks
         YYYY-MM-DD_video-slug/
+          PROJECT_STATUS.json
           raw/
           assets/
   final-videos/
@@ -48,9 +103,9 @@ Rules:
   it instead of replacing a real directory.
 - Keep one folder per video inside the batch.
 - Use the weekly batch folder itself as the project navigation surface. Do not
-  create or maintain an `_ACTIVE/` folder just to mirror projects that are
-  already visible in the batch. Preserve an existing `_ACTIVE/` compatibility
-  path or alias only when it is still referenced by CapCut or another tool.
+  create an `_ACTIVE/` mirror. Use `_CARRYOVER/` symlinks for unfinished filmed
+  projects from prior weeks and `_COMPLETED/` symlinks for closed projects.
+  Preserve any existing compatibility alias still referenced by an editor.
 - Shared scratch or raw-materials holding folders should not use the
   `YYYY-MM-DD_video-slug` pattern. Use a plain name like
   `general-raw-materials/` so it is visibly not an active video project, and do
@@ -73,13 +128,12 @@ Rules:
 - Treat `<media-root>/final-videos/index/` as the global quick-access view.
   Every accepted final must have one healthy symlink here, whether the backing
   file is a legacy project final or a centrally owned weekly final.
-- Do not require a separate active/done folder state. When the creator
-  explicitly says a project is complete and a visible marker would help, the
-  project folder may be renamed with a suffix such as `_complete`, unless the
-  local runbook defines a different convention. Keep the original date and
-  slug intact so sorting and search still work.
-- If the project had old CapCut-facing paths or legacy notes, preserve those
-  paths with compatibility symlinks when renaming the folder.
+- Keep the canonical project folder at the path where media was first imported;
+  never move or rename it merely to represent lifecycle state. Record `active`,
+  `completed`, or `dropped` in top-level `PROJECT_STATUS.json` and generate
+  symlink views with `scripts/manage_project_lifecycle.py`. Read
+  [references/project-lifecycle.md](references/project-lifecycle.md) before
+  changing status or running weekly carryover.
 
 ## CapCut Export Pattern
 
@@ -196,6 +250,9 @@ an arbitrary old draft. Write the exact canonical project name into
    - Add one project folder per selected video, with only `raw/` and `assets/`
      by default. The operator should create the folder so its ISO date, slug,
      week placement, and dashboard entry stay aligned.
+   - Once the project is selected to film or contains footage, initialize its
+     lifecycle manifest as `active`. The Downloads fast path does this
+     automatically; other intake paths must use the lifecycle helper.
    - Prepare a same-name empty CapCut shell `YYYY-MM-DD_video-slug` only when
      the creator says editing is about to begin. Follow the
      CapCut Draft Bootstrap gate above: inspect the configured draft root and
@@ -210,7 +267,8 @@ an arbitrary old draft. Write the exact canonical project name into
    - Keep shared raw-materials folders separate from selected-video folders.
    - Put next-week candidates in the next batch, not the current batch.
 3. Prepare imports.
-   - Keep active project folders scoped to the current batch.
+   - Keep canonical project folders in their original batch. Use carryover
+     symlinks instead of moving media when work continues into another week.
    - If clips may serve multiple videos, keep them in the batch or project
      where they are first imported and copy only after the winning edit is
      known.
@@ -243,12 +301,14 @@ an arbitrary old draft. Write the exact canonical project name into
      bundle, project slugs, captions, dates, and known same-day exceptions.
      Record matched links and mark unmatched finals as `needs posting`, not as
      done.
-   - Rename completed project folders according to the local completion
-     convention, then update any weekly plan paths that pointed at the old
-     folder name.
-   - Preserve compatibility symlinks for old CapCut-facing paths when a
-     completed-folder rename would otherwise break them.
-   - Carry unused but good topics into the next batch plan.
+   - Change lifecycle state only when the creator explicitly says the project
+     is active, completed, or dropped. Dry-run and then apply
+     `manage_project_lifecycle.py`; never infer completion from an export alone.
+   - At rollover, refresh `_COMPLETED/` and `_CARRYOVER/` symlink views. Carry
+     only explicitly active filmed projects; exclude completed and dropped
+     projects and report unclassified ones.
+   - Carry unused but good unfilmed topics into the next batch plan as ideas,
+     not as media project links.
 
 ## Pre-Filming Reaction Batch
 
@@ -407,9 +467,8 @@ Return:
 - Do not describe an empty named draft as an edited timeline. A-roll assembly,
   silence cuts, asset placement, captions, and creative pacing remain separate
   work.
-- Do not rename project folders that may still be referenced by an active editor
-  project unless the user explicitly calls the video done or the local runbook
-  says the closeout rename is safe.
+- Do not rename canonical project folders to represent active, completed, or
+  dropped state. Use the lifecycle manifest and symlink views.
 - Do not break old editor references. If old projects reference old absolute
   paths, preserve those paths with compatibility symlinks or leave the old tree
   in place.
