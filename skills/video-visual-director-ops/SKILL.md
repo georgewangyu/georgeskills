@@ -258,6 +258,13 @@ unless the user separately approves its paid subscription for a specific shot.
 Preserve the provider, displayed model, prompt, billing surface, and synthetic
 status in the asset manifest; never use generated product UI as proof.
 
+Treat Blender MCP as a heavier, explicit opt-in 3D lane. Do not propose or use
+it from a generic request for a fancy edit, cinematic B-roll, or animation.
+Route to Blender only when the creator explicitly names Blender, Blender MCP,
+or a bespoke 3D treatment; then compose `video-visual-assets-ops`, preserve the
+editable `.blend` scene, render a short low-resolution proof before final
+output, and keep the shot outside the critical path until it passes QA.
+
 ## Step 7: Verify And Iterate
 
 Verify dimensions, duration, audio sync, frame rate, alpha behavior when relevant, missing media, and representative frame samples. Then invoke `video-visual-coverage-qa-ops` against the render, timed transcript, asset manifest, and visual-edit plan.

@@ -10,6 +10,7 @@
 | Diagram/board | Systems, contrasts, agent delegation, before/after | PNG or short MP4 | No |
 | Generated still | Atmosphere, metaphor, comedic plate, impossible B-roll | PNG | Ask if billable |
 | Generated video | High-novelty transitions, impossible scenes, stylized B-roll | MP4 | Explicit approval |
+| Blender 3D | Bespoke geometry, controllable camera/depth/lighting, reusable 3D scenes | MP4 + `.blend` source + poster | Explicit Blender/Blender MCP/3D request |
 
 ## Screen recording
 
@@ -34,6 +35,17 @@ Use for metaphor, mood, humor, or a non-factual transition. Do not recreate a re
 ## Generated video
 
 Use only when motion itself carries enough value to justify cost and latency. Write a shot-level prompt, target 2–5 seconds, generate the minimum number of variants, and label synthetic footage. Never use it to impersonate a real event or fake product behavior.
+
+## Blender 3D
+
+Use only when the creator explicitly asks for Blender, Blender MCP, or a
+bespoke 3D treatment. Do not select it from a generic request for fancy B-roll,
+cinematic polish, or animation. Prefer generated video for fast cinematic
+inserts and coded motion for exact explanatory graphics. Choose Blender when
+the shot specifically benefits from editable geometry, camera control,
+lighting, simulation, depth, or a reusable scene. Produce a low-resolution
+proof first, preserve the `.blend` source, and classify the render as
+synthetic illustration rather than evidence.
 
 ## Verification checklist
 

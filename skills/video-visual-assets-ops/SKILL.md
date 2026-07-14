@@ -29,8 +29,16 @@ Use [production-paths.md](references/production-paths.md) to select one of:
 4. diagram or comparison board
 5. generated still or stylized plate
 6. generated video
+7. Blender-authored 3D B-roll or motion graphics
 
 Use screenshots or A-roll when motion adds little. A visual is successful when it clarifies the beat in one glance or creates a deliberate pattern interrupt.
+
+Treat Blender as an explicit opt-in path. Use it only when the creator names
+Blender, Blender MCP, or a bespoke 3D treatment in the request. Do not infer
+permission from phrases such as `make it fancy`, `cinematic`, `add B-roll`, or
+`add animation`. Prefer generated video for fast cinematic inserts and coded
+motion for precise explanatory animation unless the creator deliberately
+chooses the additional modeling, lighting, rendering, and QA burden of Blender.
 
 For a sponsor, brand, company, or product beat, default to a source-faithful
 product UI demonstration: a privacy-safe screen recording when access is
@@ -99,6 +107,13 @@ readable labels, exact narration sync, and reusable brand treatments. Keep
 Higgsfield parked unless the user separately approves its paid subscription
 for a specific shot. Generated footage must not impersonate product proof or a
 real event.
+
+Use Blender MCP only after the explicit Blender/3D gate above passes. Reserve
+it for shots whose value comes from controllable 3D geometry, camera moves,
+lighting, depth, simulation, or reusable scene assets. Start with a short
+storyboard and low-resolution proof render, keep the Blender source file, and
+do not let scene construction block the usable first edit. Treat Blender
+output as synthetic illustration, not documentary or product evidence.
 
 A paid consumer Gemini plan does not imply that Gemini API, Vertex, MCP, or a
 third-party generator draws from the same allowance. For subscription-backed
@@ -200,5 +215,7 @@ Return:
 - Do not imitate a living creator's proprietary style exactly; extract general visual mechanics.
 - Do not conceal missing evidence with generated media.
 - Do not invoke paid or scarce generation silently.
+- Do not invoke or propose Blender merely because a richer visual might look
+  impressive; require an explicit Blender, Blender MCP, or bespoke 3D request.
 - Do not copy private media into public repositories.
 - Do not own project folders, raw-media intake, narration lock, or whole-video coverage decisions.
