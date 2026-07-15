@@ -31,6 +31,8 @@ class Session:
 
     @property
     def focus_hours(self) -> float:
+        if self.intensity == "unclassified":
+            return 0.0
         per_session = DEEP_FOCUS_HOURS if self.intensity == "deep" else LIGHT_FOCUS_HOURS
         return self.count * per_session
 
@@ -150,8 +152,27 @@ def split_tags(text: str) -> list[str]:
 
 
 def infer_domain(title: str, body: str, tags: list[str]) -> str:
-    haystack = normalize_whitespace(" ".join([title, body, " ".join(tags)])).lower()
+    title_haystack = normalize_whitespace(title).lower()
+    body_haystack = normalize_whitespace(body).lower()
     tag_set = {tag.lower() for tag in tags}
+
+    # Explicit structured tags are stronger evidence than incidental words in
+    # the body. For example, a `[work]` block that mentions a video pipeline is
+    # still day-job work, not Content.
+    if tag_set.intersection({"job/interview/skills", "career"}):
+        return "Career/Interview"
+    if tag_set.intersection({"work", "day job"}):
+        return "Day Job"
+    if tag_set.intersection({"content", "publication", "video-workflow", "sports-radar"}):
+        return "Content"
+    if tag_set.intersection({"product", "personal project"}):
+        return "Personal Project"
+    if tag_set.intersection({"outreach", "business", "business/corp", "brand"}):
+        return "Business/Admin"
+    if tag_set.intersection({"workflow", "infra", "tooling", "repo", "research", "knowledge", "audio", "systems"}):
+        return "Systems/Workflow"
+    if tag_set.intersection({"personal", "travel", "health", "people"}):
+        return "Personal"
 
     career_keywords = (
         "databricks",
@@ -253,33 +274,23 @@ def infer_domain(title: str, body: str, tags: list[str]) -> str:
         "meal",
     )
 
-    if any(keyword in haystack for keyword in content_keywords):
-        return "Content"
-    if any(keyword in haystack for keyword in career_keywords):
-        return "Career/Interview"
-    if any(keyword in haystack for keyword in day_job_keywords):
-        return "Day Job"
-    if any(keyword in haystack for keyword in business_keywords):
-        return "Business/Admin"
-    if any(keyword in haystack for keyword in project_keywords):
-        return "Personal Project"
-    if any(keyword in haystack for keyword in systems_keywords):
-        return "Systems/Workflow"
-    if any(keyword in haystack for keyword in personal_keywords):
-        return "Personal"
-
-    if "job/interview/skills" in tag_set:
-        return "Career/Interview"
-    if "business/corp" in tag_set:
-        return "Business/Admin"
-    if "content" in tag_set:
-        return "Content"
-    if "personal project" in tag_set:
-        return "Personal Project"
-    if tag_set.intersection({"workflow", "infra", "tooling", "repo", "research", "knowledge", "audio"}):
-        return "Systems/Workflow"
-    if "personal" in tag_set or "travel" in tag_set:
-        return "Personal"
+    keyword_groups = (
+        ("Career/Interview", career_keywords),
+        ("Day Job", day_job_keywords),
+        ("Content", content_keywords),
+        ("Business/Admin", business_keywords),
+        ("Personal Project", project_keywords),
+        ("Systems/Workflow", systems_keywords),
+        ("Personal", personal_keywords),
+    )
+    scores: dict[str, int] = {}
+    for domain, keywords in keyword_groups:
+        title_score = sum(3 for keyword in keywords if keyword in title_haystack)
+        body_score = sum(1 for keyword in keywords if keyword in body_haystack)
+        scores[domain] = title_score + body_score
+    best_domain, best_score = max(scores.items(), key=lambda item: item[1])
+    if best_score:
+        return best_domain
     return "Systems/Workflow"
 
 
@@ -292,11 +303,13 @@ def infer_intensity(section: str | None, title: str, body: str, domain: str) -> 
     haystack = normalize_whitespace(f"{title} {body}").lower()
     if "deep sprint" in haystack or "all-day app build" in haystack or "build push" in haystack:
         return "deep"
+    if re.search(r"\bdeep(?:,|\)|:|\s)", haystack) or "multi-block" in haystack:
+        return "deep"
     if any(token in haystack for token in ("travel", "social", "lunch", "ambient", "teresa", "tennis", "ice cream")):
         return "light"
-    if domain in {"Personal Project", "Career/Interview", "Day Job", "Business/Admin", "Content"}:
-        return "deep"
-    return "light"
+    if re.search(r"\blight(?:,|\)|:|\s)", haystack):
+        return "light"
+    return "unclassified"
 
 
 def parse_sprints_section(section_text: str, day: date) -> list[Session]:
@@ -313,6 +326,15 @@ def parse_sprints_section(section_text: str, day: date) -> list[Session]:
             return
         title = current_entry["title"].strip()
         body = current_entry["body"].strip()
+        # Most summaries use `Label: details` on one bullet line. Treat the
+        # short label as the title so a later incidental word (for example an
+        # archived "interview" inside a content block) cannot dominate the
+        # block's actual category.
+        if ":" in title:
+            label, inline_body = title.split(":", 1)
+            if len(label) <= 120:
+                title = label.strip()
+                body = " ".join(part for part in (inline_body.strip(), body) if part)
         tags = split_tags(f"{title} {body}")
         domain = infer_domain(title, body, tags)
         intensity = infer_intensity(current_entry.get("section"), title, body, domain)
@@ -349,18 +371,15 @@ def parse_sprints_section(section_text: str, day: date) -> list[Session]:
 
         entry_start = False
         title = ""
-        if stripped.startswith("- **"):
+        if line.startswith("- "):
             entry_start = True
-            title = stripped[2:].strip()
+            title = line[2:].strip()
         elif stripped.startswith("**") and ("—" in stripped or "-" in stripped):
             entry_start = True
             title = stripped
-        elif stripped.startswith("- `"):
+        elif re.match(r"^[0-9]+[.)]\s+", line):
             entry_start = True
-            title = stripped[2:].strip()
-        elif stripped.startswith("- ") and current_section is None and current_entry is None:
-            entry_start = True
-            title = stripped[2:].strip()
+            title = re.sub(r"^[0-9]+[.)]\s+", "", line).strip()
 
         if entry_start:
             if title.endswith(":"):
@@ -460,6 +479,7 @@ def build_report(days: list[dict]) -> dict:
     sessions = [session for day in days if day.get("exists") for session in day["sessions"]]
     deep_sessions = [session for session in sessions if session.intensity == "deep"]
     light_sessions = [session for session in sessions if session.intensity == "light"]
+    unclassified_sessions = [session for session in sessions if session.intensity == "unclassified"]
 
     focus_hours_by_domain: dict[str, float] = defaultdict(float)
     count_by_domain: dict[str, float] = defaultdict(float)
@@ -483,15 +503,23 @@ def build_report(days: list[dict]) -> dict:
             priorities_by_domain[domain] += 1
 
     days_with_career_deep = 0
+    days_with_career_activity = 0
     for day in days:
         if any(session.intensity == "deep" and session.domain == "Career/Interview" for session in day.get("sessions", [])):
             days_with_career_deep += 1
+        if any(session.domain == "Career/Interview" for session in day.get("sessions", [])):
+            days_with_career_activity += 1
 
     primary_alignment_values = [day["primary_alignment"] for day in days if day.get("primary_plan")]
     total_focus_hours = round(sum(focus_hours_by_domain.values()), 2)
     domain_percentages = {
         domain: round((hours / total_focus_hours) * 100, 1) if total_focus_hours else 0.0
         for domain, hours in sorted(focus_hours_by_domain.items())
+    }
+    total_activity_count = round(sum(count_by_domain.values()), 1)
+    activity_percentages = {
+        domain: round((count / total_activity_count) * 100, 1) if total_activity_count else 0.0
+        for domain, count in sorted(count_by_domain.items())
     }
 
     daily_breakdown = []
@@ -524,6 +552,7 @@ def build_report(days: list[dict]) -> dict:
             "end_date": days[-1]["date"].isoformat(),
             "days_in_window": len(days),
             "days_tracked": sum(1 for day in days if day.get("exists")),
+            "days_with_activity_records": sum(1 for day in days if day.get("sessions")),
         },
         "metrics": {
             "energy_avg": average([day.get("metrics", {}).get("energy") for day in days if day.get("exists")]),
@@ -534,8 +563,12 @@ def build_report(days: list[dict]) -> dict:
         },
         "allocation": {
             "total_focus_hours_est": total_focus_hours,
+            "activity_record_count": total_activity_count,
             "deep_session_count_est": round(sum(session.count for session in deep_sessions), 1),
             "light_session_count_est": round(sum(session.count for session in light_sessions), 1),
+            "unclassified_activity_count": round(sum(session.count for session in unclassified_sessions), 1),
+            "activity_count_by_domain": {domain: round(value, 1) for domain, value in sorted(count_by_domain.items())},
+            "activity_percentages": activity_percentages,
             "focus_hours_by_domain": {domain: round(hours, 2) for domain, hours in sorted(focus_hours_by_domain.items())},
             "deep_count_by_domain": {domain: round(value, 1) for domain, value in sorted(deep_count_by_domain.items())},
             "light_count_by_domain": {domain: round(value, 1) for domain, value in sorted(light_count_by_domain.items())},
@@ -544,6 +577,7 @@ def build_report(days: list[dict]) -> dict:
         "execution": {
             "days_with_career_deep": days_with_career_deep,
             "days_without_career_deep": len(days) - days_with_career_deep,
+            "days_with_career_activity": days_with_career_activity,
             "primary_plan_alignment_rate": (
                 round(sum(primary_alignment_values) / len(primary_alignment_values) * 100, 1)
                 if primary_alignment_values
@@ -575,9 +609,12 @@ def render_markdown(report: dict, include_daily: bool) -> str:
         "",
         f"- **Window**: {report['window']['start_date']} to {report['window']['end_date']}",
         f"- **Days tracked**: {report['window']['days_tracked']} / {report['window']['days_in_window']}",
-        f"- **Estimated focused hours**: {allocation['total_focus_hours_est']}",
-        f"- **Estimated deep sessions**: {allocation['deep_session_count_est']}",
-        f"- **Estimated light sessions**: {allocation['light_session_count_est']}",
+        f"- **Days with structured activity records**: {report['window']['days_with_activity_records']} / {report['window']['days_in_window']}",
+        f"- **Activity records extracted**: {allocation['activity_record_count']}",
+        f"- **Explicitly classified deep records**: {allocation['deep_session_count_est']}",
+        f"- **Explicitly classified light records**: {allocation['light_session_count_est']}",
+        f"- **Unclassified activity records**: {allocation['unclassified_activity_count']}",
+        f"- **Focus hours estimated from explicit intensity only**: {allocation['total_focus_hours_est']}",
         "",
         "## Average Ratings",
         "",
@@ -587,15 +624,15 @@ def render_markdown(report: dict, include_daily: bool) -> str:
         f"- **Productivity**: {metrics['productivity_avg']}",
         f"- **Sleep (hours)**: {metrics['sleep_avg']}",
         "",
-        "## Allocation",
+        "## Activity Mix (Not Time Allocation)",
         "",
     ]
-    for domain, hours in allocation["focus_hours_by_domain"].items():
-        pct = allocation["domain_percentages"].get(domain, 0.0)
+    for domain, count in allocation["activity_count_by_domain"].items():
+        pct = allocation["activity_percentages"].get(domain, 0.0)
         deep = allocation["deep_count_by_domain"].get(domain, 0.0)
         light = allocation["light_count_by_domain"].get(domain, 0.0)
         lines.append(
-            f"- **{domain}**: {hours}h est. ({pct}%) | deep {deep} | light {light}"
+            f"- **{domain}**: {count} records ({pct}%) | explicit deep {deep} | explicit light {light}"
         )
 
     lines.extend(
@@ -603,8 +640,8 @@ def render_markdown(report: dict, include_daily: bool) -> str:
             "",
             "## Execution Signals",
             "",
-            f"- **Days with a career/interview deep block**: {execution['days_with_career_deep']}",
-            f"- **Days without a career/interview deep block**: {execution['days_without_career_deep']}",
+            f"- **Days with a career/interview activity record**: {execution['days_with_career_activity']}",
+            f"- **Explicit career deep records**: {allocation['deep_count_by_domain'].get('Career/Interview', 0.0)}",
             f"- **Primary-plan first-block alignment**: {execution['primary_plan_alignment_rate']}% over {execution['primary_plan_days_measured']} measured days",
             "",
             "## Carry-Forward Pressure",
