@@ -13,6 +13,12 @@ Use this note when deciding whether TikTok account checks can rely on an API or 
 - Content Posting API is for publishing, not public profile inspection.
 - Research API is specialized and not a general-purpose profile-view API.
 - If the target account itself has authorized an app and the needed scope exists, official APIs may help. Otherwise they usually do not solve "check this public account for me".
+- User access tokens last 24 hours and refresh tokens normally last 365 days.
+  For an authorized owned account, prefer TikTokBot's automatic refresh and
+  one-time retry before treating the official API as blocked. If automatic
+  refresh fails, the likely blockers are an expired/revoked refresh token or
+  app-credential mismatch; renew OAuth instead of switching silently to
+  unofficial collection.
 
 ## CLI paths
 

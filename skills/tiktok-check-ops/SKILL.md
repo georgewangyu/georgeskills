@@ -40,6 +40,12 @@ Do not use when:
   - This returns the authorized account follower count and recent videos above
     the requested creator-baseline multiplier.
   - It requires Display API OAuth tokens in that bot's private env file.
+  - TikTok access tokens last 24 hours. Current TikTokBot check commands
+    automatically use the saved refresh token, persist rotated tokens, and
+    retry once when the access token is expired or invalid.
+  - If an older checkout returns an invalid-token error, run
+    `node src/cli.js refresh-token --save`, then rerun the check. Do not fall
+    back to browser viewing until this official recovery path has failed.
 - The local probe script always uses `curl` for a first-party reachability check.
 - It can also use `yt-dlp` and `gallery-dl` as optional best-effort extractors for
   public metadata when those tools are installed locally.
@@ -68,6 +74,9 @@ Do not use when:
    - missing extractor output does not prove the account is gone
 4. Decide access path:
    - for the operator's own authorized account analytics, use the local `tiktokbot` CLI when available
+   - if TikTokBot reports an invalid user access token, verify
+     `node src/cli.js env`, refresh through the bot, and retry the official
+     check before using a browser
    - if the user already has valid TikTok developer access for the needed scope, read `references/current-options.md`
    - otherwise use browser viewing
 5. For browser viewing, prefer:
@@ -89,6 +98,8 @@ Follow `skills/_shared/social-platform-fallbacks.md`.
 - whether any installed extractor produced usable metadata
 - recommended next path: official API, CLI probe, or browser viewing
 - blockers such as captcha, login wall, rate limits, or missing local tools
+- for owned-account API failures, whether automatic refresh succeeded or the
+  refresh token/app authorization requires renewed OAuth
 
 ## Guardrails
 
