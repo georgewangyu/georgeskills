@@ -37,3 +37,9 @@ Implementations currently live in:
 
 Legacy entrypoints remain in `<private-repo>/scripts/journal/` as wrappers that
 delegate to this skill.
+
+The prep runner discovers transcript sources and refreshes objective context;
+it does not interpret transcripts or call an external model provider. The
+active Codex agent must read the available transcript text directly, interpret
+all same-day sources together, and write the most useful supported synthesis
+into the private journal.
