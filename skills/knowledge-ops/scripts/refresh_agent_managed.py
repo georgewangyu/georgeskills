@@ -275,15 +275,7 @@ def append_unique_bullets(text: str, title: str, bullets: list[str]) -> str:
     if not bullets:
         return text
     frontmatter, markdown_body = split_frontmatter(text)
-    sections = extract_level2_headers(markdown_body)
-    existing_lines: list[str] = []
-    if title in sections:
-        start, end = sections[title]
-        section_text = markdown_body[start:end]
-        for raw_line in section_text.splitlines():
-            stripped = raw_line.strip()
-            if stripped.startswith("- "):
-                existing_lines.append(stripped)
+    existing_lines = [f"- {bullet}" for bullet in section_bullets(frontmatter + markdown_body, title)]
     merged = existing_lines[:]
     for bullet in bullets:
         stripped = bullet.strip()
@@ -315,13 +307,38 @@ def parse_sections(text: str) -> list[Section]:
 
 def bullet_lines(section: Section) -> list[str]:
     bullets: list[str] = []
-    for raw_line in section.lines:
-        stripped = raw_line.strip()
-        match = re.match(r"^[-*]\s+(.*)$", stripped)
-        if match:
-            text = re.sub(r"\s+", " ", match.group(1)).strip()
+    current: list[str] = []
+    current_indent = -1
+
+    def flush() -> None:
+        nonlocal current, current_indent
+        if current:
+            text = re.sub(r"\s+", " ", " ".join(current)).strip()
             if text:
                 bullets.append(text)
+        current = []
+        current_indent = -1
+
+    for raw_line in section.lines:
+        match = re.match(r"^(\s*)[-*]\s+(.*)$", raw_line)
+        if match:
+            flush()
+            current_indent = len(match.group(1).expandtabs(4))
+            current = [match.group(2).strip()]
+            continue
+
+        stripped = raw_line.strip()
+        if not stripped:
+            flush()
+            continue
+
+        leading_indent = len(raw_line) - len(raw_line.lstrip(" \t"))
+        if current and leading_indent > current_indent:
+            current.append(stripped)
+        else:
+            flush()
+
+    flush()
     return bullets
 
 
@@ -538,14 +555,41 @@ def infer_theme_labels(topic: TopicPage, evidence_texts: list[str], source_snipp
     return labels
 
 
+def representative_sentence(text: str, token_counts: Counter[str], max_chars: int = 480) -> str:
+    normalized = re.sub(r"\s+", " ", text).strip()
+    sentences = re.split(r"(?<=[.!?])\s+", normalized)
+    candidates = [
+        sentence.strip()
+        for sentence in sentences
+        if 40 <= len(sentence.strip()) <= max_chars and sentence.strip().endswith((".", "!", "?"))
+    ]
+    if candidates:
+        return max(
+            candidates,
+            key=lambda sentence: sum(
+                token_counts.get(token, 0)
+                for token in re.findall(r"[a-z0-9][a-z0-9-]+", sentence.lower())
+            ),
+        )
+    if len(normalized) <= max_chars:
+        return normalized.rstrip(".") + "."
+    return ""
+
+
 def representative_evidence(evidence_texts: list[str], limit: int = 3) -> list[str]:
     if not evidence_texts:
         return []
     token_counts = word_counter(evidence_texts)
     scored: list[tuple[int, str]] = []
     for text in evidence_texts:
-        score = sum(token_counts.get(token, 0) for token in re.findall(r"[a-z0-9][a-z0-9-]+", text.lower()))
-        scored.append((score, text))
+        representative = representative_sentence(text, token_counts)
+        if not representative:
+            continue
+        score = sum(
+            token_counts.get(token, 0)
+            for token in re.findall(r"[a-z0-9][a-z0-9-]+", representative.lower())
+        )
+        scored.append((score, representative))
     selected: list[str] = []
     used_tokens: set[str] = set()
     for _, text in sorted(scored, key=lambda item: (-item[0], item[1])):
@@ -555,7 +599,7 @@ def representative_evidence(evidence_texts: list[str], limit: int = 3) -> list[s
         }
         if selected and tokens and len(tokens & used_tokens) / max(len(tokens), 1) > 0.7:
             continue
-        selected.append(text.rstrip(".") + ".")
+        selected.append(text)
         used_tokens |= tokens
         if len(selected) >= limit:
             break
@@ -582,8 +626,10 @@ def operational_signals(evidence_texts: list[str]) -> list[str]:
 
 def synthesize_summary(topic: TopicPage, evidence_texts: list[str], source_snippets: list[str], seed_paths: list[str], dates: list[str]) -> list[str]:
     theme_labels = infer_theme_labels(topic, evidence_texts, source_snippets, seed_paths)
+    seed_label = "seed document" if len(seed_paths) == 1 else "seed documents"
+    evidence_label = "evidence bullet" if len(evidence_texts) == 1 else "evidence bullets"
     bullets = [
-        f"{topic.title} is a recurring canonical topic grounded in {len(seed_paths)} seed documents and {len(evidence_texts)} accumulated evidence bullets."
+        f"{topic.title} is a recurring canonical topic grounded in {len(seed_paths)} {seed_label} and {len(evidence_texts)} accumulated {evidence_label}."
     ]
     if theme_labels:
         if len(theme_labels) == 1:
@@ -648,8 +694,9 @@ def compile_topic_page(topic: TopicPage) -> bool:
     updated = upsert_level2_section(text, "Summary", summary_body)
     updated = upsert_level2_section(updated, "Current Understanding", current_body)
 
-    if updated != text:
-        path.write_text(updated, encoding="utf-8")
+    normalized = updated.rstrip() + "\n"
+    if normalized != text:
+        path.write_text(normalized, encoding="utf-8")
         return True
     return False
 
@@ -1094,8 +1141,10 @@ def apply_safe_updates(candidate: dict[str, object], *, date_text: str) -> bool:
         text = updated
         changed = True
 
-    if changed:
-        page_path.write_text(text, encoding="utf-8")
+    normalized = text.rstrip() + "\n"
+    if changed or normalized != text:
+        page_path.write_text(normalized, encoding="utf-8")
+        changed = True
     return changed
 
 
