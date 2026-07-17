@@ -153,6 +153,7 @@ For videos longer than 45 seconds, six or more meaningful beats, or three or mor
 - `visual-beat-mapper`: transcript-to-treatment map
 - `a-roll-treatment-worker`: punch-ins, reframes, scale rhythm, and face-safe crops
 - `proof-and-broll-worker`: source receipts, B-roll, provenance, and legibility
+- `manim-sequence-worker`: one precise mathematical, geometric, graph, algorithm, or mechanism sequence
 - `remotion-sequence-worker`: one or more named motion sequences
 - `visual-qa-worker`: independent render inspection against the plan
 
@@ -169,6 +170,7 @@ Compose existing skills:
 
 - Invoke `video-asset-pack-ops` for sourced screenshots, official receipts, and the numbered asset manifest.
 - Invoke `video-visual-assets-ops` for selected diagrams, coded motion, screen demonstrations, generated media, or promo excerpts.
+- Invoke `manim-explainer-ops` when equations, graphs, coordinate systems, geometry, machine-learning flow, algorithm state, or another mechanism needs exact semantic transformation.
 - Invoke `social-motion-diagram-ops` for Excalidraw-style diagrams when that visual grammar fits.
 - Invoke `video-visual-coverage-qa-ops` after a reviewable render.
 
@@ -252,9 +254,13 @@ screenshots, screen recordings, or official demo footage whenever the beat
 proves a product or claim. For cinematic atmosphere, transformation shots,
 metaphor, or clearly synthetic inserts, prefer the authenticated Gemini
 consumer video surface when it is available and approved. Use coded Remotion
-motion for precise explanatory or UI animation, diagrams, legible text,
-deterministic timing, and reusable brand treatments. Keep Higgsfield parked
-unless the user separately approves its paid subscription for a specific shot.
+motion as the default for UI, brand, text, general diagrams, legible labels,
+deterministic timing, reusable motion, and whole-video assembly. Route
+mathematical, geometric, equation-based, graph, machine-learning, algorithmic,
+or mechanism explanations whose meaning depends on exact semantic object
+transformations to `manim-explainer-ops`. Do not imitate a living creator's
+exact visual identity in either lane. Keep Higgsfield parked unless the user
+separately approves its paid subscription for a specific shot.
 Preserve the provider, displayed model, prompt, billing surface, and synthetic
 status in the asset manifest; never use generated product UI as proof.
 

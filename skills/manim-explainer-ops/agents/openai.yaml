@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manim Explainer Ops"
+  short_description: "Build precise technical explainer animations"
+  default_prompt: "Use $manim-explainer-ops to create an editor-ready animation that explains this mechanism precisely."

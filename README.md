@@ -63,7 +63,9 @@ These are the skill clusters that have been moving fastest recently:
 - **Social video production:** `weekly-video-batch-ops`,
   `capcut-ai-edit-reel-ops`, `shortform-rough-cut-ops`, and
   `social-video-archive-ops` cover batch planning, edit preparation, final
-  export handling, and durable reference-video archives.
+  export handling, and durable reference-video archives;
+  `manim-explainer-ops` adds precise programmatic technical animation as a
+  specialist lane beside the default Remotion workflow.
 - **Voice and writing:** `voice-calibration-ops` builds a source-derived voice
   profile and applies it to posts, essays, emails, and launch notes.
 - **Repo and workflow quality:** `repo-readme-onboarding-ops`,
@@ -122,6 +124,7 @@ These are the skill clusters that have been moving fastest recently:
 | `video-asset-pack-ops` | Turn a settled script into a parallel-gathered, sourced, numbered edit-asset pack with a beat-to-asset manifest. |
 | `video-visual-director-ops` | Direct one coherent post-A-cut treatment across A-roll reframes, proof, B-roll, motion, captions, sound, rendering, and QA. |
 | `video-visual-assets-ops` | Produce selected higher-value video visuals such as coded motion, diagrams, screen demonstrations, promo excerpts, and generated media. |
+| `manim-explainer-ops` | Create precise Manim CE animations for math, equations, machine learning, algorithms, graphs, geometry, and mechanisms, then return editor-ready assets and reproducible source. |
 | `video-visual-coverage-qa-ops` | Audit a first export against its transcript and asset pack for visual gaps, overlay problems, evidence mismatch, and exact timestamped fixes. |
 | `video-edit-phase-gate-ops` | Keep a video edit on one evidence-backed path from intake and A-cut lock through editor persistence, independent rendered evaluation, and final acceptance. |
 | `video-companion-page-ops` | Create local HTML/blog-style companion pages for educational videos with clickable sources, screenshots, diagrams, and talking outlines. |

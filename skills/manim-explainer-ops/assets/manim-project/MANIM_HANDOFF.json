@@ -1,0 +1,29 @@
+{
+  "project": "__PROJECT_NAME__",
+  "scene_class": "__SCENE_CLASS__",
+  "classification": "explanation",
+  "teaching_claim": "replace with the exact claim this animation explains",
+  "narration_sync": {
+    "timeline_in": null,
+    "timeline_out": null,
+    "spoken_cue": "replace with the narration phrase"
+  },
+  "render": {
+    "command": "uv run manim -qh -r 1080,1920 --fps 30 scene.py __SCENE_CLASS__",
+    "output": null,
+    "poster": null,
+    "duration_seconds": null,
+    "width": 1080,
+    "height": 1920,
+    "frame_rate": 30,
+    "codec": null
+  },
+  "source_provenance": [],
+  "validation": {
+    "first_middle_final_frames_inspected": false,
+    "safe_zones_checked": false,
+    "narration_sync_checked": false,
+    "conceptual_accuracy_checked": false
+  },
+  "editor_notes": []
+}

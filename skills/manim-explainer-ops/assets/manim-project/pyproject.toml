@@ -1,0 +1,8 @@
+[project]
+name = "__PROJECT_NAME__"
+version = "0.1.0"
+description = "Programmatic technical explainer animation"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "manim==0.20.1",
+]

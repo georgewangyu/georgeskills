@@ -6,7 +6,8 @@
 |---|---|---|---|
 | Screen recording | Real product behavior or UI flow | MP4 + poster | No, when access is already available |
 | Official promo excerpt | Product launch, cinematic context, physical behavior | Short MP4 + provenance | Ask before large downloads; otherwise no |
-| Coded motion | Timelines, counters, comparisons, flows, maps, UI abstractions | MP4 + PNG + editable source | No |
+| Manim explainer | Equations, graphs, coordinates, geometry, machine-learning flow, algorithm state, precise mechanisms | MP4 + PNG + editable Python source | No |
+| Remotion/coded motion | UI, brand, text, timelines, counters, comparisons, flows, maps, screen-like composition | MP4 + PNG + editable source | No |
 | Diagram/board | Systems, contrasts, agent delegation, before/after | PNG or short MP4 | No |
 | Generated still | Atmosphere, metaphor, comedic plate, impossible B-roll | PNG | Ask if billable |
 | Generated video | High-novelty transitions, impossible scenes, stylized B-roll | MP4 | Explicit approval |
@@ -20,9 +21,23 @@ Use real UI and a short, deterministic interaction. Hide private data, notificat
 
 Prefer official press kits, launch posts, product sites, or channels owned by the subject. Record URL, owner, original duration, excerpt boundaries, and intended editorial transformation. Avoid rehosting whole promotional videos.
 
-## Coded motion
+## Manim explainer
 
-Prefer SVG/HTML/CSS/canvas or a small local render script. Use one moving idea: a counter, reveal, highlight, cursor, path, stack, or split comparison. Include an editable source and render with a reproducible command when practical.
+Invoke `manim-explainer-ops` when the teaching value depends on exact semantic
+object transformations: equations becoming equations, points linked to graph
+values, geometry preserving an invariant, algorithm state advancing, or a
+mechanism mapping input to output. Keep the Python source and classify the
+result as explanation rather than proof unless sourced values justify an
+evidence label. Borrow general teaching mechanics, not a living creator's exact
+visual identity.
+
+## Remotion or other coded motion
+
+Prefer Remotion, SVG/HTML/CSS/canvas, or a small local render script for UI,
+brand, typography, timelines, counters, comparisons, flows, maps, and general
+screen-like composition. Use one moving idea: a counter, reveal, highlight,
+cursor, path, stack, or split comparison. Include editable source and a
+reproducible render command.
 
 ## Diagram or comparison board
 

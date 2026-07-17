@@ -25,11 +25,12 @@ Use [production-paths.md](references/production-paths.md) to select one of:
 
 1. source-faithful screen recording or UI demonstration
 2. official promo or demo excerpt
-3. deterministic coded motion
-4. diagram or comparison board
-5. generated still or stylized plate
-6. generated video
-7. Blender-authored 3D B-roll or motion graphics
+3. Manim technical explainer
+4. deterministic Remotion or other coded motion
+5. diagram or comparison board
+6. generated still or stylized plate
+7. generated video
+8. Blender-authored 3D B-roll or motion graphics
 
 Use screenshots or A-roll when motion adds little. A visual is successful when it clarifies the beat in one glance or creates a deliberate pattern interrupt.
 
@@ -39,6 +40,13 @@ permission from phrases such as `make it fancy`, `cinematic`, `add B-roll`, or
 `add animation`. Prefer generated video for fast cinematic inserts and coded
 motion for precise explanatory animation unless the creator deliberately
 chooses the additional modeling, lighting, rendering, and QA burden of Blender.
+
+Route mathematical, geometric, equation-based, graph, machine-learning,
+algorithmic, and mechanism animations to `manim-explainer-ops` when semantic
+object transformations carry the explanation. Keep Remotion as the default for
+UI, brand, typography, screen-like composition, general text motion, and
+whole-video assembly. Manim is a specialist asset lane, not a replacement for
+the surrounding visual-director or editor workflow.
 
 For a sponsor, brand, company, or product beat, default to a source-faithful
 product UI demonstration: a privacy-safe screen recording when access is
@@ -102,11 +110,12 @@ screen recordings, or official demo footage when the asset proves a product or
 claim. For cinematic inserts, atmosphere, transformation shots, or clearly
 illustrative metaphor, prefer the authenticated Gemini consumer video surface
 when generative video materially improves the shot. Use Remotion or another
-coded-motion path for precise explanatory or UI animation, routing diagrams,
-readable labels, exact narration sync, and reusable brand treatments. Keep
-Higgsfield parked unless the user separately approves its paid subscription
-for a specific shot. Generated footage must not impersonate product proof or a
-real event.
+coded-motion path for UI, brand, text-led motion, routing diagrams, readable
+labels, exact narration sync, and reusable brand treatments. Use
+`manim-explainer-ops` for precise mathematical, geometric, graph, algorithmic,
+equation, machine-learning, or mechanism animation. Keep Higgsfield parked
+unless the user separately approves its paid subscription for a specific shot.
+Generated footage must not impersonate product proof or a real event.
 
 Use Blender MCP only after the explicit Blender/3D gate above passes. Reserve
 it for shots whose value comes from controllable 3D geometry, camera moves,
@@ -166,6 +175,7 @@ longer generation merely to use more of the paid output.
 
 ### 5. Compose existing skills
 
+- Use `manim-explainer-ops` for precise mathematical, geometric, graph, equation, machine-learning, algorithmic, and mechanism animation.
 - Use `social-motion-diagram-ops` for sketch-style diagrams and small looping flows.
 - Use `social-video-archive-ops` when official or reference video must be downloaded and preserved; create only the short editor-ready derivative here and retain exact in/out points.
 - Use an image-generation skill for generated stills or image edits when available.
