@@ -84,7 +84,7 @@ class EmailAccount:
         return scopes
 
     def verify_account(self, service):
-        """Verify that the authenticated account matches the expected email"""
+        """Return True for a match, False for a mismatch, or None if verification fails."""
         try:
             # Get the user's profile to verify account
             profile = service.users().getProfile(userId='me').execute()
@@ -97,7 +97,7 @@ class EmailAccount:
                 return False
         except Exception as e:
             print(f"Error verifying account: {e}", file=sys.stderr)
-            return False
+            return None
 
     def get_credentials(self):
         """Get valid user credentials for this account, with account verification"""
@@ -131,7 +131,11 @@ class EmailAccount:
                 print(f"⚠️  IMPORTANT: Please sign in with {self.email} when the browser opens!", file=sys.stderr)
                 try:
                     flow = InstalledAppFlow.from_client_secrets_file(str(CREDENTIALS_FILE), self.scopes)
-                    creds = flow.run_local_server(port=0)
+                    creds = flow.run_local_server(
+                        port=0,
+                        prompt='select_account',
+                        login_hint=self.email,
+                    )
                 except Exception as e:
                     print(f"Error during OAuth flow for {self.email}: {e}", file=sys.stderr)
                     return None
@@ -139,7 +143,8 @@ class EmailAccount:
             # Verify the account matches
             try:
                 service = build('gmail', 'v1', credentials=creds)
-                if not self.verify_account(service):
+                verification = self.verify_account(service)
+                if verification is False:
                     print(f"ERROR: Authentication failed - wrong account detected!", file=sys.stderr)
                     print(f"Expected: {self.email}", file=sys.stderr)
                     print(f"Please delete the token file and try again: {self.token_file}", file=sys.stderr)
@@ -147,6 +152,11 @@ class EmailAccount:
                     if self.token_file.exists():
                         self.token_file.unlink()
                     return None
+                if verification is None:
+                    print(
+                        "WARNING: Could not verify the authenticated account; preserving the token.",
+                        file=sys.stderr,
+                    )
             except Exception as e:
                 print(f"Error verifying account after authentication: {e}", file=sys.stderr)
                 # Still save the token, but warn
@@ -163,7 +173,8 @@ class EmailAccount:
             # Verify existing token is for the correct account
             try:
                 service = build('gmail', 'v1', credentials=creds)
-                if not self.verify_account(service):
+                verification = self.verify_account(service)
+                if verification is False:
                     print(f"ERROR: Token mismatch detected! Token is for wrong account.", file=sys.stderr)
                     print(f"Expected: {self.email}", file=sys.stderr)
                     print(f"Deleting incorrect token. Please re-authenticate.", file=sys.stderr)
@@ -171,6 +182,11 @@ class EmailAccount:
                     if self.token_file.exists():
                         self.token_file.unlink()
                     return None
+                if verification is None:
+                    print(
+                        "WARNING: Could not verify the existing token; preserving it for a later retry.",
+                        file=sys.stderr,
+                    )
             except Exception as e:
                 print(f"Error verifying existing token: {e}", file=sys.stderr)
                 # Continue anyway - might be a temporary API issue
