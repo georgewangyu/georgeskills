@@ -122,7 +122,7 @@ These are the skill clusters that have been moving fastest recently:
 | `broad-video-trend-radar-ops` | Run broad cross-platform trend sweeps for high-multiplier short-form formats outside a narrow niche. |
 | `shortform-rough-cut-ops` | Turn raw short-form clips, creator intent, and format runbooks into an edit decision list and rough draft plan. |
 | `video-asset-pack-ops` | Turn a settled script into a parallel-gathered, sourced, numbered edit-asset pack with a beat-to-asset manifest. |
-| `video-visual-director-ops` | Direct one coherent post-A-cut treatment across A-roll reframes, proof, B-roll, motion, captions, sound, rendering, and QA. |
+| `video-visual-director-ops` | Direct one coherent short- or long-form post-A-cut treatment across A-roll, proof, transcript-anchored takeovers, motion, sound, native integration, and QA. |
 | `video-visual-assets-ops` | Produce selected higher-value video visuals such as coded motion, diagrams, screen demonstrations, promo excerpts, and generated media. |
 | `manim-explainer-ops` | Create precise Manim CE animations for math, equations, machine learning, algorithms, graphs, geometry, and mechanisms, then return editor-ready assets and reproducible source. |
 | `video-visual-coverage-qa-ops` | Audit a first export against its transcript and asset pack for visual gaps, overlay problems, evidence mismatch, and exact timestamped fixes. |

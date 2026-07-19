@@ -1,6 +1,6 @@
 ---
 name: video-visual-director-ops
-description: Direct and execute the visual pass after a short-form video's A-roll and spoken story are locked. Use when a creator has a versioned A-cut export and wants Codex to apply a creator visual-style profile and produce A-roll punch-ins or reframes, proof assets, B-roll, captions, sound effects, transitions, trend-informed treatments, diagrams, and Remotion animation while preserving the locked story. Supports live Remotion Studio review, full-composite renders, transparent overlay tracks, and individual editor assets.
+description: Direct and execute the visual pass after a short- or long-form talking-head video's A-roll and spoken story are locked. Use when a creator has a versioned A-cut export and wants Codex to apply a creator visual-style profile and produce A-roll punch-ins or reframes, proof assets, B-roll, captions, sound effects, transitions, transcript-anchored full-screen takeovers, diagrams, and Remotion or Manim animation while preserving the locked story. Supports long-form course openings, live Remotion Studio review, full-composite renders, transparent overlay tracks, individual editor assets, and native editor integration.
 ---
 
 # Video Visual Director Ops
@@ -74,6 +74,15 @@ screenshot.
 
 Also set a density ceiling. A useful default for talking-head shorts is one meaningful visual change every two to four seconds, with intentional uninterrupted eye-contact beats. Do not add movement merely to satisfy the cadence.
 
+For a premium long-form talking-head or course opening, read the creator profile
+for a `long_form_takeover_mode`. When that mode is approved, use one meaningful
+full-screen takeover start every `25-40s` across the first `5-10m`; treat `30s`
+as the planning default, not a quota. Record the average start interval, total
+takeover seconds, and coverage percentage. Each takeover still needs a distinct
+comprehension, mechanism, comparison, or proof job. Preserve face-led returns
+between sequences and flag adjacent clusters or repeated chapter maps for
+native rhythm review.
+
 ## Step 2: Scout Trend Mechanics When Useful
 
 Invoke `broad-video-trend-radar-ops` and/or `video-breakout-research-ops` when the creator asks for current editing references, names a trending format, or the treatment needs a fresh pattern interrupt. Have a dedicated trend-mechanics scout deconstruct the reference rather than return only links.
@@ -120,6 +129,13 @@ single looping scale move belongs in a partial-frame overlay.
 Default to zero or one full-screen takeover in a talking-head short. Additional
 takeovers each require a distinct comprehension or proof job; visual variety by
 itself is not a reason.
+
+The short-form zero-or-one rule does not apply when an approved creator profile
+enables long-form takeover mode. In that mode, build a transcript-backed
+takeover schedule before rendering, keep every clip silent under the original
+narration unless sound is explicitly designed, and make every first and final
+frame usable as a hard cut. A high-density schedule is an editorial system, not
+permission to cover filler or silence.
 
 Map persistent template text, captions, and face-safe zones before sizing
 overlays. Inspect the assembled composite—not only the isolated asset—and
@@ -261,6 +277,13 @@ or mechanism explanations whose meaning depends on exact semantic object
 transformations to `manim-explainer-ops`. Do not imitate a living creator's
 exact visual identity in either lane. Keep Higgsfield parked unless the user
 separately approves its paid subscription for a specific shot.
+
+Do not equate programmatic animation with Manim. Use Remotion for most editorial
+takeovers: typography, UI/context layouts, comparisons, timelines, receipts,
+state cards, and data-driven compositing. Use Manim selectively when the meaning
+depends on rigorous object continuity or an evolving mathematical, graph, or
+system model. A long-form batch will usually be Remotion-heavy with a small
+number of Manim sequences.
 Preserve the provider, displayed model, prompt, billing surface, and synthetic
 status in the asset manifest; never use generated product UI as proof.
 
@@ -274,6 +297,14 @@ output, and keep the shot outside the critical path until it passes QA.
 ## Step 7: Verify And Iterate
 
 Verify dimensions, duration, audio sync, frame rate, alpha behavior when relevant, missing media, and representative frame samples. Then invoke `video-visual-coverage-qa-ops` against the render, timed transcript, asset manifest, and visual-edit plan.
+
+For a long-form takeover batch, independently inspect every first, middle, and
+last state. Reject an empty first frame, fade from black, clipped headline,
+late source receipt, or asset shorter than its requested editor range. Build
+the rhythm preview on one continuous timeline clock with timestamped overlays;
+do not concatenate independently rounded A-roll and takeover chunks because
+sub-frame rounding accumulates. Emit a frame-boundary audit and inspect exact
+claim cutoffs at the delivery frame rate before native integration.
 
 Run a sound-design coverage check against the rendered candidate, not only the
 timeline. Reconcile every planned SFX cue to an audible timestamp and record
@@ -305,6 +336,9 @@ Return:
 - render validation notes and the final visual-coverage QA report
 - canonical text and timed sound-design cue maps, plus updated phase-gate
   status when `VIDEO_EDIT_GATES.md` is present
+- for an approved long-form takeover pass, the timing schedule, average start
+  interval, total takeover time, coverage percentage, frame-boundary audit,
+  unified contact sheet, and independent QA verdict
 - explicit manual handoff steps, unresolved blockers, and any A-cut observations kept outside the visual pass
 
 The run is not complete merely because assets exist. It is complete when the locked A-cut has a coherent, inspectable visual treatment and a verified reviewable output or exact editor handoff.
