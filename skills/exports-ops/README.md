@@ -6,8 +6,10 @@ Modular export implementations for:
 - Gmail
 - large, verified Google Drive folder archives
 - Meta Facebook and Instagram JSON archives
+- macOS Messages/iMessage snapshots
 - Cursor chats
 - X/Twitter feed snapshots
+- local-first macOS screen-activity capture
 
 The scripts run against private data/config in `<private-repo>`:
 - `captures/*`
@@ -39,3 +41,29 @@ chosen external/private output location.
 
 `scripts/query_meta_messages.py` reports index statistics or returns bounded
 read-only full-text, platform, sender, thread, and UTC date-range results.
+
+`scripts/index_imessage_messages.py` builds an atomic SQLite/FTS5 index from a
+consistent macOS Messages `chat.db` snapshot. Its bundled Swift decoder recovers
+message text stored in Apple's legacy attributed-string format while retaining
+attachment metadata rather than duplicating attachment binaries.
+
+`scripts/query_imessage_messages.py` reports bounded statistics, timelines,
+chat rankings, and full-text results with direction, service, chat, and date
+filters. Use `--content-only` for message-body claims.
+
+`scripts/export_imessage_daily_context.py` creates the lighter nightly context
+surface used by a private daily-summary workflow. It snapshots `chat.db` with
+SQLite backup semantics into a temporary directory, extracts the target local
+day plus the previous day's late window, omits attachment content, filters
+obvious automated traffic, writes a bounded private JSON staging file, and
+deletes the temporary database when the process exits. It is intentionally
+separate from the large verified archive/index workflow.
+
+`scripts/audit_export_freshness.py` reads a caller-owned JSON registry and
+reports stale incremental markers, due snapshots, and external-manifest
+availability. It is deliberately read-only and does not advance checkpoints.
+
+`scripts/capture_screen_activity.py` runs a pauseable macOS capture loop with
+locked/idle/sensitive-app skips, external-volume-only raw storage, rolling raw
+retention, 10-minute contact sheets, and a storage/image-token estimate. It
+makes no network or model calls; private paths belong in caller-owned config.

@@ -9,6 +9,7 @@ profiles:
       inferred_sprints_review: required
       work_sprint_capture: prompt_if_weekday_or_blind_spot
       exports: skip
+      imessage_context: skip
       health_context: skip
       email_context: existing_data_only
       location_context: existing_data_only
@@ -21,6 +22,7 @@ profiles:
     modules:
       summary_status: required
       exports: run_with_freshness_cache
+      imessage_context: bounded_private_extract
       health_context: run_if_source_available
       email_context: run
       location_context: run
@@ -36,6 +38,7 @@ profiles:
     modules:
       summary_status: required
       exports: force_or_cache
+      imessage_context: bounded_private_extract
       health_context: run_if_source_available
       email_context: run
       location_context: run
@@ -60,3 +63,5 @@ output_contract:
   external_market_radar_detail_home_template: "journal/external-signal-scans/YYYY/MM/YYYY-MM-DD-market-radar.md"
   external_market_radar_detail_home_can_be_overridden_by: "JOURNAL_OPS_MARKET_RADAR_SCAN_TEMPLATE or --market-radar-scan-path"
   daily_summary_gets_external_radar_rollup_only: true
+  imessage_raw_staging_is_private_and_short_lived: true
+  imessage_journal_output_is_derived_context_not_raw_transcript: true

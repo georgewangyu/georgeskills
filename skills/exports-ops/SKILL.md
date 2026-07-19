@@ -18,6 +18,7 @@ Use this skill for reusable export/import automation:
 - email/calendar exports
 - Apple Notes and Cursor chat exports
 - social feed ingestion/export
+- private local screen-activity capture and derived contact sheets
 - multi-source export workflows that touch more than one data source
 
 Prefer the narrower skills when the intent is clear:
@@ -70,6 +71,39 @@ common Meta UTF-8 mojibake, and does not extract the raw ZIP trees.
 Use `scripts/query_meta_messages.py` for bounded, read-only full-text, platform,
 sender, thread, and UTC date-range queries. Prefer statistics or narrow filters
 before returning private message snippets.
+
+Use `scripts/index_imessage_messages.py` on a consistent, read-only macOS
+Messages `chat.db` snapshot. The indexer uses the bundled Swift helper to
+decode legacy `NSAttributedString` message bodies, preserves attachment
+metadata without copying binaries into the derived index, and writes an atomic
+SQLite/FTS5 index. Keep both snapshot and index in private external storage.
+
+Use `scripts/query_imessage_messages.py` for bounded statistics, timeline,
+chat, direction, service, and full-text queries. Use `--content-only` when a
+claim depends on words appearing in message text. Participant previews are
+capped so a group-chat query does not spill a full private roster.
+
+Use `scripts/export_imessage_daily_context.py` for the separate daily-summary
+context lane. It must use SQLite backup semantics to create a consistent
+temporary copy of the live Messages database, query only that temporary copy,
+omit attachment bodies, filter automated verification traffic by default, and
+delete the database snapshot after extraction. The output is a short-lived,
+ignored private staging file; agents should write derived day-level context to
+the journal rather than raw handles or surprise message excerpts. This daily
+lane does not replace or advance the verified monthly archive checkpoint.
+
+Use `scripts/audit_export_freshness.py` with a private freshness registry to
+check mixed automatic and snapshot exports without mutating their checkpoints.
+It understands per-account timestamp marker files and dated snapshot due dates;
+keep private account names and archive paths in the registry, not this repo.
+
+Use `scripts/capture_screen_activity.py` for a pauseable macOS screen capture
+pilot. Raw images must go to a caller-configured private external archive; the
+collector must wait when that volume is missing rather than fall back to an
+internal disk. Keep the locked, idle, and sensitive-app exclusions enabled,
+use rolling raw retention, and treat generated contact sheets and image-token
+reports as analysis aids rather than permission to upload any screen content.
+The script makes no model or network calls automatically.
 
 Legacy entrypoints remain in `<private-repo>/scripts/exports/` as wrappers that
 delegate to this skill.

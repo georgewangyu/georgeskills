@@ -43,3 +43,8 @@ it does not interpret transcripts or call an external model provider. The
 active Codex agent must read the available transcript text directly, interpret
 all same-day sources together, and write the most useful supported synthesis
 into the private journal.
+
+The standard and full prep profiles also create a bounded private iMessage
+daily-context staging file through `exports-ops`. Treat it like transcript
+source material: the active Codex agent interprets it, but only derived
+day-level context belongs in the journal. The check-in profile skips Messages.

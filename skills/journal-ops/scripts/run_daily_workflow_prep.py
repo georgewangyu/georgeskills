@@ -43,6 +43,7 @@ SCRIPTS_DIR = ROOT / "scripts" / "journal"
 APPLE_NOTES_EXPORT = ROOT / "scripts" / "exports" / "apple-notes" / "export_apple_notes.py"
 EMAIL_EXPORT = ROOT / "scripts" / "exports" / "email" / "export_emails_gmail_api.py"
 CALENDAR_EXPORT = ROOT / "scripts" / "exports" / "calendar" / "export_calendar_google.py"
+IMESSAGE_CONTEXT_EXPORT = ROOT / "scripts" / "exports" / "imessage" / "export_imessage_daily_context.py"
 IMPORT_HEALTH_AUTO = SCRIPTS_DIR / "import_health_auto_export_csv.py"
 IMPORT_HEALTH_JSON = SCRIPTS_DIR / "import_health_auto_export_google_drive.py"
 IMPORT_HEALTH_SHORTCUT = SCRIPTS_DIR / "import_health_shortcut_csv.py"
@@ -58,6 +59,8 @@ if not LLM_WIKI_ROOT.is_absolute():
     LLM_WIKI_ROOT = (WORKSPACE_ROOT / LLM_WIKI_ROOT).resolve()
 LLM_WIKI_INGEST = LLM_WIKI_ROOT / "scripts" / "ingest_workspace_docs.py"
 CAPTURES_DIR = ROOT / "captures"
+IMESSAGE_CONTEXT_DIR = CAPTURES_DIR / "imessage" / "daily-context"
+DAILY_WORKFLOW_TIMEZONE = os.environ.get("DAILY_WORKFLOW_TIMEZONE", "local")
 NOTES_LAST_EXPORT_MARKER = CAPTURES_DIR / "apple-notes" / "all-notes" / ".last_export"
 EMAIL_DIR = CAPTURES_DIR / "email"
 CALENDAR_DIR = CAPTURES_DIR / "calendar"
@@ -125,6 +128,7 @@ MODULE_PROFILE_DESCRIPTIONS = {
 MODULE_PROFILE_SKIP_FLAGS = {
     "checkin": {
         "skip_exports": True,
+        "skip_imessage": True,
         "skip_health": True,
         "skip_memory": True,
         "skip_agent_managed": True,
@@ -529,6 +533,42 @@ def print_audio_sources(day_text: str) -> AudioSourceSnapshot:
     return snapshot
 
 
+def imessage_context_path_for(day_text: str) -> Path:
+    return IMESSAGE_CONTEXT_DIR / f"{day_text}.json"
+
+
+def print_imessage_context(day_text: str) -> None:
+    path = imessage_context_path_for(day_text)
+    print("\n== iMessage daily context ==")
+    if not path.exists():
+        print(f"- No private staging file found at {path}")
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"- Unreadable staging receipt: {error}")
+        return
+    status = payload.get("status", "unknown")
+    if status != "ready":
+        print(f"- Status: {status}")
+        print(f"- Source gap: {payload.get('error', 'unknown error')}")
+        print(f"- Receipt: {path}")
+        return
+    counts = payload.get("counts", {})
+    print(
+        "- Ready: "
+        f"{counts.get('included_messages', 0)} message(s) across "
+        f"{len(payload.get('threads', []))} thread-window(s)"
+    )
+    print(
+        "- Filtered: "
+        f"{counts.get('automated_filtered', 0)} automated, "
+        f"{counts.get('system_or_reaction_filtered', 0)} system/reaction"
+    )
+    print(f"- Private staging file: {path}")
+    print("- Journal rule: synthesize day-level context; do not copy raw handles or surprise excerpts.")
+
+
 def build_wiki_ingest_state(*, target_date: str, summary_path: Path) -> dict[str, object] | None:
     if not summary_path.exists() or not GEORGE_LLM_WIKI_ROOT.exists():
         return None
@@ -843,6 +883,11 @@ def main() -> int:
     )
     parser.add_argument("--skip-exports", action="store_true", help="Skip Apple Notes / email / calendar exports")
     parser.add_argument(
+        "--skip-imessage",
+        action="store_true",
+        help="Skip the bounded private iMessage daily-context extract.",
+    )
+    parser.add_argument(
         "--force-exports",
         action="store_true",
         help="Run notes/email/calendar exports even when the prep runner already refreshed them recently.",
@@ -925,6 +970,24 @@ def main() -> int:
         ParallelStepSpec("Email interview context", ["python3", str(PRINT_EMAIL), "--date", args.date]),
         ParallelStepSpec("Location interview context", ["python3", str(PRINT_LOCATION), "--date", args.date]),
     ]
+    if not args.skip_imessage:
+        initial_parallel_steps.append(
+            ParallelStepSpec(
+                "iMessage daily context",
+                [
+                    "python3",
+                    str(IMESSAGE_CONTEXT_EXPORT),
+                    "--date",
+                    args.date,
+                    "--timezone",
+                    DAILY_WORKFLOW_TIMEZONE,
+                    "--output",
+                    str(imessage_context_path_for(args.date)),
+                    "--soft-fail",
+                ],
+                ok_codes={0, 3},
+            )
+        )
 
     health_missing = False
     if not args.skip_health:
@@ -1026,6 +1089,7 @@ def main() -> int:
     print(f"- Emails for date: {email_count_for(args.date)}")
     print(f"- Reflection exists: {'yes' if reflection_exists_for(args.date) else 'no'}")
     print_audio_sources(args.date)
+    print_imessage_context(args.date)
 
     failed = [r for r in results if not r.ok]
     print("\n== Result summary ==")
