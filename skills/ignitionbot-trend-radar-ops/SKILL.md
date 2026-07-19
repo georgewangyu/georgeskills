@@ -96,6 +96,9 @@ Return:
   the response.
 - If optional sources are missing credentials, report that as source coverage,
   not as a failure.
+- X reads must use the Bird-style `AUTH_TOKEN` + `CT0` session GraphQL adapter.
+  Do not use an X developer bearer token or fall back to the paid official
+  recent-search API. Report a stale session or query ID as a source gap.
 - Do not promote a secondary reaction without resolving the canonical event
   when a primary source is available.
 - Keep the answer focused on trend evidence and actions, not raw JSON dumps,

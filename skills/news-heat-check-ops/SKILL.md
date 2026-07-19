@@ -110,6 +110,11 @@ source inventories.
 
 ## Guardrails
 
+- For routine or automated X reads, use the Bird-style browser-session path
+  (`AUTH_TOKEN` + `CT0`) through XBot or IgnitionBot. Do not use an X developer
+  bearer token or the official recent-search endpoint, and never fall back to
+  a billable official read when session search fails. Record stale session or
+  GraphQL query IDs as a source gap.
 - Do not call a story viral from raw views alone.
 - Do not treat a personalized feed or saved seed list as the market universe.
 - Do not substitute a low-follower/high-view outlier scan for event-level news
