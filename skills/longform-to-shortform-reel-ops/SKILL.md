@@ -1,15 +1,14 @@
 ---
 name: longform-to-shortform-reel-ops
 description: Select, score, and source-remap standalone vertical short-form clips from a finished long-form video, creator-edited timeline, transcript, and original camera/audio/screen-recording sources. Use when repurposing a course, podcast, interview, tutorial, livestream, or horizontal A-roll edit into Instagram Reels, TikTok videos, or YouTube Shorts; when the user wants a ranked candidate list before editing; or when an approved long-form cut must be traced back to higher-quality untouched media for vertical reframing.
-metadata:
-  memory_tags:
-    - domain:social-media
-    - workflow:longform-to-shortform
-    - skill_role:operator
-    - repo_boundary:tools
-    - inputs:longform-video
-    - outputs:reel-candidate-register
-    - risk:medium
+memory_tags:
+  - domain:social-media
+  - workflow:longform-to-shortform
+  - skill_role:operator
+  - repo_boundary:tools
+  - inputs:longform-video
+  - outputs:reel-candidate-register
+  - risk:medium
 ---
 
 # Long-Form to Short-Form Reel Ops
