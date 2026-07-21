@@ -142,6 +142,29 @@ overlays. Inspect the assembled composite—not only the isolated asset—and
 reject any placement that covers required text or the speaker's important
 action.
 
+### Design deck-led takeovers before animating
+
+When a video calls for three or more coordinated full-screen, text-led,
+diagram-led, or product-explainer takeovers, create the visual system as a
+portrait slide deck before choosing the animation renderer. Default to a Marp
+deck at the exact delivery aspect ratio. Include real graphs, figures, brand
+assets, and source-faithful proof rather than placeholder cards. Render exact
+slide images and a contact sheet, then obtain visual-direction approval before
+building motion.
+
+Treat every approved slide as a required key state. Animate its layers,
+comparisons, paths, or state changes; do not ask Remotion or Manim to invent a
+new visual composition from the transcript alone. Keep layout approval and
+motion approval separate, and run a representative animation sample before a
+full batch.
+
+Before defaulting to Remotion for a deck-led sequence, read
+[deck-first-animation-routing.md](references/deck-first-animation-routing.md).
+Evaluate Marp HTML transitions/morphs and native Keynote builds first when they
+can preserve the approved slide system and produce a deterministic editor-safe
+movie. Keep Remotion for exact timeline compositing, alpha, data-driven motion,
+and cases where slide-native tools cannot satisfy the delivery contract.
+
 Treat the creator's accepted title placement as a compositional anchor, not
 only as a collision zone. When the established title stage is centered in the
 lower third and the speaker remains readable, default explanatory overlays to
@@ -330,6 +353,8 @@ Return:
 - `TREND_MECHANICS.md` when trend research was used
 - the exact A-cut identity and fingerprint used for timing
 - Remotion source/project path and preview instructions
+- for a deck-led takeover system, the editable portrait deck, exact slide
+  renders, contact sheet, renderer-routing decision, and approved motion sample
 - full composite, transparent overlay, and/or individual assets requested
 - `CAPCUT_HANDOFF.md` when the creator will finish in CapCut, including exact
   placement instructions and an editability inventory
