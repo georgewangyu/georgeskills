@@ -23,6 +23,9 @@ Use when:
 Do not use when:
 - The request is only for text copy with no visual asset.
 - The user wants photorealistic imagery or illustration; use an image-generation or design skill instead.
+- The user wants premium kinetic typography, conceptual UI/card motion,
+  gauges, cascades, focus/depth, or multi-state shared-object continuity; use
+  `editorial-motion-graphics-ops` instead.
 - The user asks to copy a creator's exact proprietary source file or brand identity. Borrow the pattern, not the private asset.
 
 ## Inputs

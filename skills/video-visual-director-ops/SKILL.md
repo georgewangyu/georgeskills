@@ -193,7 +193,8 @@ For videos longer than 45 seconds, six or more meaningful beats, or three or mor
 - `a-roll-treatment-worker`: punch-ins, reframes, scale rhythm, and face-safe crops
 - `proof-and-broll-worker`: source receipts, B-roll, provenance, and legibility
 - `manim-sequence-worker`: one precise mathematical, geometric, graph, algorithm, or mechanism sequence
-- `remotion-sequence-worker`: one or more named motion sequences
+- `editorial-motion-sequence-worker`: one or more named kinetic-type, UI/card,
+  gauge, cascade, focus/depth, or shared-object sequences
 - `visual-qa-worker`: independent render inspection against the plan
 
 The parent owns the timebase, art direction, file naming, integration, and final judgment. Do not let separate workers invent conflicting visual systems.
@@ -209,6 +210,9 @@ Compose existing skills:
 
 - Invoke `video-asset-pack-ops` for sourced screenshots, official receipts, and the numbered asset manifest.
 - Invoke `video-visual-assets-ops` for selected diagrams, coded motion, screen demonstrations, generated media, or promo excerpts.
+- Invoke `editorial-motion-graphics-ops` for selected premium kinetic type,
+  conceptual UI/card motion, gauges, cascades, focus pulls, depth changes, and
+  shared-object sequences that need exact editor-ready delivery.
 - Invoke `manim-explainer-ops` when equations, graphs, coordinate systems, geometry, machine-learning flow, algorithm state, or another mechanism needs exact semantic transformation.
 - Invoke `social-motion-diagram-ops` for Excalidraw-style diagrams when that visual grammar fits.
 - Invoke `video-visual-coverage-qa-ops` after a reviewable render.
@@ -292,18 +296,22 @@ Route every visual job by what it must accomplish. Use source-faithful
 screenshots, screen recordings, or official demo footage whenever the beat
 proves a product or claim. For cinematic atmosphere, transformation shots,
 metaphor, or clearly synthetic inserts, prefer the authenticated Gemini
-consumer video surface when it is available and approved. Use coded Remotion
-motion as the default for UI, brand, text, general diagrams, legible labels,
-deterministic timing, reusable motion, and whole-video assembly. Route
+consumer video surface when it is available and approved. Use
+`editorial-motion-graphics-ops` for selected premium UI, card, typography,
+gauge, cascade, focus/depth, and shared-object sequences. Remotion remains the
+default coded engine for exact timing, reusable motion, and whole-video
+assembly, but let the specialist route slide-native or browser motion when it
+better preserves approved key states. Route
 mathematical, geometric, equation-based, graph, machine-learning, algorithmic,
 or mechanism explanations whose meaning depends on exact semantic object
 transformations to `manim-explainer-ops`. Do not imitate a living creator's
 exact visual identity in either lane. Keep Higgsfield parked unless the user
 separately approves its paid subscription for a specific shot.
 
-Do not equate programmatic animation with Manim. Use Remotion for most editorial
-takeovers: typography, UI/context layouts, comparisons, timelines, receipts,
-state cards, and data-driven compositing. Use Manim selectively when the meaning
+Do not equate programmatic animation with Manim. Use
+`editorial-motion-graphics-ops` for most premium editorial takeovers:
+typography, UI/context layouts, comparisons, timelines, state cards, focus
+pulls, and data-driven compositing. Use Manim selectively when the meaning
 depends on rigorous object continuity or an evolving mathematical, graph, or
 system model. A long-form batch will usually be Remotion-heavy with a small
 number of Manim sequences.

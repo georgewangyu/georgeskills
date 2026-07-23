@@ -1,0 +1,6 @@
+interface:
+  display_name: "Editorial Motion Graphics"
+  short_description: "Build premium editor-ready motion sequences"
+  default_prompt: "Use $editorial-motion-graphics-ops to turn this narration beat into a premium editor-ready motion asset."
+policy:
+  allow_implicit_invocation: true

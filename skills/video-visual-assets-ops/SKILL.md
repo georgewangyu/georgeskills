@@ -26,7 +26,7 @@ Use [production-paths.md](references/production-paths.md) to select one of:
 1. source-faithful screen recording or UI demonstration
 2. official promo or demo excerpt
 3. Manim technical explainer
-4. deterministic Remotion or other coded motion
+4. premium editorial motion specialist
 5. diagram or comparison board
 6. generated still or stylized plate
 7. generated video
@@ -44,9 +44,12 @@ chooses the additional modeling, lighting, rendering, and QA burden of Blender.
 Route mathematical, geometric, equation-based, graph, machine-learning,
 algorithmic, and mechanism animations to `manim-explainer-ops` when semantic
 object transformations carry the explanation. Keep Remotion as the default for
-UI, brand, typography, screen-like composition, general text motion, and
-whole-video assembly. Manim is a specialist asset lane, not a replacement for
-the surrounding visual-director or editor workflow.
+whole-video assembly. Route selected premium UI, brand, typography, card,
+gauge, cascade, focus/depth, and shared-object sequences to
+`editorial-motion-graphics-ops`; that specialist may choose Remotion,
+slide-native motion, or deterministic browser capture. Manim and editorial
+motion are specialist asset lanes, not replacements for the surrounding
+visual-director or editor workflow.
 
 For a sponsor, brand, company, or product beat, default to a source-faithful
 product UI demonstration: a privacy-safe screen recording when access is
@@ -109,9 +112,11 @@ Choose the production engine by visual job. Use source-faithful screenshots,
 screen recordings, or official demo footage when the asset proves a product or
 claim. For cinematic inserts, atmosphere, transformation shots, or clearly
 illustrative metaphor, prefer the authenticated Gemini consumer video surface
-when generative video materially improves the shot. Use Remotion or another
-coded-motion path for UI, brand, text-led motion, routing diagrams, readable
-labels, exact narration sync, and reusable brand treatments. Use
+when generative video materially improves the shot. Use
+`editorial-motion-graphics-ops` for selected premium UI, brand, text-led, card,
+gauge, cascade, focus/depth, and shared-object sequences with exact narration
+sync. Use Remotion or another coded-motion path directly only for lighter
+general motion or whole-video assembly. Use
 `manim-explainer-ops` for precise mathematical, geometric, graph, algorithmic,
 equation, machine-learning, or mechanism animation. Keep Higgsfield parked
 unless the user separately approves its paid subscription for a specific shot.
@@ -175,6 +180,9 @@ longer generation merely to use more of the paid output.
 
 ### 5. Compose existing skills
 
+- Use `editorial-motion-graphics-ops` for premium kinetic type, conceptual UI
+  or cards, gauges, cascades, focus pulls, depth changes, and shared-object
+  state transitions.
 - Use `manim-explainer-ops` for precise mathematical, geometric, graph, equation, machine-learning, algorithmic, and mechanism animation.
 - Use `social-motion-diagram-ops` for sketch-style diagrams and small looping flows.
 - Use `social-video-archive-ops` when official or reference video must be downloaded and preserved; create only the short editor-ready derivative here and retain exact in/out points.

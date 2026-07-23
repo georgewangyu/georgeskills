@@ -16,7 +16,8 @@ Use the narrowest suitable lane:
 | Lane | Use it for |
 | --- | --- |
 | Manim | Equations, graphs, coordinate systems, geometric transforms, algorithm state, tensors, model flow, and mechanisms whose meaning lives in precise object-to-object change |
-| Remotion | UI, product flows, brand systems, typography, general text motion, screen-like composition, and whole-video assembly |
+| Editorial motion specialist | Premium UI/cards, brand systems, kinetic typography, gauges, cascades, focus/depth, and shared-object editorial state changes |
+| Remotion directly | Lighter general text motion and whole-video assembly |
 | Blender | Real 3D geometry, camera, lighting, depth, simulation, or reusable 3D scenes, only when the user explicitly requests Blender or bespoke 3D |
 | Source proof | Real product behavior, benchmarks, articles, receipts, and claims that require evidence rather than illustration |
 
@@ -151,6 +152,7 @@ asset, not the whole edit, A-cut, or final publishing decision.
 - Do not silently change notation, values, narration timing, or the factual
   claim to make the animation easier.
 - Do not use Blender without the explicit 3D gate.
-- Do not replace the default Remotion lane for UI, brand, or text motion.
+- Do not replace `editorial-motion-graphics-ops` for premium UI, brand,
+  kinetic-type, focus/depth, or shared-object editorial motion.
 - Do not copy private source media, local paths, credentials, or user-specific
   defaults into this public skill or generated examples.

@@ -7,7 +7,7 @@
 | Screen recording | Real product behavior or UI flow | MP4 + poster | No, when access is already available |
 | Official promo excerpt | Product launch, cinematic context, physical behavior | Short MP4 + provenance | Ask before large downloads; otherwise no |
 | Manim explainer | Equations, graphs, coordinates, geometry, machine-learning flow, algorithm state, precise mechanisms | MP4 + PNG + editable Python source | No |
-| Remotion/coded motion | UI, brand, text, timelines, counters, comparisons, flows, maps, screen-like composition | MP4 + PNG + editable source | No |
+| Editorial motion specialist | Premium kinetic type, conceptual UI/cards, gauges, cascades, focus/depth, shared-object state changes | MP4 or tested alpha clip + PNG + editable source + placement manifest | No |
 | Diagram/board | Systems, contrasts, agent delegation, before/after | PNG or short MP4 | No |
 | Generated still | Atmosphere, metaphor, comedic plate, impossible B-roll | PNG | Ask if billable |
 | Generated video | High-novelty transitions, impossible scenes, stylized B-roll | MP4 | Explicit approval |
@@ -31,13 +31,15 @@ result as explanation rather than proof unless sourced values justify an
 evidence label. Borrow general teaching mechanics, not a living creator's exact
 visual identity.
 
-## Remotion or other coded motion
+## Editorial motion specialist
 
-Prefer Remotion, SVG/HTML/CSS/canvas, or a small local render script for UI,
-brand, typography, timelines, counters, comparisons, flows, maps, and general
-screen-like composition. Use one moving idea: a counter, reveal, highlight,
-cursor, path, stack, or split comparison. Include editable source and a
-reproducible render command.
+Invoke `editorial-motion-graphics-ops` for selected premium UI, brand,
+typography, card, gauge, cascade, focus/depth, and shared-object sequences.
+Define and approve first, transformation, and final states before animation.
+Let the specialist choose Remotion, a proven slide-native path, or deterministic
+browser motion according to timing, alpha, editability, and state-continuity
+requirements. Return an individual editor asset, poster, editable source,
+reproducible render command, and exact placement manifest.
 
 ## Diagram or comparison board
 

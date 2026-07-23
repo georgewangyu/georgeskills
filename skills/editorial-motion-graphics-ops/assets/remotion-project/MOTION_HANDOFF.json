@@ -1,0 +1,67 @@
+{
+  "asset_id": "__PROJECT_NAME__",
+  "classification": "explanation",
+  "visual_job": "replace with the exact visual job",
+  "narration_sync": {
+    "timeline_in_seconds": null,
+    "timeline_out_seconds": null,
+    "spoken_cue": "replace with the narration phrase",
+    "handles_frames": 0
+  },
+  "delivery": {
+    "mode": __DELIVERY_MODE_JSON__,
+    "width": __WIDTH__,
+    "height": __HEIGHT__,
+    "fps": __FPS__,
+    "duration_seconds": __DURATION_SECONDS__,
+    "codec": null,
+    "pixel_format": null,
+    "audio_disposition": "silent-under-narration"
+  },
+  "placement": {
+    "anchor": "full-canvas",
+    "scale": 1,
+    "blend_or_composite_notes": []
+  },
+  "source": {
+    "project": "./src",
+    "render_command": __RENDER_COMMAND_JSON__,
+    "provenance": [
+      "Generated from editorial-motion-graphics-ops starter; record later source changes here"
+    ]
+  },
+  "artifacts": {
+    "final_clip": __FINAL_CLIP_JSON__,
+    "review_clip": "outputs/review.mp4",
+    "poster": "outputs/poster.png",
+    "sampled_frames": {
+      "first": "outputs/qa/first.png",
+      "transformation": "outputs/qa/transformation.png",
+      "final": "outputs/qa/final.png"
+    },
+    "contact_sheet": "outputs/qa/contact-sheet.png",
+    "validation_receipt": "outputs/qa/validation.json"
+  },
+  "approval": {
+    "poster_frame": __POSTER_FRAME__,
+    "poster_approved": false,
+    "approved_by": null
+  },
+  "validation": {
+    "first_transformation_final_inspected": false,
+    "phone_scale_checked": false,
+    "real_composite_checked": false,
+    "safe_zones_checked": false,
+    "cut_boundaries_checked": false,
+    "adjacent_mechanics_checked": false
+  },
+  "receiving_editor": {
+    "import_test_status": "not-run",
+    "import_notes": [
+      "Confirm alpha interpretation or full-screen replacement behavior in the receiving editor",
+      "Confirm the clip remains independently movable, disableable, and replaceable"
+    ]
+  },
+  "editor_notes": [],
+  "known_limits": []
+}
