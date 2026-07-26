@@ -109,7 +109,7 @@ These are the skill clusters that have been moving fastest recently:
 | `social-screen-control-ops` | Use Codex Computer Use for bounded logged-in visual checks on social-media pages when CLI or Playwright paths are blocked. |
 | `social-motion-diagram-ops` | Create Excalidraw-style static diagrams and short looping motion assets for LinkedIn/X/social drafts. |
 | `social-hook-selection-ops` | Select and adapt high-fit hooks for TikTok, Instagram Reels, YouTube Shorts, and short-form video ideas. |
-| `shortform-talking-points-ops` | Create natural point-form talking outlines for TikTok, Instagram Reels, and Shorts using a sourced hook, hot take beats, and final twist. |
+| `shortform-talking-points-ops` | Choose a minimal viable short-form script engine, define its central open loop, and create a natural point-form TikTok, Reels, or Shorts outline. |
 | `capcut-ai-edit-reel-ops` | Create list-style short-form reels by duplicating a proven CapCut AI-edit template, updating the title, and drafting the numbered caption/comment copy. |
 | `raw-video-clip-intake-ops` | Sort raw camera-card clips into weekly video project folders with sidecar preservation, contact sheets, and intake manifests. |
 | `weekly-video-batch-ops` | Organize recurring short-form video batch folders, CapCut final export inboxes, canonical final names, quick-access final-video indexes, and weekly phone-transfer bundles. |

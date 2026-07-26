@@ -1,4 +1,4 @@
 interface:
-  display_name: "Shortform Talking Points"
-  short_description: "Draft natural IG/TikTok talking outlines"
-  default_prompt: "Use $shortform-talking-points-ops to turn this short-form video idea into a natural point-form talking outline with a hook and twist."
+  display_name: "Shortform Script Structures"
+  short_description: "Structure natural short-form video outlines"
+  default_prompt: "Use $shortform-talking-points-ops to choose a minimal script structure and turn this idea into a natural point-form short-form video outline."
