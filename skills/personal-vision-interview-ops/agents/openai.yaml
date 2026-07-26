@@ -1,0 +1,4 @@
+interface:
+  display_name: "Personal Vision Interview"
+  short_description: "Interview and synthesize a personal vision"
+  default_prompt: "Use $personal-vision-interview-ops to guide me through one thoughtful question at a time and draft a private personal vision."

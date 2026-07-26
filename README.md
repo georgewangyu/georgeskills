@@ -191,6 +191,7 @@ These are the skill clusters that have been moving fastest recently:
 | `later-queue-triage-ops` | Convert deferred work queues into source-first decision cards with fit, risk, proof, blockers, and next action. |
 | `live-proof-gate-ops` | Define proof-before-done gates for agent workflows, automations, integrations, and queued work. |
 | `decision-gate-ops` | Evaluate meaningful operational, automation, product, workflow, or personal execution decisions with constraints, proof thresholds, reversible defaults, and future principles. |
+| `personal-vision-interview-ops` | Guide a private, one-question-at-a-time interview and synthesize the answers into a personal vision and decision gate without inventing certainty. |
 | `codex-thread-hygiene-ops` | Organize Codex conversations by renaming vague threads and reviewing pinned-chat cleanup candidates. |
 | `skill-forge-ops` | Mine journals, transcripts, PRs, commits, scripts, and agent notes for workflows worth turning into reusable skills. |
 | `agent-eval-harness-ops` | Design lightweight eval harnesses for coding or workflow agents, including rubrics and failure taxonomies. |
