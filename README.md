@@ -110,7 +110,7 @@ These are the skill clusters that have been moving fastest recently:
 | `social-motion-diagram-ops` | Create Excalidraw-style static diagrams and short looping motion assets for LinkedIn/X/social drafts. |
 | `social-hook-selection-ops` | Select and adapt high-fit hooks for TikTok, Instagram Reels, YouTube Shorts, and short-form video ideas. |
 | `shortform-talking-points-ops` | Choose a minimal viable short-form script engine, define its central open loop, and create a natural point-form TikTok, Reels, or Shorts outline. |
-| `capcut-ai-edit-reel-ops` | Create list-style short-form reels by duplicating a proven CapCut AI-edit template, updating the title, and drafting the numbered caption/comment copy. |
+| `capcut-ai-edit-reel-ops` | Turn one short B-roll clip or existing editor template into a 6-10 second caption-first list Reel with a persistent title hook, lightweight visual refreshes, and a matching numbered post caption. |
 | `raw-video-clip-intake-ops` | Sort raw camera-card clips into weekly video project folders with sidecar preservation, contact sheets, and intake manifests. |
 | `weekly-video-batch-ops` | Organize recurring short-form video batch folders, CapCut final export inboxes, canonical final names, quick-access final-video indexes, and weekly phone-transfer bundles. |
 | `youtube-check-ops` | Check YouTube channel or video public metadata. Falls back to lightweight public probes. |
