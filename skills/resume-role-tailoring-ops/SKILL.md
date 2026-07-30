@@ -1,13 +1,14 @@
 ---
 name: resume-role-tailoring-ops
-description: Use when tailoring a senior software engineering resume to a specific job description, company, role family, ATS keyword set, or application folder/variant.
-memory_tags:
-  - domain:resume
-  - workflow:role-tailoring
-  - skill_role:operator
-  - repo_boundary:tools
-  - data_class:private-derived
-  - risk:medium
+description: Use when tailoring any professional resume to a job description, company, role family, career lane, ATS keyword set, or application variant, including software, data, research, scientific, and bioinformatics roles.
+metadata:
+  memory_tags:
+    - domain:resume
+    - workflow:role-tailoring
+    - skill_role:operator
+    - repo_boundary:tools
+    - data_class:private-derived
+    - risk:medium
 ---
 
 # Resume Role Tailoring Ops
@@ -15,9 +16,12 @@ memory_tags:
 ## Trigger
 
 Use when:
-- the user provides or points to a job description and wants a targeted senior software engineering resume
+- the user provides or points to a job description and wants a targeted resume
 - the user asks for ATS keywords, company-specific tailoring, match analysis, or JD fit
-- the user wants a new company or category resume variant created under an existing resume folder structure
+- the user wants a new company, role-family, or career-lane resume variant
+
+For an end-to-end request to create, fix, shorten, or redesign a resume, start
+with `resume-creation-ops`; this skill owns its evidence and tailoring phase.
 
 Do not use when:
 - the request is only to fix layout, compile a PDF, or clean formatting; use `resume-formatting-ops`
@@ -36,8 +40,13 @@ Do not use when:
 2. Normalize the target.
    - Extract company, title, level, team/domain, location if relevant, and application URL.
    - Classify the role family using local conventions when available, such as `ai_infra`, `data_infra`, or `product_backend`.
-3. Extract the senior SWE hiring signal from the JD.
-   - Look for explicit ATS wording around languages, platforms, architecture, distributed systems, cloud, data/ML/AI infra, reliability, observability, CI/CD, ownership, mentorship, technical leadership, cross-functional execution, and business impact.
+3. Extract the hiring signal from the JD or target lane.
+   - Look for explicit ATS wording around domain methods, tools, languages,
+     platforms, workflows, ownership, collaboration, seniority, and outcomes.
+   - For software roles, include architecture, reliability, testing, CI/CD,
+     data systems, and delivery evidence. For scientific/research roles, include
+     methods, modalities, data scale, reproducibility, publications, and
+     biological or experimental interpretation.
    - Separate recruiter-facing exact phrases from hiring-manager evidence needs.
    - Preserve important company vocabulary when truthful, but do not mirror awkward JD language if it makes the resume sound fake.
 4. Audit available evidence before rewriting.
@@ -45,6 +54,14 @@ Do not use when:
    - For each target keyword or seniority signal, mark evidence as `strong`, `partial`, `missing`, or `unsupported`.
    - If evidence is missing or only partial, interview the user before adding it. Ask concise questions that elicit concrete facts: system scale, ownership boundary, architecture choices, technologies used, measurable outcome, reliability/performance impact, cross-team work, leadership/mentorship, and dates.
    - If the user cannot provide evidence, leave the term out or put it in a gap list. Do not infer work-laptop history, internal project details, metrics, tools, or scope.
+   - Assign an evidence-sufficiency level before layout:
+     - `3 — sufficient`: verified evidence can support the target and a full page
+     - `2 — usable`: viable, but targeted answers would strengthen one or two gaps
+     - `1 — sparse`: insufficient relevant detail for an evidence-dense page
+     - `0 — blocked`: essential facts or target direction are unresolved
+   - At levels 0–1, pause final resume generation and ask 3–7 high-yield
+     questions. Do not compensate with padding, repeated content, generic
+     summaries, or tiny typography.
 5. Decide the destination path.
    - Category variant: `variants/<role_family>/<company_or_lane>/<person_or_profile>/`
    - Company-specific variant: use a company folder when the resume is targeted to one employer.
@@ -62,6 +79,10 @@ Do not use when:
    - Preserve factual consistency and interview defensibility.
    - Prefer natural keyword integration over stuffing.
    - Keep bullets outcome-first, concrete, and scoped.
+   - When compressing a multi-page source, use the page for the highest-value
+     evidence instead of preserving every role equally. Prefer strong projects,
+     quantified outcomes, publications, awards, and recent/relevant experience;
+     remove duplicated or weak material first.
 9. Run the verifier loop.
    - Compare final resume against the JD keyword plan.
    - List missing but important terms, explain whether each is unsupported or intentionally omitted.
@@ -92,6 +113,10 @@ If target-role evidence is missing, interview before editing. Prefer questions l
 - Which exact technologies, cloud services, data stores, frameworks, or internal platforms did you use?
 - Who did you influence: partner teams, PM/design, on-call rotations, junior engineers, customers, leadership?
 - What was the before/after state, and what would a coworker say you specifically contributed?
+- Which project artifacts are public, who used them, and how were they tested,
+  deployed, maintained, or handed off?
+- What have you done since the last dated resume entry, and should it appear as
+  work, research, coursework, volunteering, or an independent project?
 
 Treat interview answers as source material, but keep uncertainty visible. If an answer is vague, ask a follow-up or write a weaker truthful bullet instead of upgrading it into a senior-sounding claim.
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resume Creation Ops"
+  short_description: "Build evidence-dense, ATS-safe resumes"
+  default_prompt: "Use $resume-creation-ops to turn this source resume into a truthful, evidence-dense one-page resume with final QA."
