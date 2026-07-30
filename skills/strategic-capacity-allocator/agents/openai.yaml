@@ -1,0 +1,4 @@
+interface:
+  display_name: "Strategic Capacity Allocator"
+  short_description: "Allocate effort across competing priorities"
+  default_prompt: "Use $strategic-capacity-allocator to interview me and recommend an evidence-backed sprint allocation."

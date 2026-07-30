@@ -1,0 +1,109 @@
+{
+  "profile": {
+    "name": "Example professional",
+    "horizon": "two-week sprint",
+    "capacity_hours": 40
+  },
+  "lanes": [
+    {
+      "name": "Salaried career",
+      "scores": {
+        "pnr": 85,
+        "bp": 90,
+        "ca": 70,
+        "fit": 60,
+        "align": 72,
+        "ec": 85,
+        "oc": 15,
+        "sat": 40
+      },
+      "min_pct": 30,
+      "max_pct": 55,
+      "evidence": [
+        "The role supplies current income and a promotion packet is due this quarter.",
+        "Recent work has built transferable stakeholder and execution skills."
+      ],
+      "notes": "Protect the income base but cap overtime."
+    },
+    {
+      "name": "Portfolio product",
+      "scores": {
+        "pnr": 35,
+        "bp": 35,
+        "ca": 90,
+        "fit": 82,
+        "align": 88,
+        "ec": 65,
+        "oc": 30,
+        "sat": 20
+      },
+      "min_pct": 15,
+      "max_pct": 40,
+      "evidence": [
+        "Three target users described the same workflow problem.",
+        "A working prototype would remain useful as technical and product proof."
+      ],
+      "notes": "Use the sprint to test the problem, not to build a full company."
+    },
+    {
+      "name": "Educational publishing",
+      "scores": {
+        "pnr": 20,
+        "bp": 10,
+        "ca": 65,
+        "fit": 72,
+        "align": 68,
+        "ec": 55,
+        "oc": 40,
+        "sat": 55
+      },
+      "min_pct": 5,
+      "max_pct": 25,
+      "evidence": [
+        "Past posts generated useful conversations but no reliable revenue.",
+        "Editing time has recently grown faster than audience learning."
+      ],
+      "notes": "Maintain the publishing habit without treating attention as the destination."
+    },
+    {
+      "name": "Freelance consulting",
+      "scores": {
+        "pnr": 55,
+        "bp": 40,
+        "ca": 70,
+        "fit": 66,
+        "align": 72,
+        "ec": 60,
+        "oc": 35,
+        "sat": 35
+      },
+      "min_pct": 5,
+      "max_pct": 25,
+      "evidence": [
+        "Two former colleagues have asked about short paid engagements.",
+        "Discovery calls would improve customer and market understanding."
+      ],
+      "notes": "Use a bounded offer instead of open-ended client work."
+    },
+    {
+      "name": "Open exploration",
+      "scores": {
+        "pnr": 5,
+        "bp": 20,
+        "ca": 75,
+        "fit": 88,
+        "align": 80,
+        "ec": 40,
+        "oc": 20,
+        "sat": 15
+      },
+      "min_pct": 10,
+      "max_pct": 20,
+      "evidence": [
+        "Uncommitted research has repeatedly produced useful project ideas.",
+        "The value is real but difficult to attribute to a single sprint."
+      ],
+      "notes": "Keep a protected floor and require a short learning note."
+    }
+  ]
+}
