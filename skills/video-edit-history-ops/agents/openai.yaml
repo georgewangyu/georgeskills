@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video Edit History Ops"
+  short_description: "Capture and reconcile AI video edit learnings"
+  default_prompt: "Use $video-edit-history-ops to load relevant prior lessons, create or update this reviewable AI edit's history record and project pointer, then validate the index."

@@ -30,7 +30,9 @@ Do not use when:
 
 - Required: local clip folder or clip manifest
 - Required: intended story flow, even if rough
-- Optional: format runbook, script, reference video, music track, beat markers, target duration, platform, and editor/draft tool
+- Optional: format runbook, script, reference video, music track, beat markers,
+  target duration, platform, editor/draft tool, and creator-specific video
+  history root
 
 ## Core Principle
 
@@ -40,6 +42,13 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
 
 ## Workflow
 
+0. Load relevant edit history.
+   - When a creator-specific history root exists, invoke
+     `video-edit-history-ops` before story selection.
+   - Read promoted defaults, recurring failure modes, and only the detailed
+     records relevant to this format, editor, or risk.
+   - Add applicable checks to the project ledger without treating project-only
+     notes as universal rules.
 1. Establish the target format.
    - Ask for the intended hook, situation, progress beats, twist or ending, and target platform.
    - Capture target duration. For short-form talking/story formats, treat 55-70 seconds as a useful default window when the user has no stronger format-specific target.
@@ -90,6 +99,13 @@ Raw short-form clips are often captured opportunistically: B-roll may belong ear
    - Use CapCut or another draft writer as the timeline assembly layer, not the editing brain.
    - Generate a draft only from selected clips and rough trims.
    - Keep final pacing, text, effects, comedic timing, and taste-heavy choices human-reviewed.
+7. Close the learning loop after review.
+   - When the creator gives feedback or a meaningful review candidate is
+     accepted or rejected, invoke `video-edit-history-ops`.
+   - Record the exact artifact, timestamps, creator feedback, failure analysis,
+     and unresolved issues.
+   - Promote a future default only when the creator explicitly requests it or
+     multiple independently reviewed edits support it.
 
 ## Output Contract
 
@@ -101,6 +117,7 @@ Return:
 - cleaned speech / voiceover range list when narration drives the edit
 - unresolved questions or weak clips
 - draft generation command or next manual editor steps, when applicable
+- pointer to the updated per-video history record after creator review
 
 ## Guardrails
 
@@ -109,6 +126,9 @@ Return:
 - Do not assume a strong hook or twist exists just because the format expects one.
 - Do not invent clip contents. If visual inspection or transcription is missing, mark the gap.
 - Do not copy private footage into public repos.
+- Do not store creator-specific history in this reusable skill repo.
+- Do not infer an editor preset from a compressed render; capture exact native
+  values from the creator or a verified draft.
 
 ## References
 

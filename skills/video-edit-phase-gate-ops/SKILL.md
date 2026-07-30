@@ -18,6 +18,11 @@ proved, and which exact render was evaluated. The parent video operator owns
 the edit and the shared timebase. Evaluator subagents remain read-only and enter
 at proof gates rather than acting as parallel editors.
 
+When a creator-specific history root exists, invoke `video-edit-history-ops`
+before Phase 0. Record which promoted defaults and recurring failure checks
+apply to this project. Historical notes inform the gate; they do not override
+the current brief.
+
 ## Initialize The Gate Ledger
 
 Copy [video-edit-gates-template.md](assets/video-edit-gates-template.md) into the
@@ -189,6 +194,11 @@ affected lanes. Mark the edit accepted only when:
 Write `VIDEO_EDIT_ACCEPTANCE.md` with the consolidated verdict. Do not call a
 metadata-only change complete.
 
+After creator feedback or final review, invoke `video-edit-history-ops` and link
+the per-video learning record from the gate ledger. Record an experimental,
+rejected, or superseded result too when it produces a durable failure check.
+Do not wait for publication to close the learning loop.
+
 ## Invalidation Rules
 
 - A-cut replacement or ripple timing: invalidate phases 2–5.
@@ -220,6 +230,7 @@ Maintain or return:
 - project/version lineage, persistence evidence, and accepted exceptions
 - pointers to lane-specific evaluator reports and their verdicts
 - `VIDEO_EDIT_ACCEPTANCE.md` tied to the final render fingerprint
+- pointer to the updated per-video history record after creator review
 
 The run is complete only when the rendered result, not merely the timeline,
 satisfies every required gate or records an explicit creator exception.
