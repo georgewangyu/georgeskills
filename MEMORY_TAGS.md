@@ -1,19 +1,25 @@
 # Memory Tags
 
-`memory_tags` in skill headers are lightweight metadata for retrieval and
-routing. They are not secrets and should be public-safe.
+`metadata.memory_tags` in skill headers are lightweight metadata for retrieval
+and routing. They are not secrets and should be public-safe.
 
 ## Format
 
-Use YAML list format in frontmatter:
+Use YAML list format beneath the schema-compatible top-level `metadata` key:
 
 ```yaml
-memory_tags:
-  - domain:journal
-  - workflow:daily-summary
-  - data_class:private-derived
-  - repo_boundary:tools
+metadata:
+  memory_tags:
+    - domain:journal
+    - workflow:daily-summary
+    - data_class:private-derived
+    - repo_boundary:tools
 ```
+
+Some older skills still use a top-level `memory_tags` key. Preserve that
+legacy shape until the skill is otherwise touched, but use
+`metadata.memory_tags` for new or updated skills so the official skill
+validator accepts the header.
 
 ## Required Tags
 

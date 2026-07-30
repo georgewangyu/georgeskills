@@ -130,6 +130,7 @@ These are the skill clusters that have been moving fastest recently:
 | `manim-explainer-ops` | Create precise Manim CE animations for math, equations, machine learning, algorithms, graphs, geometry, and mechanisms, then return editor-ready assets and reproducible source. |
 | `video-visual-coverage-qa-ops` | Audit a first export against its transcript and asset pack for visual gaps, overlay problems, evidence mismatch, and exact timestamped fixes. |
 | `video-edit-phase-gate-ops` | Keep a video edit on one evidence-backed path from intake and A-cut lock through editor persistence, independent rendered evaluation, and final acceptance. |
+| `video-edit-history-ops` | Load prior edit learnings, record every reviewable AI-assisted edit in a private history index, and reconcile weekly project folders against their history receipts. |
 | `video-companion-page-ops` | Create local HTML/blog-style companion pages for educational videos with clickable sources, screenshots, diagrams, and talking outlines. |
 | `static-note-share-ops` | Publish selected local notes, transcripts, or research docs as sanitized static share pages with explicit redaction and deployment gates. |
 
@@ -191,6 +192,7 @@ These are the skill clusters that have been moving fastest recently:
 | `later-queue-triage-ops` | Convert deferred work queues into source-first decision cards with fit, risk, proof, blockers, and next action. |
 | `live-proof-gate-ops` | Define proof-before-done gates for agent workflows, automations, integrations, and queued work. |
 | `decision-gate-ops` | Evaluate meaningful operational, automation, product, workflow, or personal execution decisions with constraints, proof thresholds, reversible defaults, and future principles. |
+| `strategic-capacity-allocator` | Interview a person about vision, constraints, evidence, and competing priorities, then recommend an auditable sprint allocation with confidence, opportunity-cost, floor, and cap controls. |
 | `personal-vision-interview-ops` | Guide a private, one-question-at-a-time interview and synthesize the answers into a personal vision and decision gate without inventing certainty. |
 | `codex-thread-hygiene-ops` | Organize Codex conversations by renaming vague threads and reviewing pinned-chat cleanup candidates. |
 | `skill-forge-ops` | Mine journals, transcripts, PRs, commits, scripts, and agent notes for workflows worth turning into reusable skills. |
@@ -207,9 +209,10 @@ These are the skill clusters that have been moving fastest recently:
 
 | Skill | Description |
 |---|---|
+| `resume-creation-ops` | Orchestrate the complete resume workflow: evidence intake, role variants, template selection, one-page generation, and final ATS and visual QA. |
 | `resume-role-tailoring-ops` | Tailor resumes to a target JD, company, role family, and ATS keyword plan while preserving truthful evidence. |
-| `resume-formatting-ops` | Fix resume formatting, build PDFs, check one-page fit, and verify ATS parseability before submission. |
-| `resume-ats-validation-ops` | Validate resume variants for parser sanity, keyword coverage, truthful tailoring, and required content preservation. |
+| `resume-formatting-ops` | Build readable resume PDFs and enforce evidence-dense one-page fit with deterministic utilization checks. |
+| `resume-ats-validation-ops` | Validate parser order, keyword coverage, truthful evidence, required content, and one-page utilization. |
 
 ### Legacy / Maintenance
 
@@ -276,7 +279,8 @@ do not use an x86_64 uv-managed interpreter on Apple Silicon.
 1. Create a folder under `skills/<skill-name>/`.
 2. Copy `templates/SKILL_TEMPLATE.md` to `skills/<skill-name>/SKILL.md`.
 3. Fill in all sections: trigger, inputs, workflow, output contract, guardrails.
-4. Add YAML frontmatter with at least `name`, `description`, and `memory_tags`.
+4. Add YAML frontmatter with at least `name`, `description`, and
+   `metadata.memory_tags`.
 5. Run `./scripts/sync-to-codex.sh` and restart your AI assistant.
 6. Update the skill catalog table in this README.
 
@@ -286,12 +290,13 @@ do not use an x86_64 uv-managed interpreter on Apple Silicon.
 ---
 name: my-skill-ops
 description: One-line description of what this skill does and when to use it.
-memory_tags:
-  - domain:my-domain
-  - workflow:my-workflow
-  - inputs:web
-  - outputs:status-report
-  - risk:low
+metadata:
+  memory_tags:
+    - domain:my-domain
+    - workflow:my-workflow
+    - inputs:web
+    - outputs:status-report
+    - risk:low
 ---
 ```
 

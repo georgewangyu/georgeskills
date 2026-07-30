@@ -1,11 +1,12 @@
 ---
 name: <skill-name>
 description: <What this skill does and when to trigger it>
-memory_tags:
-  - domain:<domain>
-  - workflow:<workflow>
-  - repo_boundary:tools
-  - risk:<low|medium|high>
+metadata:
+  memory_tags:
+    - domain:<domain>
+    - workflow:<workflow>
+    - repo_boundary:tools
+    - risk:<low|medium|high>
 ---
 
 # <Skill Title>
