@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -15,6 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Check a markdown account watchlist for high-view short-form videos.")
     parser.add_argument("--watchlist", type=Path, required=True, help="Private markdown watchlist path")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
+    parser.add_argument("--health-out", type=Path, help="Optional JSON collector-health receipt")
     parser.add_argument("--previous", type=Path, help="Previous JSONL output for new-link comparison")
     parser.add_argument("--youtube-bot-dir", default=os.environ.get("YOUTUBEBOT_DIR", ""))
     parser.add_argument("--tiktok-bot-dir", default=os.environ.get("TIKTOKBOT_DIR", ""))
@@ -29,6 +31,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit-per-account", type=int, default=10)
     parser.add_argument("--max-base", type=int, default=10000000)
     parser.add_argument("--timeout-seconds", type=int, default=60)
+    parser.add_argument(
+        "--failure-threshold",
+        type=int,
+        default=2,
+        help="Stop calling a platform after this many consecutive account failures",
+    )
+    parser.add_argument(
+        "--tiktok-node-fallback",
+        choices=["true", "false"],
+        default="true",
+        help="Retry one failed non-Node TikTok account check with the Node backend",
+    )
     return parser.parse_args()
 
 
@@ -150,13 +164,85 @@ def within_age(row: dict[str, Any], max_age_days: int) -> bool:
     return age_days is None or float(age_days) <= max_age_days
 
 
-def collect(args: argparse.Namespace, accounts: list[dict[str, str]], previous_urls: set[str]) -> list[dict[str, Any]]:
+def empty_health() -> dict[str, dict[str, Any]]:
+    return {
+        platform: {
+            "status": "not_attempted",
+            "attempted": 0,
+            "succeeded": 0,
+            "failed": 0,
+            "skipped_after_circuit_breaker": 0,
+            "rows_returned": 0,
+            "errors": [],
+            "fallbacks": [],
+        }
+        for platform in ("youtube", "tiktok", "instagram")
+    }
+
+
+def finalize_health(health: dict[str, dict[str, Any]]) -> None:
+    for platform_health in health.values():
+        if platform_health["attempted"] == 0:
+            platform_health["status"] = "not_attempted"
+        elif platform_health["succeeded"] == 0:
+            platform_health["status"] = "unavailable"
+        elif platform_health["failed"] or platform_health["skipped_after_circuit_breaker"]:
+            platform_health["status"] = "degraded"
+        else:
+            platform_health["status"] = "success"
+
+
+def record_result(
+    health: dict[str, dict[str, Any]],
+    platform: str,
+    raw: list[dict[str, Any]],
+    error: str | None,
+    label: str,
+) -> None:
+    platform_health = health[platform]
+    platform_health["attempted"] += 1
+    if error:
+        platform_health["failed"] += 1
+        platform_health["errors"].append(f"{label}: {sanitize_error(error)}")
+        return
+    platform_health["succeeded"] += 1
+    platform_health["rows_returned"] += len(raw)
+
+
+def sanitize_error(error: str, max_length: int = 1200) -> str:
+    text = str(error).replace(str(Path.home()), "~")
+    text = re.sub(
+        r"(['\"]challenge_context['\"]\s*:\s*)['\"][^'\"]+['\"]",
+        r"\1'[redacted]'",
+        text,
+    )
+    text = re.sub(
+        r"(['\"]challenge_type_enum_str['\"]\s*:\s*)['\"][^'\"]+['\"]",
+        r"\1'[redacted]'",
+        text,
+    )
+    if len(text) > max_length:
+        return text[:max_length].rstrip() + "…"
+    return text
+
+
+def collect(
+    args: argparse.Namespace,
+    accounts: list[dict[str, str]],
+    previous_urls: set[str],
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
     rows: list[dict[str, Any]] = []
-    errors: list[str] = []
+    health = empty_health()
+    consecutive_failures = {platform: 0 for platform in health}
     for account in accounts:
         platform = account.get("platform", "").lower()
         handle = account.get("handle", "")
         if args.platform != "all" and platform != args.platform:
+            continue
+        if platform not in health:
+            continue
+        if consecutive_failures[platform] >= max(args.failure_threshold, 1):
+            health[platform]["skipped_after_circuit_breaker"] += 1
             continue
         if platform == "youtube" and args.youtube_bot_dir:
             query = account.get("query") or handle
@@ -173,7 +259,8 @@ def collect(args: argparse.Namespace, accounts: list[dict[str, str]], previous_u
                 "--format", "json",
             ]
             raw, error = run_json(command, args.youtube_bot_dir, args.timeout_seconds)
-            errors.extend([f"youtube {handle}: {error}"] if error else [])
+            record_result(health, platform, raw, error, handle)
+            consecutive_failures[platform] = consecutive_failures[platform] + 1 if error else 0
             rows.extend(normalize(item, account, platform, previous_urls) for item in raw)
         elif platform == "tiktok" and args.tiktok_bot_dir:
             query = account.get("query") or handle
@@ -192,7 +279,26 @@ def collect(args: argparse.Namespace, accounts: list[dict[str, str]], previous_u
                 "--format", "json",
             ]
             raw, error = run_json(command, args.tiktok_bot_dir, args.timeout_seconds)
-            errors.extend([f"tiktok {handle}: {error}"] if error else [])
+            record_result(health, platform, raw, error, f"{handle} [{args.tiktok_web_backend}]")
+            if error and args.tiktok_node_fallback == "true" and args.tiktok_web_backend != "node":
+                fallback_command = list(command)
+                backend_index = fallback_command.index("--backend") + 1
+                fallback_command[backend_index] = "node"
+                fallback_raw, fallback_error = run_json(
+                    fallback_command,
+                    args.tiktok_bot_dir,
+                    args.timeout_seconds,
+                )
+                record_result(health, platform, fallback_raw, fallback_error, f"{handle} [node fallback]")
+                health[platform]["fallbacks"].append({
+                    "account": handle,
+                    "from": args.tiktok_web_backend,
+                    "to": "node",
+                    "status": "failed" if fallback_error else "success",
+                })
+                if not fallback_error:
+                    raw, error = fallback_raw, None
+            consecutive_failures[platform] = consecutive_failures[platform] + 1 if error else 0
             rows.extend(normalize(item, account, platform, previous_urls) for item in raw)
         elif platform == "instagram" and args.ig_bot_dir:
             command = [
@@ -204,15 +310,23 @@ def collect(args: argparse.Namespace, accounts: list[dict[str, str]], previous_u
                 "--format", "json",
             ]
             raw, error = run_json(command, args.ig_bot_dir, args.timeout_seconds)
-            errors.extend([f"instagram {handle}: {error}"] if error else [])
+            record_result(health, platform, raw, error, handle)
+            consecutive_failures[platform] = consecutive_failures[platform] + 1 if error else 0
             rows.extend(normalize(item, account, platform, previous_urls) for item in raw)
-    for error in errors:
-        print(error, file=sys.stderr)
+    finalize_health(health)
+    for platform_health in health.values():
+        for error in platform_health["errors"]:
+            print(error, file=sys.stderr)
     filtered = [
         row for row in rows
         if int(row.get("views") or 0) >= args.min_views and within_age(row, args.max_age_days)
     ]
-    return sorted(filtered, key=lambda row: (int(row.get("views") or 0), float(row.get("ratio") or 0)), reverse=True)
+    sorted_rows = sorted(
+        filtered,
+        key=lambda row: (int(row.get("views") or 0), float(row.get("ratio") or 0)),
+        reverse=True,
+    )
+    return sorted_rows, health
 
 
 def main() -> int:
@@ -223,10 +337,22 @@ def main() -> int:
         return 2
     previous_urls = load_previous_urls(args.previous)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    rows = collect(args, accounts, previous_urls)
+    rows, health = collect(args, accounts, previous_urls)
     with args.out.open("w", encoding="utf-8") as handle:
         for row in rows:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    if args.health_out:
+        args.health_out.parent.mkdir(parents=True, exist_ok=True)
+        args.health_out.write_text(
+            json.dumps({
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "watchlist": str(args.watchlist),
+                "output": str(args.out),
+                "rows_written": len(rows),
+                "platforms": health,
+            }, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     print(f"wrote {len(rows)} rows to {args.out}")
     return 0
 

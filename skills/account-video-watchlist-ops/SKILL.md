@@ -43,6 +43,14 @@ Keep real handles, private notes, and saved run outputs in the user's private re
    - TikTok: uses public web search for the handle/account seed.
    - Instagram: uses `igbot private-profile` for known profiles.
    - The wrapper passes `--mute-audio true` to TikTok browser automation by default; keep this default unless the user explicitly asks for audio review.
+   - Write `--health-out` on scheduled runs. The receipt distinguishes
+     `success`, `degraded`, `unavailable`, and `not_attempted` per platform.
+   - Keep the default platform circuit breaker. After two consecutive account
+     failures, skip the remaining accounts on that platform instead of
+     repeating a broken collector for the full watchlist.
+   - TikTok `auto` collection retries a failed account once through the Node
+     backend by default. Disable this only when a caller has already completed
+     an equivalent canary.
 3. Rank and filter.
    - Default to `views >= 100000`.
    - Prefer absolute views first, then account-relative outlier signals when available.
@@ -62,6 +70,7 @@ python3 skills/account-video-watchlist-ops/scripts/run_account_video_watchlist.p
   --ig-bot-dir <path-to-igbot> \
   --tiktok-web-backend node \
   --tiktok-web-mute-audio true \
+  --health-out /tmp/account-video-watchlist-health.json \
   --min-views 100000 \
   --max-age-days 45 \
   --previous <private-repo>/areas/social-media/video/research/previous-account-watchlist.jsonl \
@@ -76,6 +85,9 @@ Return:
 - `maybe`: videos with good fit but weaker view count, if the user asks for a softer threshold.
 - `skip/noise`: accounts or videos that are high-volume but poor fit.
 - Per-platform caveats such as TikTok web-search timeout or Instagram login/session failure.
+- A machine-readable collector-health receipt for scheduled runs, including
+  attempted/succeeded/failed calls, rows returned, fallbacks, circuit-breaker
+  skips, and bounded error messages.
 - Any account-specific caveats, especially YouTube query drift when a channel-specific collector is unavailable.
 - Suggested emulation formats, phrased as reusable structures rather than one-off copies.
 
@@ -85,5 +97,9 @@ Return:
 - Do not treat a high multiplier with low views as viral unless the user explicitly asks for low-base breakouts.
 - Do not copy creator-specific identity, celebrity access, institution access, or personal-life details that will not transfer.
 - If a bot fails, continue with other platforms and report the failure plainly.
+- Never overwrite a known-good persistent snapshot with an empty or unavailable
+  run. Write a dated attempt first; promote it to `latest` only after the
+  health receipt confirms usable rows. A previous snapshot may be referenced
+  only with its original collection date and a `stale` label.
 - Do not pretend YouTube search-seeded rows are definitely from the tracked account unless the returned creator/channel matches.
 - Mute browser automation for media-heavy pages whenever supported; never intentionally play TikTok/Reels/Shorts audio during background research unless the user asks to listen. If TikTok sound is required, require an explicit `--tiktok-web-mute-audio false` override.
