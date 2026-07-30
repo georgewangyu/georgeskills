@@ -1,14 +1,15 @@
 ---
 name: strategic-capacity-allocator
 description: Interview a person about vision, constraints, evidence, and competing priorities, then produce an auditable sprint-capacity recommendation using confidence-adjusted utility scores, floors, caps, opportunity cost, and diminishing returns. Use when someone asks how to divide limited weekly, sprint, quarterly, or portfolio capacity across career, business, creative, learning, exploration, or other strategic lanes; when building a vision allocator or prioritization frontend; or when a weighted recommendation needs to remain inspectable rather than becoming an opaque ranking.
-memory_tags:
-  - domain:decision-making
-  - workflow:capacity-allocation
-  - skill_role:evaluator
-  - repo_boundary:tools
-  - inputs:vision-and-priorities
-  - outputs:allocation-recommendation
-  - risk:medium
+metadata:
+  memory_tags:
+    - domain:decision-making
+    - workflow:capacity-allocation
+    - skill_role:evaluator
+    - repo_boundary:tools
+    - inputs:vision-and-priorities
+    - outputs:allocation-recommendation
+    - risk:medium
 ---
 
 # Strategic Capacity Allocator

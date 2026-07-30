@@ -1,14 +1,15 @@
 ---
 name: shortform-rough-cut-ops
 description: Turn messy short-form video clips, creator intent, and optional format runbooks into an inspectable edit decision list and rough draft plan for CapCut or similar editors.
-memory_tags:
-  - domain:social-media
-  - workflow:shortform-rough-cut
-  - skill_role:operator
-  - repo_boundary:tools
-  - inputs:local-media
-  - outputs:edit-decision-list
-  - risk:medium
+metadata:
+  memory_tags:
+    - domain:social-media
+    - workflow:shortform-rough-cut
+    - skill_role:operator
+    - repo_boundary:tools
+    - inputs:local-media
+    - outputs:edit-decision-list
+    - risk:medium
 ---
 
 # Shortform Rough Cut Ops

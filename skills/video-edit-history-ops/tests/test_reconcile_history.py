@@ -60,6 +60,8 @@ class ReconcileHistoryTests(unittest.TestCase):
         self,
         video_id: str = "2026-07-27_example-video",
         history_record: str = "history/2026/2026-07-27_example-video.md",
+        capture_stage: str = "reviewable",
+        captured_at: str = "2026-07-27",
     ) -> None:
         write(
             self.project / "AI_EDIT_HISTORY.md",
@@ -67,8 +69,8 @@ class ReconcileHistoryTests(unittest.TestCase):
             "schema: ai-edit-history-pointer-v1\n"
             f"video_id: {video_id}\n"
             f"history_record: {history_record}\n"
-            "capture_stage: reviewable\n"
-            "captured_at: 2026-07-27\n"
+            f"capture_stage: {capture_stage}\n"
+            f"captured_at: {captured_at}\n"
             "---\n",
         )
 
@@ -90,6 +92,18 @@ class ReconcileHistoryTests(unittest.TestCase):
         self.assertEqual(
             [issue.code for issue in issues], ["VIDEO_ID_MISMATCH"]
         )
+
+    def test_invalid_capture_stage_is_reported(self) -> None:
+        self.add_pointer(capture_stage="draft")
+        _, issues = MODULE.run_audit(self.history, [self.projects])
+        self.assertEqual([issue.code for issue in issues], ["INVALID_POINTER"])
+        self.assertIn("unexpected capture_stage", issues[0].detail)
+
+    def test_invalid_captured_at_is_reported(self) -> None:
+        self.add_pointer(captured_at="July 27")
+        _, issues = MODULE.run_audit(self.history, [self.projects])
+        self.assertEqual([issue.code for issue in issues], ["INVALID_POINTER"])
+        self.assertIn("captured_at must use YYYY-MM-DD", issues[0].detail)
 
     def test_orphan_record_is_reported(self) -> None:
         self.add_pointer()
@@ -189,6 +203,15 @@ class ReconcileHistoryTests(unittest.TestCase):
         self.project.joinpath("REEL_BRIEF.md").unlink()
         write(self.project / "working" / "review.mp4", "placeholder")
         _, issues = MODULE.run_audit(self.history, [self.projects])
+        self.assertEqual([issue.code for issue in issues], ["MISSING_POINTER"])
+
+    def test_symlinked_project_child_is_not_discovered(self) -> None:
+        outside = Path(self.temp.name) / "outside-project"
+        write(outside / "REEL_BRIEF.md", "Status: ready for creator review\n")
+        link = self.projects / "linked-project"
+        link.symlink_to(outside, target_is_directory=True)
+        projects, issues = MODULE.run_audit(self.history, [self.projects])
+        self.assertEqual(projects, [self.project.resolve()])
         self.assertEqual([issue.code for issue in issues], ["MISSING_POINTER"])
 
 

@@ -192,6 +192,34 @@ def finalize_health(health: dict[str, dict[str, Any]]) -> None:
             platform_health["status"] = "success"
 
 
+def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
+def classify_run(
+    rows: list[dict[str, Any]],
+    health: dict[str, dict[str, Any]],
+) -> str:
+    attempted = [
+        platform_health
+        for platform_health in health.values()
+        if platform_health["status"] != "not_attempted"
+    ]
+    if rows:
+        return (
+            "success"
+            if attempted
+            and all(item["status"] == "success" for item in attempted)
+            else "degraded"
+        )
+    if any(item["succeeded"] for item in attempted):
+        return "empty"
+    return "unavailable"
+
+
 def record_result(
     health: dict[str, dict[str, Any]],
     platform: str,
@@ -336,25 +364,47 @@ def main() -> int:
         print("No watchlist accounts found. Add a markdown table with platform and handle columns.", file=sys.stderr)
         return 2
     previous_urls = load_previous_urls(args.previous)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
     rows, health = collect(args, accounts, previous_urls)
-    with args.out.open("w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    generated_at = datetime.now(timezone.utc)
+    attempt_path = args.out.with_name(
+        f"{args.out.stem}.attempt-"
+        f"{generated_at.strftime('%Y%m%dT%H%M%S%fZ')}"
+        f"{args.out.suffix}"
+    )
+    write_jsonl(attempt_path, rows)
+    run_status = classify_run(rows, health)
+    previous_output_preserved = args.out.exists()
+    promoted = bool(rows)
+    if promoted:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(attempt_path, args.out)
     if args.health_out:
         args.health_out.parent.mkdir(parents=True, exist_ok=True)
         args.health_out.write_text(
             json.dumps({
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": generated_at.isoformat(),
                 "watchlist": str(args.watchlist),
                 "output": str(args.out),
+                "attempt_output": str(attempt_path),
                 "rows_written": len(rows),
+                "run_status": run_status,
+                "promoted_to_latest": promoted,
+                "previous_output_preserved": (
+                    previous_output_preserved and not promoted
+                ),
                 "platforms": health,
             }, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
-    print(f"wrote {len(rows)} rows to {args.out}")
-    return 0
+    if promoted:
+        print(f"promoted {len(rows)} rows to {args.out}")
+        return 0
+    print(
+        f"{run_status}: preserved {args.out}; "
+        f"attempt receipt is {attempt_path}",
+        file=sys.stderr,
+    )
+    return 1
 
 
 if __name__ == "__main__":

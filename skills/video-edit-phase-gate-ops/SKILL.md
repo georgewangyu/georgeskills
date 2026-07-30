@@ -1,14 +1,15 @@
 ---
 name: video-edit-phase-gate-ops
 description: Orchestrate a short-form video edit through intake lock, narration/A-cut lock, asset and visual planning, editor assembly and persistence, rendered evaluation, and final acceptance. Use when starting or resuming a multi-step video edit, preparing a CapCut or similar editor handoff, handling sponsor/product footage or creator-supplied proof, recovering from repeated correction cycles, or requiring independent content, visual-brand, and technical-audio evaluator subagents before declaring an edit complete.
-memory_tags:
-  - domain:social-media
-  - workflow:video-edit-phase-gate
-  - skill_role:orchestrator
-  - repo_boundary:tools
-  - inputs:video-project
-  - outputs:edit-gate-ledger
-  - risk:medium
+metadata:
+  memory_tags:
+    - domain:social-media
+    - workflow:video-edit-phase-gate
+    - skill_role:orchestrator
+    - repo_boundary:tools
+    - inputs:video-project
+    - outputs:edit-gate-ledger
+    - risk:medium
 ---
 
 # Video Edit Phase Gate Ops

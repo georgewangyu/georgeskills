@@ -55,6 +55,8 @@ SKIP_DIR_NAMES = {
     "raw",
 }
 VIDEO_SUFFIXES = {".mov", ".mp4", ".m4v"}
+CAPTURE_STAGES = {"reviewable", "creator-selected", "final", "published"}
+DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 @dataclass(frozen=True)
@@ -164,7 +166,8 @@ def discover_projects(roots: list[Path]) -> list[Path]:
         else:
             for child in root.iterdir():
                 if (
-                    child.is_dir()
+                    not child.is_symlink()
+                    and child.is_dir()
                     and not child.name.startswith("_")
                     and looks_like_project(child)
                     and is_reviewable(child)
@@ -233,6 +236,24 @@ def audit_project(
                 "INVALID_POINTER",
                 project,
                 f"unexpected pointer schema {fields['schema']}",
+            )
+        )
+    capture_stage = fields.get("capture_stage")
+    if capture_stage and capture_stage not in CAPTURE_STAGES:
+        issues.append(
+            Issue(
+                "INVALID_POINTER",
+                project,
+                f"unexpected capture_stage {capture_stage}",
+            )
+        )
+    captured_at = fields.get("captured_at")
+    if captured_at and not DATE_PATTERN.fullmatch(captured_at):
+        issues.append(
+            Issue(
+                "INVALID_POINTER",
+                project,
+                "captured_at must use YYYY-MM-DD",
             )
         )
     if issues:

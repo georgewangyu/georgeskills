@@ -32,6 +32,8 @@ REQUIRED_HEADINGS = (
     "Next Iteration",
 )
 EXPECTED_SCHEMA = "video-edit-history-v1"
+LESSON_STATUSES = {"project_only", "candidate", "promoted", "superseded"}
+DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def frontmatter(text: str) -> dict[str, str]:
@@ -130,6 +132,18 @@ def main() -> int:
             errors.append(
                 f"{path.relative_to(root)}: unexpected schema {schema}; "
                 f"expected {EXPECTED_SCHEMA}"
+            )
+        reviewed_at = fields.get("reviewed_at")
+        if reviewed_at and not DATE_PATTERN.fullmatch(reviewed_at):
+            errors.append(
+                f"{path.relative_to(root)}: reviewed_at must use YYYY-MM-DD"
+            )
+        lesson_status = fields.get("lesson_status")
+        if lesson_status and lesson_status not in LESSON_STATUSES:
+            allowed = ", ".join(sorted(LESSON_STATUSES))
+            errors.append(
+                f"{path.relative_to(root)}: invalid lesson_status "
+                f"{lesson_status}; expected one of {allowed}"
             )
         video_id = fields.get("video_id")
         if video_id:

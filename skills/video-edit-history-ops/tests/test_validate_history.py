@@ -87,6 +87,28 @@ class ValidateHistoryTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn("unexpected schema video-edit-history-v2", output)
 
+    def test_invalid_lesson_status_fails(self) -> None:
+        self.run_validator("video-edit-history-v1")
+        text = self.record.read_text(encoding="utf-8").replace(
+            "lesson_status: candidate",
+            "lesson_status: maybe",
+        )
+        write(self.record, text)
+        result, output = self.invoke_validator()
+        self.assertEqual(result, 1)
+        self.assertIn("invalid lesson_status maybe", output)
+
+    def test_invalid_reviewed_at_fails(self) -> None:
+        self.run_validator("video-edit-history-v1")
+        text = self.record.read_text(encoding="utf-8").replace(
+            "reviewed_at: 2026-07-27",
+            "reviewed_at: July 27",
+        )
+        write(self.record, text)
+        result, output = self.invoke_validator()
+        self.assertEqual(result, 1)
+        self.assertIn("reviewed_at must use YYYY-MM-DD", output)
+
     def test_plain_text_path_does_not_count_as_index_link(self) -> None:
         write(
             self.root / "history" / "INDEX.md",
