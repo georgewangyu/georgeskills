@@ -1,13 +1,14 @@
 ---
 name: codex-thread-hygiene-ops
-description: Review Codex threads, rename vague or stale titles, and propose pin/archive cleanup. Use for chat title hygiene, pinned/recent thread review, and pre-automation cleanup passes.
-memory_tags:
-  - domain:workflow
-  - workflow:thread-hygiene
-  - skill_role:operator
-  - repo_boundary:tools
-  - outputs:codex-thread-updates
-  - risk:medium
+description: Review and update Codex thread titles, pins, and archive state, including verification when local and hosted thread records are ambiguous. Use for chat title hygiene, pinned/recent thread review, authorized pin cleanup, and pre-automation cleanup passes.
+metadata:
+  memory_tags:
+    - domain:workflow
+    - workflow:thread-hygiene
+    - skill_role:operator
+    - repo_boundary:tools
+    - outputs:codex-thread-updates
+    - risk:medium
 ---
 
 # Codex Thread Hygiene Ops
@@ -53,10 +54,40 @@ If the user gives no scope, default to a bounded manual pass over pinned and rec
 5. Keep pin/archive changes review-first unless the user explicitly asks for direct action.
    - Propose stale pins, duplicate threads, or completed threads as cleanup candidates.
    - Do not unpin or archive during the first hygiene pass unless the user clearly authorizes it.
-6. Report concise results.
+6. Apply authorized pin changes with the verified local-mutation protocol below.
+7. Report concise results.
    - Include renamed threads with old title, new title, and reason.
    - Include skipped good titles as a count, not a long list.
    - Include proposed pin/archive changes separately from actions taken.
+
+## Verified Local Pin Mutations
+
+Treat a pin receipt as evidence for the record it names, not automatic proof
+that the visible local sidebar changed. Codex may expose the same thread id
+through both local and hosted catalogs.
+
+For an authorized local-sidebar pin change:
+
+1. Record the calling thread id so the app can return to it afterward.
+2. Resolve the exact target id from the reviewed inventory; never mutate by
+   title alone.
+3. Navigate the main Codex window to that exact target with
+   `navigate_to_codex_page`.
+4. Call `set_thread_pinned` only after the target is focused.
+5. Inspect the receipt. If it names an unexpected hosted or remote source,
+   treat the requested local mutation as unverified even when `pinned: false`
+   is returned.
+6. For multiple targets, repeat focus then mutation one target at a time. Return
+   the app to the recorded calling thread when finished.
+7. Verify the actual local retained-pin set through a supported app inventory
+   or a read-only local sidebar-state check. Do not infer pin state from list
+   ordering when the inventory omits a pin field.
+8. Report success only when the local state reflects the requested change. If
+   verification fails, report the mutation as incomplete and preserve the
+   user's remaining pins.
+
+Do not dismiss a local mismatch as cache lag without evidence. Do not edit
+Codex application state files directly as a shortcut.
 
 ## Title Rules
 
@@ -87,6 +118,7 @@ Avoid wasting future runs on titles that are already useful:
 
 Return:
 - actions taken, grouped by title updates, pin updates, and archive updates
+- pin-verification source and the exact retained set after mutations
 - skipped count for already-good titles
 - review-needed candidates with short reasons
 - recommended next automation scope, if the user is evaluating automation
