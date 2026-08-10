@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Intro Ops"
+  short_description: "Build truthful long-form YouTube openings"
+  default_prompt: "Use $youtube-intro-ops to draft a tight, truthful first-minute monologue for my YouTube video."
