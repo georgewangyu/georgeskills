@@ -30,6 +30,14 @@ Current focus:
   - Promotes reviewed candidates into canonical stores by id or whole file
 - `query_memory.py`
   - Filters canonical and candidate records by type, date, durability, text, or source
+- `project_codex_runtime_memory.py`
+  - Inventories only Codex automation `memory.md` files, scans complete files
+    before reading them, and writes a metadata/classification manifest without
+    raw runtime prose
+  - Accepts a private reviewed line-range map and emits only source-backed
+    candidate records under `memory/candidates/`
+  - Enforces one-way runtime-to-private-candidate flow; it never writes Codex
+    runtime memory or promotes candidates into canonical stores
 - `dream_memory.py`
   - Refreshes recent candidate extraction
   - Validates memory files
