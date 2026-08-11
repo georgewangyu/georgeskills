@@ -10,10 +10,20 @@ Modular export implementations for:
 - Cursor chats
 - X/Twitter feed snapshots
 - local-first macOS screen-activity capture
+- approved Discord guild history through a least-privilege bot
 
 The scripts run against private data/config in `<private-repo>`:
 - `captures/*`
 - `scripts/exports/*` credentials/config/tokens
+
+`scripts/archive_discord_guild.py` builds a private offline Discord archive
+through the official bot API. It accepts only `DISCORD_BOT_TOKEN` from the
+environment, requests no send or moderation permissions, refuses message
+collection until a source-permission receipt is approved, and stores resumable
+raw pages plus normalized JSONL/SQLite outside the reusable skill repository.
+It inventories bot-visible channels and threads separately from human-visible
+scope, follows `before` cursors and Discord rate-limit headers, and includes a
+takedown command for active raw/index removal.
 
 For a bounded Google Drive archive, use
 `scripts/download_google_drive_archive.py` with explicit credentials, token,
