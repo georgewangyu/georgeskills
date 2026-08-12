@@ -56,6 +56,23 @@ Keep concepts that can be rewritten into:
 - a new niche promise
 - the same visual grammar with different substance
 
+### Pass 4: Follower-Conversion Review
+
+Only run this pass when post-attributed follow data or a clearly labeled
+creator-provided insight is available. Record:
+
+- follows/views and follows/reach
+- average watch percentage within a comparable duration band
+- saves/views and shares/views
+- continuity between the post promise and profile promise
+- series or open-loop design
+- topic-to-profile fit
+- CTA type and whether a follow gate influenced the result
+- attribution source and confidence
+
+Keep this lane separate from the view-breakout rank. A post can be a strong
+attention breakout and a weak follower converter, or vice versa.
+
 ## Scoring Notes
 
 ### Base Asymmetry
@@ -81,6 +98,45 @@ Interpretation:
 - identity lock-in: results depend on persona rather than concept
 - credibility issue: follower count or audience size looks understated relative to obvious fame
 - incomplete data: uncertain views, missing follower counts, or stale probes
+
+## Follower-Conversion Calibration
+
+Use ratios as comparative research signals, not universal platform
+benchmarks. Compare similar formats and duration bands whenever possible.
+
+Suggested starting bands for manual triage:
+
+| Signal | Low | Notable | Strong | Exceptional |
+| --- | ---: | ---: | ---: | ---: |
+| Follows / views | `<0.10%` | `0.10-0.30%` | `0.30-1.00%` | `>=1.00%` |
+| Follows / reach | `<0.15%` | `0.15-0.50%` | `0.50-1.50%` | `>=1.50%` |
+| Saves / views | `<0.10%` | `0.10-0.30%` | `0.30-0.75%` | `>=0.75%` |
+| Shares / views | `<0.05%` | `0.05-0.15%` | `0.15-0.40%` | `>=0.40%` |
+
+Average watch percentage is strongly duration-dependent. Use it to compare
+like-for-like posts, not a 20-second clip against a 20-minute video.
+
+### CTA Classification
+
+- `none`: no explicit conversion request observed
+- `implicit_series`: continuity comes from a series or open loop
+- `direct_follow`: a transparent request to follow for the stated promise
+- `keyword_dm`: a comment keyword triggers a resource or message
+- `follow_gated_asset`: the promised resource requires or encourages a follow
+
+Keyword-DM and follow-gated results are hybrid funnel outcomes. Report the
+observed conversion, but do not label it content-only conversion.
+
+### Evidence Classes
+
+- `platform_first_party`: exported or directly observed platform insight
+- `creator_first_party`: insight shown or stated by the creator; not audited
+- `public_metadata`: visible counters and metadata without follow attribution
+- `inferred`: derived from indirect evidence
+- `unknown`: source cannot be established
+
+Evidence confidence and conversion strength are separate dimensions. Never
+raise the confidence label merely because the result is large.
 
 ## Minimal Artifact Shape
 
