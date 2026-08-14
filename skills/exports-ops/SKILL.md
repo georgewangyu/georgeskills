@@ -89,8 +89,10 @@ temporary copy of the live Messages database, query only that temporary copy,
 omit attachment bodies, filter automated verification traffic by default, and
 delete the database snapshot after extraction. The output is a short-lived,
 ignored private staging file; agents should write derived day-level context to
-the journal rather than raw handles or surprise message excerpts. This daily
-lane does not replace or advance the verified monthly archive checkpoint.
+the journal. A private workflow may allow bounded, directly relevant raw
+excerpts, but raw handles, credentials, attachment bodies, and bulk message
+dumps remain excluded. This daily lane does not replace or advance the
+verified monthly archive checkpoint.
 
 Use `scripts/audit_export_freshness.py` with a private freshness registry to
 check mixed automatic and snapshot exports without mutating their checkpoints.

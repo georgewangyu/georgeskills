@@ -1,6 +1,7 @@
 import importlib.util
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -20,6 +21,28 @@ spec.loader.exec_module(module)
 
 
 class BulletParsingTests(unittest.TestCase):
+    def test_preserved_created_date_keeps_existing_frontmatter_value(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "report.md"
+            path.write_text(
+                "---\ntitle: Report\ncreated: 2026-07-29\n---\n# Report\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(
+                module.preserved_created_date(path, "2026-08-05"),
+                "2026-07-29",
+            )
+
+    def test_preserved_created_date_uses_fallback_for_new_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "missing.md"
+
+            self.assertEqual(
+                module.preserved_created_date(path, "2026-08-05"),
+                "2026-08-05",
+            )
+
     def test_bullet_lines_join_wrapped_continuations(self) -> None:
         section = module.Section(
             title="Important Evidence",

@@ -384,7 +384,8 @@ def build_daily_context(
             "automated_messages_excluded": not include_automated,
             "journal_contract": (
                 "Use this ignored private staging file for day-level synthesis. "
-                "Write derived context to the journal; do not copy raw handles or surprise excerpts."
+                "Bounded, directly relevant raw excerpts may be retained when the private workflow allows it. "
+                "Do not copy raw handles, credentials, attachment bodies, or bulk message dumps."
             ),
         },
         "limits": {

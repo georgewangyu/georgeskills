@@ -26,11 +26,14 @@ from health_paths import apple_health_export_xml, daily_health_metrics_csv, reso
 from health_overnight_analysis import analyze_overnight, fmt_pct
 from print_location_interview_context import (
     PLACES_FILE,
+    build_owntracks_s3_config,
     build_config as build_traccar_config,
+    fetch_owntracks_s3_positions,
     fetch_positions as fetch_traccar_positions,
     fetch_report_stops as fetch_traccar_report_stops,
     haversine_km,
     load_places as load_location_places,
+    summarize_owntracks_error,
     summarize_report_stops as summarize_location_report_stops,
     summarize_stop_clusters as summarize_location_stop_clusters,
 )
@@ -566,7 +569,10 @@ def print_imessage_context(day_text: str) -> None:
         f"{counts.get('system_or_reaction_filtered', 0)} system/reaction"
     )
     print(f"- Private staging file: {path}")
-    print("- Journal rule: synthesize day-level context; do not copy raw handles or surprise excerpts.")
+    print(
+        "- Journal rule: synthesize day-level context; bounded relevant raw excerpts are allowed, "
+        "but exclude raw handles, credentials, attachment bodies, and bulk dumps."
+    )
 
 
 def build_wiki_ingest_state(*, target_date: str, summary_path: Path) -> dict[str, object] | None:
@@ -732,15 +738,43 @@ def build_health_section(day_text: str) -> str | None:
 
 
 def build_location_section(day_text: str) -> str | None:
-    config = build_traccar_config()
-    if config is None:
-        return None
-    try:
-        positions = fetch_traccar_positions(config, day_text)
-    except Exception:
-        return None
+    source = "OwnTracks/S3"
+    owntracks_config = build_owntracks_s3_config()
+    owntracks_error: Exception | None = None
+    positions = []
+    if owntracks_config is not None:
+        try:
+            positions = fetch_owntracks_s3_positions(owntracks_config, day_text)
+        except Exception as exc:
+            owntracks_error = exc
+
+    traccar_config = None
     if not positions:
-        return None
+        source = "Traccar fallback"
+        traccar_config = build_traccar_config()
+        if traccar_config is not None:
+            try:
+                positions = fetch_traccar_positions(traccar_config, day_text)
+            except Exception:
+                positions = []
+
+    if not positions:
+        lines: list[str] = []
+        if owntracks_config is not None:
+            if owntracks_error is not None:
+                lines.append(
+                    "- OwnTracks/S3 was configured but unreadable: "
+                    f"{summarize_owntracks_error(owntracks_error)}."
+                )
+            else:
+                lines.append("- OwnTracks/S3 returned no positions for this date.")
+        else:
+            lines.append("- OwnTracks/S3 configuration was unavailable.")
+        if traccar_config is not None:
+            lines.append("- The Traccar fallback returned no positions for this date.")
+        else:
+            lines.append("- The Traccar fallback configuration was unavailable.")
+        return "\n".join(lines)
 
     total_distance_km = 0.0
     max_speed = 0.0
@@ -750,16 +784,20 @@ def build_location_section(day_text: str) -> str | None:
 
     places = load_location_places(PLACES_FILE)
     stops: list[str] = []
-    try:
-        stops = summarize_location_report_stops(fetch_traccar_report_stops(config, day_text), places)
-    except Exception:
-        stops = []
+    if traccar_config is not None:
+        try:
+            stops = summarize_location_report_stops(
+                fetch_traccar_report_stops(traccar_config, day_text), places
+            )
+        except Exception:
+            stops = []
     if not stops:
         stops = summarize_location_stop_clusters(positions, places)
 
     first = positions[0]
     last = positions[-1]
     lines = [
+        f"- Source: `{source}`.",
         "- First seen at"
         f" `{first.timestamp.strftime('%H:%M')}` and last seen at"
         f" `{last.timestamp.strftime('%H:%M')}`, with about"

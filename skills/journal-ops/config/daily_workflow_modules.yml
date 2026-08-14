@@ -65,3 +65,4 @@ output_contract:
   daily_summary_gets_external_radar_rollup_only: true
   imessage_raw_staging_is_private_and_short_lived: true
   imessage_journal_output_is_derived_context_not_raw_transcript: true
+  imessage_bounded_relevant_raw_excerpts_are_allowed: true

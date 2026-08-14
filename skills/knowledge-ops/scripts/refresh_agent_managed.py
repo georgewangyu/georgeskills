@@ -408,6 +408,13 @@ def frontmatter_scalar(header: str, key: str) -> str | None:
     return match.group(1).strip().strip('"')
 
 
+def preserved_created_date(path: Path, fallback: str) -> str:
+    if not path.exists():
+        return fallback
+    header = parse_frontmatter_header(path.read_text(encoding="utf-8"))
+    return frontmatter_scalar(header, "created") or fallback
+
+
 def frontmatter_block(key: str, values: list[str], *, indent: str = "") -> str:
     if not values:
         return f"{indent}{key}: []"
@@ -703,6 +710,9 @@ def compile_topic_page(topic: TopicPage) -> bool:
 
 def build_health_report(topic_pages: list[TopicPage]) -> Path:
     ensure_dir(REPORTS_DIR)
+    path = REPORTS_DIR / "health-report.md"
+    today = date.today().isoformat()
+    created = preserved_created_date(path, today)
     entries: list[TopicHealth] = []
     for topic in topic_pages:
         text = topic.path.read_text(encoding="utf-8")
@@ -729,8 +739,8 @@ def build_health_report(topic_pages: list[TopicPage]) -> Path:
         'title: "LLM Wiki Health Report"',
         "type: report",
         "status: active",
-        f"created: {date.today().isoformat()}",
-        f"updated: {date.today().isoformat()}",
+        f"created: {created}",
+        f"updated: {today}",
         'sources: ["topics/"]',
         'tags: ["wiki", "report", "health"]',
         "---",
@@ -751,7 +761,6 @@ def build_health_report(topic_pages: list[TopicPage]) -> Path:
             f"- `{entry.slug}` - evidence={entry.evidence_count}, seeds={entry.source_seed_count}, "
             f"summary={entry.summary_quality}, current_understanding={entry.current_understanding_quality}, themes={theme_text}"
         )
-    path = REPORTS_DIR / "health-report.md"
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
 
@@ -909,6 +918,8 @@ def ensure_seed_topic_pages(*, overwrite: bool = False) -> list[Path]:
 def rebuild_index_page(topic_pages: list[TopicPage]) -> Path:
     ensure_dir(INDEXES_DIR)
     path = INDEXES_DIR / "knowledge-map.md"
+    today = date.today().isoformat()
+    created = preserved_created_date(path, today)
     entries = "\n".join(
         f"- `{topic.path.relative_to(AGENT_MANAGED_DIR).as_posix()}` - canonical page for {topic.title}."
         for topic in sorted(topic_pages, key=lambda item: item.title.lower())
@@ -918,8 +929,8 @@ def rebuild_index_page(topic_pages: list[TopicPage]) -> Path:
         'title: "Knowledge Map"\n'
         "type: index\n"
         "status: active\n"
-        f"created: {date.today().isoformat()}\n"
-        f"updated: {date.today().isoformat()}\n"
+        f"created: {created}\n"
+        f"updated: {today}\n"
         'sources: ["topics/"]\n'
         'tags: ["wiki", "index", "knowledge-map"]\n'
         "---\n"

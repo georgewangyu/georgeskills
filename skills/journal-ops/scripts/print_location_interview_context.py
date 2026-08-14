@@ -378,6 +378,23 @@ def aws_cli_json(args: list[str]) -> Any:
     return json.loads(proc.stdout)
 
 
+def summarize_owntracks_error(exc: Exception) -> str:
+    """Return a public-safe explanation for an OwnTracks/S3 read failure."""
+    message = str(exc).lower()
+    if (
+        "session has expired" in message
+        or "expiredtoken" in message
+        or "please reauthenticate" in message
+        or "unable to load a existing login session" in message
+    ):
+        return "AWS CLI authentication expired; run `aws login`"
+    if "unable to locate credentials" in message or "could not find credentials" in message:
+        return "AWS CLI credentials are unavailable"
+    if isinstance(exc, FileNotFoundError) or "no such file or directory: 'aws'" in message:
+        return "AWS CLI is unavailable"
+    return f"AWS/S3 read failed ({exc.__class__.__name__})"
+
+
 def owntracks_s3_day_prefixes(config: OwnTracksS3Config, day_text: str) -> list[str]:
     target_day = datetime.strptime(day_text, "%Y-%m-%d").date()
     days = [target_day - timedelta(days=1), target_day, target_day + timedelta(days=1)]
@@ -766,24 +783,36 @@ def print_summary(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Print Traccar location context for a target date.")
+    parser = argparse.ArgumentParser(description="Print location context for a target date.")
     parser.add_argument("--date", default=date.today().isoformat(), help="Target date YYYY-MM-DD (default: today)")
     args = parser.parse_args()
 
     places = load_places(PLACES_FILE)
     owntracks_s3_config = build_owntracks_s3_config()
+    owntracks_error: Exception | None = None
     if owntracks_s3_config is not None:
         try:
             owntracks_positions = fetch_owntracks_s3_positions(owntracks_s3_config, args.date)
-        except Exception:
+        except Exception as exc:
             owntracks_positions = []
+            owntracks_error = exc
         if owntracks_positions:
             print_summary(args.date, owntracks_positions, places, "OwnTracks/S3")
             return 0
+        if owntracks_error is not None:
+            print(
+                f"Location context for {args.date}: OwnTracks/S3 unreadable "
+                f"({summarize_owntracks_error(owntracks_error)}); trying Traccar fallback."
+            )
+        else:
+            print(
+                f"Location context for {args.date}: OwnTracks/S3 returned no positions; "
+                "trying Traccar fallback."
+            )
 
     config = build_config()
     if config is None:
-        print(f"Location context for {args.date}: skipped (set TRACCAR_BASE_URL, TRACCAR_EMAIL, TRACCAR_PASSWORD, and TRACCAR_DEVICE_ID or TRACCAR_DEVICE_NAME).")
+        print(f"Location context for {args.date}: Traccar fallback skipped (configuration unavailable).")
         return 0
 
     try:

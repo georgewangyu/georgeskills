@@ -46,5 +46,6 @@ into the private journal.
 
 The standard and full prep profiles also create a bounded private iMessage
 daily-context staging file through `exports-ops`. Treat it like transcript
-source material: the active Codex agent interprets it, but only derived
-day-level context belongs in the journal. The check-in profile skips Messages.
+source material: the active Codex agent interprets it and follows the private
+journal policy on bounded raw excerpts. Never promote raw handles, credentials,
+attachment bodies, or bulk message dumps. The check-in profile skips Messages.
