@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Market Gap Radar"
+  short_description: "Find low-supply, high-demand YouTube niches"
+  default_prompt: "Use $youtube-market-gap-radar-ops to find and validate low-supply, high-demand YouTube niches around a category."
