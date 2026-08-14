@@ -60,13 +60,10 @@ These are the skill clusters that have been moving fastest recently:
   annotations; `book-note-quality-ops` checks whether book notes are
   public-ready before they feed a catalog or Books Radar-style site. Private
   live reading-note workflows should live in private overlay repos.
-- **Social video production:** `weekly-video-batch-ops`,
-  `capcut-ai-edit-reel-ops`, `shortform-rough-cut-ops`, and
-  `social-video-archive-ops` cover batch planning, edit preparation, final
-  export handling, and durable reference-video archives;
-  `editorial-motion-graphics-ops` adds premium kinetic type, UI/card motion,
-  gauges, focus pulls, and shared-object sequences, while
-  `manim-explainer-ops` owns precise programmatic technical animation.
+- **Social-video strategy and discovery:** hook selection, talking points,
+  platform checks/transcription, trend research, and watchlists remain here.
+  The cohesive editing and production skill stack now lives in the sibling
+  `george-video-ops` domain package.
 - **Voice and writing:** `voice-calibration-ops` builds a source-derived voice
   profile and applies it to posts, essays, emails, and launch notes.
 - **Repo and workflow quality:** `repo-readme-onboarding-ops`,
@@ -110,27 +107,15 @@ These are the skill clusters that have been moving fastest recently:
 | `social-motion-diagram-ops` | Create Excalidraw-style static diagrams and short looping motion assets for LinkedIn/X/social drafts. |
 | `social-hook-selection-ops` | Select and adapt high-fit hooks for TikTok, Instagram Reels, YouTube Shorts, and short-form video ideas. |
 | `shortform-talking-points-ops` | Choose a minimal viable short-form script engine, define its central open loop, and create a natural point-form TikTok, Reels, or Shorts outline. |
-| `capcut-ai-edit-reel-ops` | Turn one short B-roll clip or existing editor template into a 6-10 second caption-first list Reel with a persistent title hook, lightweight visual refreshes, and a matching numbered post caption. |
-| `raw-video-clip-intake-ops` | Sort raw camera-card clips into weekly video project folders with sidecar preservation, contact sheets, and intake manifests. |
-| `weekly-video-batch-ops` | Organize recurring short-form video batch folders, CapCut final export inboxes, canonical final names, quick-access final-video indexes, and weekly phone-transfer bundles. |
 | `youtube-check-ops` | Check YouTube channel or video public metadata. Falls back to lightweight public probes. |
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
 | `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |
 | `social-video-archive-ops` | Archive reference videos from social platforms outside active repos, with provenance notes and repo-side symlinks. |
 | `video-breakout-research-ops` | Sweep TikTok, Instagram, and YouTube Shorts for low-follower, high-traction video patterns. |
+| `youtube-market-gap-radar-ops` | Validate low-supply, high-demand YouTube niches with channel-baseline outliers, repeat evidence, and query-family supply audits. |
 | `niche-video-watchlist-ops` | Run targeted YouTube/TikTok bot sweeps for niche search lanes and creator watchlists. |
 | `account-video-watchlist-ops` | Track a private list of niche creator accounts for new high-view videos worth emulating. |
 | `broad-video-trend-radar-ops` | Run broad cross-platform trend sweeps for high-multiplier short-form formats outside a narrow niche. |
-| `shortform-rough-cut-ops` | Turn raw short-form clips, creator intent, and format runbooks into an edit decision list and rough draft plan. |
-| `longform-to-shortform-reel-ops` | Select and score standalone vertical clips from a finished long-form edit, then track the two-stage conform back to original camera and audio before production. |
-| `video-asset-pack-ops` | Turn a settled script into a parallel-gathered, sourced, numbered edit-asset pack with a beat-to-asset manifest. |
-| `video-visual-director-ops` | Direct one coherent short- or long-form post-A-cut treatment across A-roll, proof, transcript-anchored takeovers, motion, sound, native integration, and QA. |
-| `video-visual-assets-ops` | Produce selected higher-value video visuals such as coded motion, diagrams, screen demonstrations, promo excerpts, and generated media. |
-| `editorial-motion-graphics-ops` | Create selected premium editorial motion sequences—kinetic type, conceptual UI/cards, gauges, cascades, focus/depth, and shared-object transitions—as reproducible editor-ready assets. |
-| `manim-explainer-ops` | Create precise Manim CE animations for math, equations, machine learning, algorithms, graphs, geometry, and mechanisms, then return editor-ready assets and reproducible source. |
-| `video-visual-coverage-qa-ops` | Audit a first export against its transcript and asset pack for visual gaps, overlay problems, evidence mismatch, and exact timestamped fixes. |
-| `video-edit-phase-gate-ops` | Keep a video edit on one evidence-backed path from intake and A-cut lock through editor persistence, independent rendered evaluation, and final acceptance. |
-| `video-edit-history-ops` | Load prior edit learnings, record every reviewable AI-assisted edit in a private history index, and reconcile weekly project folders against their history receipts. |
 | `video-companion-page-ops` | Create local HTML/blog-style companion pages for educational videos with clickable sources, screenshots, diagrams, and talking outlines. |
 | `static-note-share-ops` | Publish selected local notes, transcripts, or research docs as sanitized static share pages with explicit redaction and deployment gates. |
 
@@ -194,7 +179,7 @@ These are the skill clusters that have been moving fastest recently:
 | `decision-gate-ops` | Evaluate meaningful operational, automation, product, workflow, or personal execution decisions with constraints, proof thresholds, reversible defaults, and future principles. |
 | `strategic-capacity-allocator` | Interview a person about vision, constraints, evidence, and competing priorities, then recommend an auditable sprint allocation with confidence, opportunity-cost, floor, and cap controls. |
 | `personal-vision-interview-ops` | Guide a private, one-question-at-a-time interview and synthesize the answers into a personal vision and decision gate without inventing certainty. |
-| `codex-thread-hygiene-ops` | Organize Codex conversations by renaming vague threads and reviewing pinned-chat cleanup candidates. |
+| `codex-thread-hygiene-ops` | Organize Codex conversations, review cleanup candidates, and verify authorized local pin changes across ambiguous local/hosted records. |
 | `skill-forge-ops` | Mine journals, transcripts, PRs, commits, scripts, and agent notes for workflows worth turning into reusable skills. |
 | `agent-eval-harness-ops` | Design lightweight eval harnesses for coding or workflow agents, including rubrics and failure taxonomies. |
 | `repo-readme-onboarding-ops` | Audit and improve repository READMEs and GitHub About metadata for clearer first impressions, quickstarts, usage proof, and contribution onboarding. |
@@ -334,7 +319,9 @@ integration setup (Gmail API, Google Calendar API, Apple Notes).
 ## Notes
 
 - `~/.codex/skills/` is machine-level, not workspace-local.
-- This repo is the editable source of truth for all skills.
+- This repo is the editable source of truth for the skills it contains.
+- Cohesive domain packages may own their own skill families; the local video
+  editing/production family is maintained in sibling `george-video-ops`.
 - Skills that reference `<private-repo>` resolve the path via the
   `LIFEREPO_PRIVATE_ROOT` environment variable or the pointer config at
   `liferepo/.liferepo/local/private_repo.json`.
