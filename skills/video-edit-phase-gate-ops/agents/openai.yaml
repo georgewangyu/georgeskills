@@ -1,4 +1,0 @@
-interface:
-  display_name: "Video Edit Phase Gates"
-  short_description: "Proof-gated video editing with evaluator lanes"
-  default_prompt: "Use $video-edit-phase-gate-ops to run this video edit through intake, assembly, rendered QA, and final acceptance."

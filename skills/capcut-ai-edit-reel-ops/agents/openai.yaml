@@ -1,4 +1,0 @@
-interface:
-  display_name: "Caption-First List Reel Ops"
-  short_description: "Build short B-roll loops with caption payoffs"
-  default_prompt: "Use $capcut-ai-edit-reel-ops to turn one short B-roll clip into a caption-first list Reel with a timed title loop and matching numbered post caption."

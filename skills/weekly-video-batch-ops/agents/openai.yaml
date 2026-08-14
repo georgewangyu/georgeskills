@@ -1,4 +1,0 @@
-interface:
-  display_name: "Weekly Video Batch Ops"
-  short_description: "Intake clips and manage weekly video lifecycle"
-  default_prompt: "Use $weekly-video-batch-ops to intake new clips, create a same-name CapCut draft, or mark a video active, completed, or dropped and refresh safe weekly carryover views."

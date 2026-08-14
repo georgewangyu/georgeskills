@@ -1,4 +1,0 @@
-interface:
-  display_name: "Long-Form to Reels"
-  short_description: "Find and remap strong reels from long-form video"
-  default_prompt: "Use $longform-to-shortform-reel-ops to rank standalone reel candidates from a finished long-form edit and remap them to original sources."

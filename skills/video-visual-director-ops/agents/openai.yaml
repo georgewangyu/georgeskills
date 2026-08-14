@@ -1,6 +1,0 @@
-interface:
-  display_name: "Video Visual Director"
-  short_description: "Direct short- and long-form post-A-cut visuals"
-  default_prompt: "Use $video-visual-director-ops to direct and execute the visual pass for this locked A-cut."
-policy:
-  allow_implicit_invocation: true

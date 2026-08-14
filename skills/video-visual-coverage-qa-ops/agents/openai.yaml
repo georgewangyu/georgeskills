@@ -1,4 +1,0 @@
-interface:
-  display_name: "Video Visual Coverage QA"
-  short_description: "Audit overlays and visual coverage by timestamp"
-  default_prompt: "Use $video-visual-coverage-qa-ops to audit this near-final video and return exact timed visual fixes."
