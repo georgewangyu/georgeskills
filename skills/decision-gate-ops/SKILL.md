@@ -1,14 +1,15 @@
 ---
 name: decision-gate-ops
 description: Evaluate meaningful operational, automation, product, workflow, or personal execution decisions by surfacing constraints, tradeoffs, proof requirements, reversible defaults, and the principle to carry forward.
-memory_tags:
-  - domain:decision-making
-  - workflow:decision-gate
-  - skill_role:evaluator
-  - repo_boundary:tools
-  - inputs:decision-context
-  - outputs:decision-brief
-  - risk:medium
+metadata:
+  memory_tags:
+    - domain:decision-making
+    - workflow:decision-gate
+    - skill_role:evaluator
+    - repo_boundary:tools
+    - inputs:decision-context
+    - outputs:decision-brief
+    - risk:medium
 ---
 
 # Decision Gate Ops
@@ -102,6 +103,42 @@ Automate boring, reversible, high-leverage steps first.
 Keep human approval for public, taste-sensitive, or platform-fragile steps until live proof repeatedly beats the manual workflow.
 ```
 
+## Five-Step Improvement Sequence
+
+When the decision is how to improve or automate an existing recurring process,
+run these steps in order before selecting the automation boundary:
+
+1. **Question requirements.** Name the intended outcome, the evidence that it
+   matters, and the accountable source of each requirement. Challenge inherited
+   gates, artifacts, reviewers, and quality rules that have no observable job.
+2. **Delete parts or process.** Remove unnecessary handoffs, outputs, variants,
+   reviews, and work. Make deletion reversible when uncertainty is material,
+   and define the evidence that would require adding something back.
+3. **Simplify and optimize what remains.** Reduce interfaces, decision fields,
+   tool changes, duplicate checks, and competing authorities. Do not optimize
+   work that should have been deleted.
+4. **Accelerate the feedback cycle.** Measure the current time to the first
+   usable result and to the decisive human or machine feedback. Shorten those
+   cycles before increasing throughput.
+5. **Automate last.** Automate only the surviving, repeatable, sufficiently
+   proven work. Preserve a human gate for taste-sensitive, public,
+   irreversible, or high-consequence decisions until repeated live evidence
+   supports moving it.
+
+This sequence is adapted from the ordered engineering process Elon Musk
+described during the Everyday Astronaut Starbase tour:
+https://www.youtube.com/watch?v=t705r8ICkRw
+
+For each step, record one of:
+
+- `changed`: what was removed or revised;
+- `kept_with_evidence`: why it survives;
+- `not_ready`: which missing evidence blocks moving to the next step.
+
+Do not jump to step five because automation is technically possible. If a
+changed requirement or repeated failure alters the process shape, return to
+steps one through three instead of layering more automation onto it.
+
 ## Decision Map Escalation
 
 Use a decision map when:
@@ -139,6 +176,7 @@ Return:
 - recommendation
 - why not the strongest alternative
 - automation/manual boundary, if relevant
+- five-step sequence results when improving or automating a recurring process
 - proof threshold or next experiment
 - second-order consequence to watch
 - future principle
