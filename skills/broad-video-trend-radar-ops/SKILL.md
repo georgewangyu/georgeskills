@@ -1,14 +1,15 @@
 ---
 name: broad-video-trend-radar-ops
 description: Scan short-form platforms for broad trend patterns and reusable formats outside a narrow niche.
-memory_tags:
-  - domain:video
-  - workflow:broad-trend-radar
-  - skill_role:researcher
-  - repo_boundary:tools
-  - inputs:public-social-platforms
-  - outputs:trend-candidates
-  - risk:medium
+metadata:
+  memory_tags:
+    - domain:video
+    - workflow:broad-trend-radar
+    - skill_role:researcher
+    - repo_boundary:tools
+    - inputs:public-social-platforms
+    - outputs:trend-candidates
+    - risk:medium
 ---
 
 # Broad Video Trend Radar Ops
@@ -30,9 +31,11 @@ Run a wide radar sweep across TikTok, YouTube Shorts, and optionally Instagram R
    - Use 5-12 lanes spanning adjacent and non-adjacent categories.
    - Include at least one lane outside the user's obvious niche.
 2. Run collectors.
-   - Use `scripts/run_broad_video_radar.py` when doing a repeatable sweep.
-   - Use `tiktokbot web-trending` for TikTok trend/FYP-style candidates.
-   - Use `tiktokbot web-search` for broad lanes where keyword context matters.
+   - Use `scripts/run_broad_video_radar.py` only where the local policy permits
+     its browser-backed TikTok and Instagram lanes.
+   - When browser automation is prohibited, build the TikTok portion from a
+     diverse private creator seed list through `account-video-watchlist-ops`
+     and label it profile-first discovery, not a personalized FYP.
    - The wrapper passes `--mute-audio true` to TikTok browser automation by default; only disable it for explicit audio review.
    - Use `youtubebot find` for YouTube Shorts-like search lanes.
    - Use `igbot private-search` for Instagram Reels lanes when a private bridge session is available; treat `login_required` as a collector limitation and continue.
@@ -54,11 +57,16 @@ Run a broad default sweep:
 ```bash
 python3 skills/broad-video-trend-radar-ops/scripts/run_broad_video_radar.py \
   --youtube-bot-dir <path-to-youtubebot> \
-  --tiktok-bot-dir <path-to-tiktokbot> \
-  --ig-bot-dir <path-to-igbot> \
-  --tiktok-mute-audio true \
+  --platform youtube \
   --out /tmp/broad-video-radar.jsonl
 ```
+
+In a Playwright-prohibited workspace, supply a diverse private TikTok creator
+seed list to `account-video-watchlist-ops` and use its default
+`--tiktok-collector profile-feed` path. Do not add TikTok or Instagram bot
+directories to the broad wrapper's Quick Command: those lanes are
+browser/unofficial-adapter paths and require a separate policy-permitted,
+explicitly enabled run.
 
 Run with explicit lanes:
 
@@ -68,9 +76,10 @@ python3 skills/broad-video-trend-radar-ops/scripts/run_broad_video_radar.py \
   --lane "work from home comedy" \
   --lane "moving to a new city" \
   --lane "AI tools" \
+  --platform youtube \
+  --youtube-bot-dir <path-to-youtubebot> \
   --max-base 300000 \
   --max-age-days 14 \
-  --tiktok-mute-audio true \
   --out /tmp/broad-video-radar.jsonl
 ```
 

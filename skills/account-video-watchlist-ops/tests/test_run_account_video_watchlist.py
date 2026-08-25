@@ -67,6 +67,7 @@ class AccountWatchlistOutputTests(unittest.TestCase):
             youtube_bot_dir="/tmp/youtubebot",
             tiktok_bot_dir="/tmp/tiktokbot",
             ig_bot_dir="",
+            tiktok_collector="profile-feed",
             max_age_days=45,
             max_base=10_000_000,
             min_views=100_000,
@@ -152,15 +153,42 @@ class AccountWatchlistOutputTests(unittest.TestCase):
             MODULE,
             "run_json",
             side_effect=[([], "primary failed"), (recovered, None)],
-        ):
+        ) as primary:
+            args = self.collect_args("tiktok")
+            args.tiktok_collector = "web-search"
             rows, receipt = MODULE.collect(
-                self.collect_args("tiktok"),
+                args,
                 accounts,
                 set(),
             )
         self.assertEqual(len(rows), 1)
         self.assertEqual(receipt["tiktok"]["fallbacks"][0]["status"], "success")
         self.assertEqual(receipt["tiktok"]["status"], "degraded")
+        command = primary.call_args_list[0].args[0]
+        self.assertIn("--enable-browser-adapter", command)
+        self.assertEqual(rows[0]["collection_method"], "search_seed")
+
+    def test_tiktok_defaults_to_direct_profile_feed(self) -> None:
+        accounts = [{"platform": "tiktok", "handle": "example"}]
+        recovered = [{
+            "url": "https://www.tiktok.com/@example/video/1",
+            "creator": "example",
+            "followers": 10_000,
+            "views": 200_000,
+            "postedAt": "2026-08-24T00:00:00Z",
+            "source": "tiktok_embed_profile",
+        }]
+        with patch.object(MODULE, "run_json", return_value=(recovered, None)) as run:
+            rows, receipt = MODULE.collect(
+                self.collect_args("tiktok"),
+                accounts,
+                set(),
+            )
+        command = run.call_args.args[0]
+        self.assertIn("profile-feed", command)
+        self.assertNotIn("web-search", command)
+        self.assertEqual(rows[0]["collection_method"], "profile")
+        self.assertEqual(receipt["tiktok"]["status"], "success")
 
 
 if __name__ == "__main__":

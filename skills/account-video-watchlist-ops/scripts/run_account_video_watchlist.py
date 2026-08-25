@@ -21,6 +21,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--youtube-bot-dir", default=os.environ.get("YOUTUBEBOT_DIR", ""))
     parser.add_argument("--tiktok-bot-dir", default=os.environ.get("TIKTOKBOT_DIR", ""))
     parser.add_argument("--ig-bot-dir", default=os.environ.get("IGBOT_DIR", ""))
+    parser.add_argument(
+        "--tiktok-collector",
+        choices=["profile-feed", "web-search"],
+        default="profile-feed",
+        help="Use TikTok's anonymous creator embed by default; web-search is an explicit legacy fallback",
+    )
     parser.add_argument("--tiktok-web-backend", choices=["auto", "python", "node"], default="auto")
     parser.add_argument("--tiktok-web-browser", choices=["chromium", "firefox", "webkit"], default="chromium")
     parser.add_argument("--tiktok-web-headless", choices=["true", "false"], default="true")
@@ -124,7 +130,13 @@ def compute_age_days(value: Any) -> float | None:
     return round((datetime.now(timezone.utc) - published).total_seconds() / 86400, 2)
 
 
-def normalize(row: dict[str, Any], account: dict[str, str], platform: str, previous_urls: set[str]) -> dict[str, Any]:
+def normalize(
+    row: dict[str, Any],
+    account: dict[str, str],
+    platform: str,
+    previous_urls: set[str],
+    collection_method: str | None = None,
+) -> dict[str, Any]:
     if platform == "youtube":
         base = row.get("subscribers")
         ratio = row.get("subscriberRatio")
@@ -155,7 +167,11 @@ def normalize(row: dict[str, Any], account: dict[str, str], platform: str, previ
         "url": url,
         "is_new": bool(clean_url and clean_url not in previous_urls),
         "source": row.get("source"),
-        "collection_method": "search_seed" if platform in {"youtube", "tiktok"} else "profile",
+        "collection_method": collection_method or (
+            "search_seed" if platform == "youtube"
+            else "profile" if platform in {"tiktok", "instagram"}
+            else "unknown"
+        ),
     }
 
 
@@ -291,24 +307,46 @@ def collect(
             consecutive_failures[platform] = consecutive_failures[platform] + 1 if error else 0
             rows.extend(normalize(item, account, platform, previous_urls) for item in raw)
         elif platform == "tiktok" and args.tiktok_bot_dir:
-            query = account.get("query") or handle
-            command = [
-                "node", "src/cli.js", "web-search",
-                "--backend", args.tiktok_web_backend,
-                "--browser", args.tiktok_web_browser,
-                "--headless", args.tiktok_web_headless,
-                "--mute-audio", args.tiktok_web_mute_audio,
-                query,
-                "--max-results", "30",
-                "--limit", str(args.limit_per_account),
-                "--max-followers", str(args.max_base),
-                "--min-views", str(args.min_views),
-                "--sort", "views",
-                "--format", "json",
-            ]
+            if args.tiktok_collector == "profile-feed":
+                command = [
+                    "node", "src/cli.js", "profile-feed", handle,
+                    "--max-results", str(args.limit_per_account),
+                    "--limit", str(args.limit_per_account),
+                    "--max-followers", str(args.max_base),
+                    "--min-views", str(args.min_views),
+                    "--sort", "views",
+                    "--format", "json",
+                ]
+            else:
+                query = account.get("query") or handle
+                command = [
+                    "node", "src/cli.js", "web-search",
+                    "--enable-browser-adapter",
+                    "--backend", args.tiktok_web_backend,
+                    "--browser", args.tiktok_web_browser,
+                    "--headless", args.tiktok_web_headless,
+                    "--mute-audio", args.tiktok_web_mute_audio,
+                    query,
+                    "--max-results", "30",
+                    "--limit", str(args.limit_per_account),
+                    "--max-followers", str(args.max_base),
+                    "--min-views", str(args.min_views),
+                    "--sort", "views",
+                    "--format", "json",
+                ]
             raw, error = run_json(command, args.tiktok_bot_dir, args.timeout_seconds)
-            record_result(health, platform, raw, error, f"{handle} [{args.tiktok_web_backend}]")
-            if error and args.tiktok_node_fallback == "true" and args.tiktok_web_backend != "node":
+            label = (
+                f"{handle} [profile-feed]"
+                if args.tiktok_collector == "profile-feed"
+                else f"{handle} [{args.tiktok_web_backend}]"
+            )
+            record_result(health, platform, raw, error, label)
+            if (
+                error
+                and args.tiktok_collector == "web-search"
+                and args.tiktok_node_fallback == "true"
+                and args.tiktok_web_backend != "node"
+            ):
                 fallback_command = list(command)
                 backend_index = fallback_command.index("--backend") + 1
                 fallback_command[backend_index] = "node"
@@ -327,10 +365,15 @@ def collect(
                 if not fallback_error:
                     raw, error = fallback_raw, None
             consecutive_failures[platform] = consecutive_failures[platform] + 1 if error else 0
-            rows.extend(normalize(item, account, platform, previous_urls) for item in raw)
+            method = "profile" if args.tiktok_collector == "profile-feed" else "search_seed"
+            rows.extend(
+                normalize(item, account, platform, previous_urls, method)
+                for item in raw
+            )
         elif platform == "instagram" and args.ig_bot_dir:
             command = [
                 "node", "src/cli.js", "private-profile", handle,
+                "--enable-unofficial-adapter",
                 "--max-results", "20",
                 "--limit", str(args.limit_per_account),
                 "--min-views", str(args.min_views),
