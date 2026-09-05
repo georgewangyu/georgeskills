@@ -44,6 +44,7 @@ georgeskills/
   scripts/
     bootstrap_private_repo.py  ← scaffold a new private repo from liferepo templates
     sync-to-codex.sh           ← symlink skills into ~/.codex/skills/
+    sync-to-agents.sh          ← symlink skills into ~/.agents/skills/
   templates/
     SKILL_TEMPLATE.md          ← template for new skills
 ```
@@ -116,6 +117,7 @@ These are the skill clusters that have been moving fastest recently:
 | `niche-video-watchlist-ops` | Run targeted YouTube/TikTok bot sweeps for niche search lanes and creator watchlists. |
 | `account-video-watchlist-ops` | Track a private list of niche creator accounts for new high-view videos worth emulating. |
 | `broad-video-trend-radar-ops` | Run broad cross-platform trend sweeps for high-multiplier short-form formats outside a narrow niche. |
+| `shortform-trend-lifecycle-ops` | Trace a short-form format's earliest source-backed onset, breakout, replication peak, decay, and remaining usable window. |
 | `video-companion-page-ops` | Create local HTML/blog-style companion pages for educational videos with clickable sources, screenshots, diagrams, and talking outlines. |
 | `static-note-share-ops` | Publish selected local notes, transcripts, or research docs as sanitized static share pages with explicit redaction and deployment gates. |
 
@@ -233,13 +235,21 @@ chmod +x .githooks/commit-msg .githooks/pre-commit
 
 ### 3. Sync skills to your AI assistant
 
+For Codex:
 ```bash
 ./scripts/sync-to-codex.sh
 ```
-
 This symlinks each skill directory from `skills/` into `~/.codex/skills/`.
-After adding a new skill, re-run this script and restart your AI assistant
-so the skill list refreshes.
+
+For assistants that discover Agent Skills from `~/.agents/skills/`:
+```bash
+./scripts/sync-to-agents.sh
+```
+This symlinks this public repository's skills into `~/.agents/skills/`. Private
+or domain-specific repositories remain responsible for their own installation
+and are not named or traversed by this public helper.
+
+After adding a new skill, re-run the relevant script and restart your AI assistant session so the skill list refreshes.
 
 ### 4. Install transcription dependencies (optional)
 

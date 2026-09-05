@@ -1,14 +1,15 @@
 ---
 name: instagram-check-ops
 description: Check an Instagram account or post for public status and basic metadata, preferring lightweight probes before browser viewing.
-memory_tags:
-  - domain:social-media
-  - workflow:account-check
-  - skill_role:researcher
-  - repo_boundary:tools
-  - inputs:web
-  - outputs:status-report
-  - risk:medium
+metadata:
+  memory_tags:
+    - domain:social-media
+    - workflow:account-check
+    - skill_role:researcher
+    - repo_boundary:tools
+    - inputs:web
+    - outputs:status-report
+    - risk:medium
 ---
 
 # Instagram Check Ops
@@ -45,6 +46,25 @@ Do not use when:
    - otherwise use browser viewing for visual inspection
    - the shared browser fallback rules in `skills/_shared/social-platform-fallbacks.md`
 
+## Owned-Account Token Lifecycle
+
+- For an operator's authorized professional account, use the official local
+  bot's health and owned-media commands before public or unofficial fallbacks.
+- Treat browser sign-in and app authorization as separate sessions. Being
+  signed into instagram.com does not prove that IGBot has a valid OAuth token.
+- IGBot health and check commands are read-only and never refresh credentials.
+  A scheduled operator may run `node src/cli.js refresh-token --save` as a
+  bounded credential-maintenance step only while the saved long-lived token is
+  still valid.
+- Run a daily non-secret health check and refresh when fewer than 14 days
+  remain. Do not wait for the approximate 60-day long-lived-token boundary.
+- If Meta reports code `190`, an expired/revoked token, or rejects refresh,
+  stop retrying and report that fresh OAuth consent is required. Never attempt
+  login, CAPTCHA handling, or credential rotation inside a research run.
+- OAuth authorization codes are short-lived and one-time. Exchange a fresh
+  code using exactly the same redirect URI used in the authorization request;
+  never log or preserve the code in a report.
+
 ## Screen-Control Fallback
 
 Follow `skills/_shared/social-platform-fallbacks.md`.
@@ -62,6 +82,8 @@ Follow `skills/_shared/social-platform-fallbacks.md`.
 - Treat public HTML extraction as best-effort.
 - Route interactive viewing to the appropriate browser skill rather than duplicating browser automation here.
 - Do not intentionally play Reels/post audio during browser fallback unless the user asks to listen; keep media pages muted by default.
+- Never print, copy into durable notes, or commit access tokens, refresh tokens,
+  authorization codes, app secrets, or full callback URLs containing a code.
 
 ## References
 

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Short-Form Trend Lifecycle"
+  short_description: "Trace trend onset, peak, decay, and window"
+  default_prompt: "Use $shortform-trend-lifecycle-ops to trace this short-form format's source-backed lifecycle and remaining usable window."
+
+policy:
+  allow_implicit_invocation: true

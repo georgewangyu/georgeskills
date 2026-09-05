@@ -1,14 +1,15 @@
 ---
 name: tiktok-check-ops
 description: Check a TikTok account or video for public status and recent viewable content, preferring lightweight probes before browser viewing.
-memory_tags:
-  - domain:social-media
-  - workflow:account-check
-  - skill_role:researcher
-  - repo_boundary:tools
-  - inputs:web
-  - outputs:status-report
-  - risk:medium
+metadata:
+  memory_tags:
+    - domain:social-media
+    - workflow:account-check
+    - skill_role:researcher
+    - repo_boundary:tools
+    - inputs:web
+    - outputs:status-report
+    - risk:medium
 ---
 
 # TikTok Check Ops
@@ -40,12 +41,16 @@ Do not use when:
   - This returns the authorized account follower count and recent videos above
     the requested creator-baseline multiplier.
   - It requires Display API OAuth tokens in that bot's private env file.
-  - TikTok access tokens last 24 hours. Current TikTokBot check commands
-    automatically use the saved refresh token, persist rotated tokens, and
-    retry once when the access token is expired or invalid.
-  - If an older checkout returns an invalid-token error, run
-    `node src/cli.js refresh-token --save`, then rerun the check. Do not fall
+  - TikTok access tokens last 24 hours and refresh tokens normally last 365
+    days. `check` is intentionally non-mutating: it fails closed rather than
+    refreshing or rewriting credentials.
+  - If `check` reports an expired or near-expiry access token, run one bounded
+    `node src/cli.js refresh-token --save`, then rerun the check. Save the full
+    refresh response because TikTok may rotate the refresh token. Do not fall
     back to browser viewing until this official recovery path has failed.
+  - Other authorized own-account commands may refresh, persist rotated tokens,
+    and retry once as documented by the current TikTokBot checkout. Never
+    assume that behavior for `check`.
 - The local probe script always uses `curl` for a first-party reachability check.
 - It can also use `yt-dlp` and `gallery-dl` as optional best-effort extractors for
   public metadata when those tools are installed locally.
@@ -98,8 +103,8 @@ Follow `skills/_shared/social-platform-fallbacks.md`.
 - whether any installed extractor produced usable metadata
 - recommended next path: official API, CLI probe, or browser viewing
 - blockers such as captcha, login wall, rate limits, or missing local tools
-- for owned-account API failures, whether automatic refresh succeeded or the
-  refresh token/app authorization requires renewed OAuth
+- for owned-account API failures, whether the explicit saved-token refresh
+  succeeded or the refresh token/app authorization requires renewed OAuth
 
 ## Guardrails
 
@@ -107,6 +112,8 @@ Follow `skills/_shared/social-platform-fallbacks.md`.
 - Treat third-party extractors as volatile and best-effort.
 - For anything interactive or visually confirmatory, use the appropriate browser skill instead of inventing a second browser workflow here.
 - Do not store cookies or credentials inside this skill.
+- Never print, copy into durable notes, or commit access tokens, refresh tokens,
+  authorization codes, app secrets, or full callback URLs containing a code.
 - Do not intentionally play TikTok video audio during browser fallback unless the user asks to listen; keep media pages muted by default.
 
 ## References
