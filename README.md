@@ -98,7 +98,6 @@ These are the skill clusters that have been moving fastest recently:
 | `x-check-xbot` | Pull X/Twitter home and latest feeds with the native xbot engine. Summarizes signal themes. |
 | `x-post-xbot` | Post to X/Twitter through the local xbot official API path after public-safety and approval checks. |
 | `x-post-ops` | Legacy Bird-based daily X drafting/posting workflow; prefer `x-post-xbot` for approved publishing. |
-| `cross-platform-video-publishing-ops` | Publish an approved video across a creator-defined destination set, preserve Instagram ingest quality with measured compression-survival QA, use TikTok Studio and the global RedNote creator publisher when selected, prepare an approved CTA-led X trailer when a long master exceeds current limits, and require per-platform live proof. |
 | `x-check-bird` | Deprecated legacy Bird fallback for explicit baseline or blocked-xbot cases only. |
 | `tiktok-check-ops` | Check TikTok account or video public metadata and recent content. |
 | `tiktok-transcribe-ops` | Transcribe a TikTok video to text, preferring captions or subtitles before local audio fallback. |
