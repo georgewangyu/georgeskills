@@ -98,6 +98,7 @@ These are the skill clusters that have been moving fastest recently:
 | `x-check-xbot` | Pull X/Twitter home and latest feeds with the native xbot engine. Summarizes signal themes. |
 | `x-post-xbot` | Post to X/Twitter through the local xbot official API path after public-safety and approval checks. |
 | `x-post-ops` | Legacy Bird-based daily X drafting/posting workflow; prefer `x-post-xbot` for approved publishing. |
+| `cross-platform-video-publishing-ops` | Publish an approved video across a creator-defined destination set, preserve Instagram ingest quality with measured compression-survival QA, use TikTok Studio and the global RedNote creator publisher when selected, prepare an approved CTA-led X trailer when a long master exceeds current limits, and require per-platform live proof. |
 | `x-check-bird` | Deprecated legacy Bird fallback for explicit baseline or blocked-xbot cases only. |
 | `tiktok-check-ops` | Check TikTok account or video public metadata and recent content. |
 | `tiktok-transcribe-ops` | Transcribe a TikTok video to text, preferring captions or subtitles before local audio fallback. |
@@ -112,12 +113,9 @@ These are the skill clusters that have been moving fastest recently:
 | `youtube-transcribe-ops` | Transcribe a YouTube video. Prefers existing subtitles; falls back to local Whisper. |
 | `durable-transcript-archive-ops` | Preserve transcripts and source media into a durable archive with provenance and cleanup notes. |
 | `social-video-archive-ops` | Archive reference videos from social platforms outside active repos, with provenance notes and repo-side symlinks. |
-| `video-breakout-research-ops` | Sweep TikTok, Instagram, and YouTube Shorts for low-follower, high-traction video patterns. |
-| `youtube-market-gap-radar-ops` | Validate low-supply, high-demand YouTube niches with channel-baseline outliers, repeat evidence, and query-family supply audits. |
 | `niche-video-watchlist-ops` | Run targeted YouTube/TikTok bot sweeps for niche search lanes and creator watchlists. |
 | `account-video-watchlist-ops` | Track a private list of niche creator accounts for new high-view videos worth emulating. |
 | `broad-video-trend-radar-ops` | Run broad cross-platform trend sweeps for high-multiplier short-form formats outside a narrow niche. |
-| `shortform-trend-lifecycle-ops` | Trace a short-form format's earliest source-backed onset, breakout, replication peak, decay, and remaining usable window. |
 | `video-companion-page-ops` | Create local HTML/blog-style companion pages for educational videos with clickable sources, screenshots, diagrams, and talking outlines. |
 | `static-note-share-ops` | Publish selected local notes, transcripts, or research docs as sanitized static share pages with explicit redaction and deployment gates. |
 
