@@ -1,14 +1,15 @@
 ---
 name: social-screen-control-ops
 description: Use Codex Computer Use to inspect social-media pages in a local visible browser when logged-in screen state is needed or CLI/Playwright paths are blocked.
-memory_tags:
-  - domain:social-media
-  - workflow:screen-control
-  - skill_role:operator
-  - repo_boundary:tools
-  - inputs:web
-  - outputs:status-report
-  - risk:medium
+metadata:
+  memory_tags:
+    - domain:social-media
+    - workflow:screen-control
+    - skill_role:operator
+    - repo_boundary:tools
+    - inputs:web
+    - outputs:status-report
+    - risk:medium
 ---
 
 # Social Screen Control Ops
@@ -26,6 +27,11 @@ Do not use when:
 - the task requires DMs, posting, commenting, liking, following, account changes, captcha solving, credential entry, or private-message inspection without explicit action-time approval
 - the user needs bulk extraction at scale; build or use a scripted helper instead
 
+An explicitly authorized posting workflow may use this skill for its visible
+control route. The owning workflow defines its exact packet, duplicate gate,
+protected settings, Share budget and completion evidence; this skill does not
+supply publishing authorization.
+
 ## Inputs
 
 - Required: platform or site, target URL/handle/query, and research goal
@@ -33,11 +39,17 @@ Do not use when:
 
 ## Workflow
 
-1. Load and follow the `computer-use:computer-use` skill.
+1. Use the installed supported Computer Use surface. When `cua_repl` is
+   available, follow its first-call rule and read the Computer Use API and
+   confirmation-policy documentation returned by that call before continuing.
+   This runtime documentation is the control authority; a separate legacy
+   `computer-use:computer-use` skill file is not required. If only a legacy
+   control surface is available, load its matching installed skill. Stop when
+   no supported visible-control surface or its documentation is available.
 2. Open or focus the requested local browser/app with Computer Use.
 3. Prefer opening a new tab for a separate web task unless the user asks to continue in the current page.
 4. Navigate to the target page or use the site's visible search/profile navigation.
-5. After each meaningful action, call `get_app_state` and use the accessibility tree plus screenshot to read the page.
+5. After each meaningful action, call the documented state method (`getAXState` for `cua_repl`) and use the accessibility tree plus screenshot to read the page.
 6. Keep media muted by default. If audio is required for transcription, ask before intentionally playing or listening.
 7. Capture only visible, task-relevant information:
    - current URL and page status
