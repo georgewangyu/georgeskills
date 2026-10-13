@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Replace each placeholder with an absolute path on YOUR selected Mac.
+       launchd does not expand ~, $HOME, or shell commands in these strings. -->
+  <key>Label</key><string>org.example.email-workflow-primary</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>REPLACE_WITH_ABSOLUTE_VENV_PYTHON</string>
+    <string>REPLACE_WITH_ABSOLUTE_KIT_SCRIPT</string>
+    <string>scan</string>
+    <string>--config</string><string>REPLACE_WITH_ABSOLUTE_PRIVATE_CONFIG</string>
+    <string>--account</string><string>primary</string>
+  </array>
+  <key>StartInterval</key><integer>3600</integer>
+  <key>RunAtLoad</key><false/>
+  <key>KeepAlive</key><false/>
+  <!-- Decimal 63 = octal 077: any log files start owner-only. -->
+  <key>Umask</key><integer>63</integer>
+  <key>StandardOutPath</key><string>REPLACE_WITH_ABSOLUTE_PRIVATE_STATUS_LOG</string>
+  <key>StandardErrorPath</key><string>REPLACE_WITH_ABSOLUTE_PRIVATE_ERROR_LOG</string>
+</dict>
+</plist>

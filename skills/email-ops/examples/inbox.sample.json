@@ -1,0 +1,130 @@
+{
+  "account": {
+    "email": "you@example.com"
+  },
+  "threads": [
+    {
+      "id": "new-request",
+      "messages": [
+        {
+          "id": "m1",
+          "internalDate": "1",
+          "labelIds": [
+            "INBOX"
+          ],
+          "payload": {
+            "mimeType": "text/plain",
+            "headers": [
+              {
+                "name": "From",
+                "value": "sender@example.com"
+              },
+              {
+                "name": "Subject",
+                "value": "Synthetic project question"
+              },
+              {
+                "name": "Message-ID",
+                "value": "<m1@example.com>"
+              }
+            ],
+            "body": {
+              "data": "Q291bGQgeW91IGNsYXJpZnkgdGhlIHByb2plY3Qgc2NvcGU_"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "answered",
+      "messages": [
+        {
+          "id": "m2",
+          "internalDate": "2",
+          "labelIds": [
+            "INBOX"
+          ],
+          "payload": {
+            "mimeType": "text/plain",
+            "headers": [
+              {
+                "name": "From",
+                "value": "sender@example.com"
+              },
+              {
+                "name": "Subject",
+                "value": "Synthetic project question"
+              },
+              {
+                "name": "Message-ID",
+                "value": "<m2@example.com>"
+              }
+            ],
+            "body": {
+              "data": "QW55IHVwZGF0ZT8="
+            }
+          }
+        },
+        {
+          "id": "m3",
+          "internalDate": "3",
+          "labelIds": [
+            "SENT"
+          ],
+          "payload": {
+            "mimeType": "text/plain",
+            "headers": [
+              {
+                "name": "From",
+                "value": "you@example.com"
+              },
+              {
+                "name": "Subject",
+                "value": "Synthetic project question"
+              },
+              {
+                "name": "Message-ID",
+                "value": "<m3@example.com>"
+              }
+            ],
+            "body": {
+              "data": "UGxlYXNlIHNoYXJlIHRoZSBicmllZi4="
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "money-review",
+      "messages": [
+        {
+          "id": "m4",
+          "internalDate": "4",
+          "labelIds": [
+            "INBOX"
+          ],
+          "payload": {
+            "mimeType": "text/plain",
+            "headers": [
+              {
+                "name": "From",
+                "value": "sender@example.com"
+              },
+              {
+                "name": "Subject",
+                "value": "Synthetic project question"
+              },
+              {
+                "name": "Message-ID",
+                "value": "<m4@example.com>"
+              }
+            ],
+            "body": {
+              "data": "V2Ugb2ZmZXIgJDUwMCBmb3IgYSBwcm9qZWN0IHdpdGggYSBmaXJtIGRlYWRsaW5lLiBDYW4geW91IGNvbW1pdD8="
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

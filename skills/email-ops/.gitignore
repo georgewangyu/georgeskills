@@ -1,0 +1,10 @@
+# Defense in depth: all real runtime files belong outside the checkout.
+config.json
+client.json
+client_secret*.json
+token*.json
+triage.json
+preview.json
+send-*.json
+reply.txt
+state/

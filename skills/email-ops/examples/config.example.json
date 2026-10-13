@@ -1,0 +1,12 @@
+{
+  "state_dir": "~/.local/state/email-workflow",
+  "accounts": {
+    "primary": {
+      "email": "you@example.com",
+      "client_file": "<absolute-path-to-your-private-client.json>",
+      "allow_send": false,
+      "aliases": [],
+      "query": "in:inbox newer_than:14d"
+    }
+  }
+}

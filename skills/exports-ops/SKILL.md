@@ -1,13 +1,14 @@
 ---
 name: exports-ops
 description: Umbrella skill for private export and import pipelines. Use this when the task spans multiple data sources or when no more specific export skill applies.
-memory_tags:
-  - domain:exports
-  - workflow:data-ingestion
-  - skill_role:operator
-  - repo_boundary:tools
-  - data_class:private-derived
-  - risk:high
+metadata:
+  memory_tags:
+    - domain:exports
+    - workflow:data-ingestion
+    - skill_role:operator
+    - repo_boundary:tools
+    - data_class:private-derived
+    - risk:high
 ---
 
 # Exports Ops
@@ -23,7 +24,7 @@ Use this skill for reusable export/import automation:
 
 Prefer the narrower skills when the intent is clear:
 - `x-check-ops`
-- `email-ops`
+- [`email-ops`](../email-ops/SKILL.md)
 - `calendar-ops`
 - `apple-notes-export-ops`
 - `cursor-chat-export-ops`
@@ -32,6 +33,12 @@ Prefer the narrower skills when the intent is clear:
 
 - Specification source: `liferepo` workflow docs
 - Private state source: `<private-repo>/captures/` and `<private-repo>/scripts/exports/*` config/token files
+
+For a standalone Gmail installation with connector and user-owned OAuth paths,
+whole-thread triage and exact-approved single replies, use the
+[email workflow kit](../email-ops/README.md). It requires no private repository
+pointer. Established per-message export wrappers below retain their existing
+configuration; do not use their legacy bulk-send helper as the kit's send gate.
 
 ## Current Script Surface
 
