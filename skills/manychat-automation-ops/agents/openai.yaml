@@ -1,0 +1,4 @@
+interface:
+  display_name: "ManyChat Automation Ops"
+  short_description: "Manage ManyChat with official APIs and dashboard UI"
+  default_prompt: "Use $manychat-automation-ops to prepare or maintain a ManyChat automation and verify its state."
