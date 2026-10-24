@@ -81,6 +81,10 @@ a default.
    the registry.
 7. **Record.** Write a dated report with the drift table, the safe actions,
    the decisions and what landed.
+   Regenerate the per-pair status table with `--status-md STATUS.md` (one row
+   per pair: upstream, our copy, direction, pin or last sync, drift, last
+   decision, next action, owner). Record decisions in the registry's
+   `last_decision`, `next_action` and `owner` fields, never in the table.
 
 ## Hard rules
 

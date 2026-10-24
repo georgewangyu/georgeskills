@@ -31,6 +31,9 @@ pairs:
       there: ~/public/skills
       strip_suffix: -ops
     tracking: path to the doc or ledger for this pair (informational)
+    last_decision: 2026-10-24 skip   # STATUS.md column; set after each decision
+    next_action: draft merge v0.1.92 # STATUS.md column; defaults to the report's suggestion
+    owner: <name>                    # STATUS.md column
 ```
 
 ## Base used for "new commits"

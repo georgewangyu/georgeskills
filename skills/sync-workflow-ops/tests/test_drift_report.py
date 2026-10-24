@@ -124,6 +124,25 @@ class DriftReportTest(unittest.TestCase):
         self.assertEqual(r.skills_only_here, ["beta"])
         self.assertEqual(r.skills_only_there, ["gamma"])
 
+    def test_status_md_has_one_row_per_pair_with_registry_decisions(self):
+        reg = self.tmp / "reg.json"
+        status = self.tmp / "STATUS.md"
+        reg.write_text(json.dumps({"pairs": [
+            {"id": "p", "class": "P", "direction": "up -> down", "reviewed_through": self.pin,
+             "last_decision": "2026-10-24 skip", "owner": "me",
+             "upstream": {"repo": str(self.up), "ref": "main"}, "downstream": {"repo": str(self.down)}},
+            {"id": "q", "class": "V", "status": "planned", "next_action": "build mirror"}]}))
+        subprocess.run([sys.executable, str(Path(dr.__file__)), "--registry", str(reg), "--status-md", str(status)],
+                       capture_output=True, text=True, check=True)
+        rows = [ln for ln in status.read_text().splitlines() if ln.startswith("| p ") or ln.startswith("| q ")]
+        self.assertEqual(len(rows), 2)
+        self.assertIn("| up -> down |", rows[0])
+        self.assertIn("| 2026-10-24 skip |", rows[0])
+        self.assertIn("| me |", rows[0])
+        self.assertIn("| 2 |", rows[0])
+        self.assertIn("| build mirror |", rows[1])
+        self.assertIn("| unassigned |", rows[1])
+
     def test_cli_json_and_markdown(self):
         reg = self.tmp / "reg.json"
         reg.write_text(json.dumps({"pairs": [{"id": "p", "class": "P", "reviewed_through": self.pin,
