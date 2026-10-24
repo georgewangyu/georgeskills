@@ -56,7 +56,10 @@ a default.
 3. **Do the safe tier without asking.** List every action:
    - advance `reviewed_through` on pairs with nothing new
    - set the push URL to `DISABLED` on any private-repo remote that points at a public clone
-   - install your scrub pre-push hook in any public repo that lacks one
+   - install your scrub pre-push hook in any public repo that lacks one, but
+     only if the current tree already scans clean. A whole-tree hook on a tree
+     with old findings blocks every push. Prefer a hook that scans only the
+     added lines
    - create draft branches `sync/<id>-<date>` with a merge preview and a test run, without merging them
 4. **Land only the narrow case.** A security fix or a conflict-free class V
    pull lands without asking only when all of these hold:
