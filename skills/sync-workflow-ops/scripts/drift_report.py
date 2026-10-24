@@ -173,7 +173,8 @@ def check_upstream(pair: dict, rep: PairReport, do_fetch: bool) -> None:
         rep.base_source = f"since {pair['since']}"
         rep.findings.append("no pin recorded, counting by date")
     else:
-        rep.findings.append("no pin recorded (set reviewed_through)")
+        if rep.status != "planned":
+            rep.findings.append("no pin recorded (set reviewed_through)")
         return
     since_args = [f"--since={pair['since']}"] if not base and pair.get("since") else []
     log = git(repo, "log", "--no-merges", "--format=%h %cs %s", *since_args, rng, *scope) or ""
@@ -333,7 +334,10 @@ def to_status_md(reports: list[PairReport], when: str) -> str:
            "| Pair | Upstream | Our copy | Direction | Pin or last sync | Drift | Last decision | Next action | Owner |",
            "|---|---|---|---|---|---|---|---|---|"]
     for r in reports:
-        pin = f"`{r.base[:10]}` ({r.base_source})" if r.base else (r.base_source or "none")
+        src = r.base_source
+        if src.startswith("pin file "):
+            src = "pin file " + "/".join(Path(src[len("pin file "):]).parts[-3:])
+        pin = f"`{r.base[:10]}` ({src})" if r.base else (src or "none")
         drift = "n/a" if r.new_commits is None else str(r.new_commits)
         if r.behind is not None:
             drift += f" (behind {r.behind}, ahead {r.ahead})"
