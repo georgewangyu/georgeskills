@@ -181,6 +181,7 @@ These are the skill clusters that have been moving fastest recently:
 | `codex-thread-hygiene-ops` | Organize Codex conversations, review cleanup candidates, and verify authorized local pin changes across ambiguous local/hosted records. |
 | `skill-forge-ops` | Mine journals, transcripts, PRs, commits, scripts, and agent notes for workflows worth turning into reusable skills. |
 | `agent-eval-harness-ops` | Design lightweight eval harnesses for coding or workflow agents, including rubrics and failure taxonomies. |
+| `bitter-lesson-check-ops` | Sort agent scaffolding (skills, rules, lints, evals, harnesses) into durable vs temporary with a "10x smarter model" test, and rank where to invest. |
 | `repo-readme-onboarding-ops` | Audit and improve repository READMEs and GitHub About metadata for clearer first impressions, quickstarts, usage proof, and contribution onboarding. |
 | `rental-search-due-diligence-ops` | Run bounded rental-search due diligence with ranked shortlists, tour questions, risk checks, and stop conditions. |
 | `health-ops` | Health data ingestion and derived analytics workflows (Apple Health pipeline). |
