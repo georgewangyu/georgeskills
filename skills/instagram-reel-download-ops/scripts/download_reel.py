@@ -63,6 +63,27 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def single_video_id(info: object) -> str:
+    """A single-file helper must never silently select a carousel child."""
+    if not isinstance(info, dict):
+        raise ValueError("Extractor metadata must describe one video")
+    if info.get("_type") in {"playlist", "multi_video"} or info.get("entries") is not None:
+        raise ValueError(
+            "Multi-item post/carousel: this helper supports one video only; "
+            "archive the complete post with unique per-item paths instead"
+        )
+    media_id = info.get("id")
+    if info.get("_type") not in {None, "video"} or not isinstance(media_id, str) or not media_id:
+        raise ValueError("Extractor metadata does not identify one resolved video")
+    return media_id
+
+
+def download_metadata(info: dict) -> dict:
+    # yt-dlp retries webpage_url on saved-info failure. Do not permit that
+    # unchecked second extraction after this helper's single-video validation.
+    return {key: value for key, value in info.items() if key != "webpage_url"}
+
+
 def download(url: str, output_dir: Path) -> dict:
     canonical_url, shortcode = normalize_reel_url(url)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -71,11 +92,23 @@ def download(url: str, output_dir: Path) -> dict:
         raise FileExistsError(f"Refusing to overwrite {destination}")
     with tempfile.TemporaryDirectory(prefix=".instagram-reel-", dir=output_dir) as temp:
         temporary = Path(temp)
-        command = downloader_command() + [
+        downloader = downloader_command()
+        metadata = subprocess.run(
+            downloader + ["--ignore-config", "--no-playlist", "--skip-download", "--dump-single-json", canonical_url],
+            check=True, capture_output=True, text=True,
+        )
+        try:
+            extracted = json.loads(metadata.stdout)
+        except json.JSONDecodeError as error:
+            raise ValueError("Extractor did not return valid single-video metadata") from error
+        media_id = single_video_id(extracted)
+        metadata_path = temporary / "source.json"
+        metadata_path.write_text(json.dumps(download_metadata(extracted)), encoding="utf-8")
+        command = downloader + [
             "--ignore-config", "--no-playlist", "--no-overwrites",
             "--no-write-info-json", "--no-write-thumbnail",
             "--format", "bv*+ba/b", "--merge-output-format", "mp4",
-            "--output", str(temporary / "reel.%(ext)s"), canonical_url,
+            "--output", str(temporary / "reel.%(ext)s"), "--load-info-json", str(metadata_path),
         ]
         subprocess.run(command, check=True)
         candidates = [p for p in temporary.iterdir() if p.is_file() and p.suffix.lower() == ".mp4"]
@@ -86,7 +119,7 @@ def download(url: str, output_dir: Path) -> dict:
         # Same-directory hard linking publishes the verified file atomically.
         # It fails if another download created this destination meanwhile.
         os.link(candidates[0], destination)
-        return {"source_url": canonical_url, "path": str(destination.resolve()), "size_bytes": destination.stat().st_size, "sha256": digest, **info}
+        return {"source_url": canonical_url, "media_id": media_id, "path": str(destination.resolve()), "size_bytes": destination.stat().st_size, "sha256": digest, **info}
 
 
 def main() -> int:
