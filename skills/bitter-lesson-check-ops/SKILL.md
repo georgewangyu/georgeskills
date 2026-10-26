@@ -22,6 +22,8 @@ gets more valuable as models improve.
 This skill sorts each item into **durable** or **temporary** so effort goes to
 the part that compounds.
 
+Maintained home, with the tag checker: [GeorgeCodingSkills `principles-bitter-lesson`](https://github.com/georgewangyu/GeorgeCodingSkills/tree/main/skills/principles-bitter-lesson).
+
 ## Trigger [bl: strong]
 
 Use when:
