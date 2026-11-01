@@ -110,8 +110,13 @@ the overlap risk.
 For skill validation/audits use synthetic payloads and read-only docs/account
 inspection. Do not send messages or change live automations just to test.
 For authorized setup, verify saved configuration and intended live/draft state
-in fresh UI; test delivery only with an explicitly authorized test recipient.
-An API success response proves request acceptance, not delivery.
+in fresh UI. Do not require a test recipient or a fresh delivery send for
+every campaign. Existing delivery evidence may cover a reused flow pattern;
+check the changed resource, keyword, channel and specific-post binding. Run a
+new delivery test only when requested or when a concrete unresolved failure
+requires it, within the authorized audience and scope. Do not send unsolicited
+test messages or infer permission to contact arbitrary people. An API success
+response proves request acceptance, not delivery.
 
 Report the automation/action, surface used, preserved options, verified state,
 remaining delivery/eligibility limits, and private evidence location. Keep
