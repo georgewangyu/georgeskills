@@ -19,6 +19,7 @@ from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from html import unescape
 from repo_paths import resolve_private_repo_root
+from token_store import save_token
 
 # PST timezone (UTC-8), PDT is UTC-7 but we'll use PST for simplicity
 # For daylight saving time handling, you may want to use pytz library in the future
@@ -166,8 +167,7 @@ class EmailAccount:
 
             # Save credentials for next run
             try:
-                with open(self.token_file, 'w') as token:
-                    token.write(creds.to_json())
+                save_token(self.token_file, creds.to_json())
                 print(f"Saved credentials for {self.email}")
             except Exception as e:
                 print(f"Warning: Could not save token for {self.email}: {e}", file=sys.stderr)

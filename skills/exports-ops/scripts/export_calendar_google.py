@@ -24,6 +24,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from repo_paths import resolve_private_repo_root
+from token_store import save_token
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
@@ -135,8 +136,7 @@ class CalendarAccount:
 
             # Save credentials for next run
             try:
-                with open(self.token_file, 'w') as token:
-                    token.write(creds.to_json())
+                save_token(self.token_file, creds.to_json())
                 log_message(f"Saved credentials for {self.email}")
             except Exception as e:
                 log_message(f"Error saving token for {self.email}: {e}", error=True)

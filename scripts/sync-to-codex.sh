@@ -18,8 +18,11 @@ for skill_dir in "$SOURCE_DIR"/*; do
   skill_name="$(basename "$skill_dir")"
   dest="$DEST_DIR/$skill_name"
 
-  if [ -L "$dest" ] || [ -e "$dest" ]; then
-    rm -rf "$dest"
+  if [ -L "$dest" ]; then
+    rm -f "$dest"
+  elif [ -e "$dest" ]; then
+    echo "Skipping existing non-symlink entry: $skill_name"
+    continue
   fi
 
   ln -s "$skill_dir" "$dest"

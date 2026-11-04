@@ -26,6 +26,7 @@ import math
 import os
 import secrets
 import subprocess
+import sys
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
@@ -46,6 +47,9 @@ DEFAULT_DEST = daily_health_metrics_csv(ROOT)
 DEFAULT_RAW_DIR = health_auto_export_raw_dir(ROOT)
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8787
+MAX_BODY_BYTES = 10 * 1024 * 1024
+READ_TIMEOUT_SECONDS = 30
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 SYNC_SCRIPT = HEALTH_OPS_DIR / "sync_health_shortcut_metrics.py"
 
 CANONICAL_FIELDS = [
@@ -495,6 +499,7 @@ def ingest_payload(
 
 class ReceiverHandler(BaseHTTPRequestHandler):
     server_version = "HealthAutoExportReceiver/0.1"
+    timeout = READ_TIMEOUT_SECONDS
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -513,11 +518,21 @@ class ReceiverHandler(BaseHTTPRequestHandler):
         token = getattr(self.server, "auth_token", "")
         if token:
             auth_header = self.headers.get("Authorization", "")
-            if auth_header != f"Bearer {token}":
+            if not secrets.compare_digest(auth_header.encode(), f"Bearer {token}".encode()):
                 self._send_json(HTTPStatus.UNAUTHORIZED, {"error": "unauthorized"})
                 return
 
-        length = int(self.headers.get("Content-Length", "0") or "0")
+        try:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+        except ValueError:
+            length = -1
+        if length < 0:
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid_content_length"})
+            return
+        if length > MAX_BODY_BYTES:
+            self.close_connection = True
+            self._send_json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "body_too_large", "max_bytes": MAX_BODY_BYTES})
+            return
         raw = self.rfile.read(length)
         try:
             payload = json.loads(raw.decode("utf-8"))
@@ -539,7 +554,17 @@ class ReceiverHandler(BaseHTTPRequestHandler):
         print(f"[receiver] {self.address_string()} - {format % args}")
 
 
+def bind_error(host: str, auth_token: str) -> str | None:
+    if host in LOOPBACK_HOSTS or auth_token:
+        return None
+    return f"Refusing to listen on {host} without --auth-token (or HEALTH_AUTO_EXPORT_TOKEN): anyone on the network could write health data."
+
+
 def serve(host: str, port: int, dest_csv: Path, raw_dir: Path, auth_token: str, sync_write: bool) -> int:
+    error = bind_error(host, auth_token)
+    if error:
+        print(error, file=sys.stderr)
+        return 2
     httpd = ThreadingHTTPServer((host, port), ReceiverHandler)
     httpd.dest_csv = dest_csv
     httpd.raw_dir = raw_dir
@@ -562,7 +587,7 @@ def main() -> int:
     parser.add_argument("--serve", action="store_true", help="Run as a local HTTP server")
     parser.add_argument("--host", default=DEFAULT_HOST, help="Server bind host")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Server bind port")
-    parser.add_argument("--auth-token", default=os.environ.get("HEALTH_AUTO_EXPORT_TOKEN", ""), help="Optional bearer token")
+    parser.add_argument("--auth-token", default=os.environ.get("HEALTH_AUTO_EXPORT_TOKEN", ""), help="Bearer token; required unless --host is loopback")
     parser.add_argument("--input-json", default="", help="Ingest a JSON payload from a file instead of serving HTTP")
     parser.add_argument("--dest-csv", default=str(DEFAULT_DEST), help="Canonical health CSV path")
     parser.add_argument("--raw-dir", default=str(DEFAULT_RAW_DIR), help="Directory to archive raw payloads")
