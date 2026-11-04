@@ -6,7 +6,6 @@ Reads sprint-level metrics from CSV and generates charts comparing actual alloca
 
 import csv
 import sys
-from datetime import datetime
 import argparse
 
 from repo_paths import resolve_private_repo_root
@@ -154,12 +153,12 @@ def create_allocation_chart(sprints, output_path):
     x = np.arange(len(sprint_ids))
     width = 0.6
 
-    bars1 = ax.bar(x, job_interview_pct, width, label='Job/Interview/Skills', color='#2E86AB', alpha=0.8)
-    bars2 = ax.bar(x, content_pct, width, bottom=job_interview_pct, label='Content', color='#A23B72', alpha=0.8)
-    bars3 = ax.bar(x, project_pct, width,
+    ax.bar(x, job_interview_pct, width, label='Job/Interview/Skills', color='#2E86AB', alpha=0.8)
+    ax.bar(x, content_pct, width, bottom=job_interview_pct, label='Content', color='#A23B72', alpha=0.8)
+    ax.bar(x, project_pct, width,
                    bottom=[j + c for j, c in zip(job_interview_pct, content_pct)],
                    label='Personal Project', color='#F18F01', alpha=0.8)
-    bars4 = ax.bar(x, biz_pct, width,
+    ax.bar(x, biz_pct, width,
                    bottom=[j + c + p for j, c, p in zip(job_interview_pct, content_pct, project_pct)],
                    label='Business/Corp', color='#C73E1D', alpha=0.8)
 

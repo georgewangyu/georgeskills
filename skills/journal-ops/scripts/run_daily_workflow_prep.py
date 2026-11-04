@@ -20,7 +20,6 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from health_paths import apple_health_export_xml, daily_health_metrics_csv, resolve_health_source_records_root
 from health_overnight_analysis import analyze_overnight, fmt_pct

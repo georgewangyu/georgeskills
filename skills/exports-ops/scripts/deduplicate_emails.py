@@ -4,13 +4,10 @@ Deduplicate email files by checking message IDs from YAML frontmatter.
 For files without frontmatter, uses filename and content comparison.
 """
 
-import os
 import sys
 import re
 import json
-from pathlib import Path
 from collections import defaultdict
-from datetime import datetime
 
 from repo_paths import resolve_private_repo_root
 

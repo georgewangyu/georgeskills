@@ -19,7 +19,6 @@ import stat
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable
 
 from repo_paths import resolve_private_repo_root
 

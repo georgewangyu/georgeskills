@@ -3,8 +3,6 @@ import requests
 import re
 import argparse
 import json
-import os
-from datetime import date
 
 def fetch_trending(since='daily'):
     url = f"https://github.com/trending?since={since}"

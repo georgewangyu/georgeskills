@@ -15,7 +15,6 @@ import base64
 import json
 import fcntl
 import atexit
-from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from html import unescape
@@ -148,7 +147,7 @@ class EmailAccount:
                 service = build('gmail', 'v1', credentials=creds)
                 verification = self.verify_account(service)
                 if verification is False:
-                    print(f"ERROR: Authentication failed - wrong account detected!", file=sys.stderr)
+                    print("ERROR: Authentication failed - wrong account detected!", file=sys.stderr)
                     print(f"Expected: {self.email}", file=sys.stderr)
                     print(f"Please delete the token file and try again: {self.token_file}", file=sys.stderr)
                     # Delete the incorrect token
@@ -163,7 +162,7 @@ class EmailAccount:
             except Exception as e:
                 print(f"Error verifying account after authentication: {e}", file=sys.stderr)
                 # Still save the token, but warn
-                print(f"WARNING: Could not verify account, but saving token anyway", file=sys.stderr)
+                print("WARNING: Could not verify account, but saving token anyway", file=sys.stderr)
 
             # Save credentials for next run
             try:
@@ -178,9 +177,9 @@ class EmailAccount:
                 service = build('gmail', 'v1', credentials=creds)
                 verification = self.verify_account(service)
                 if verification is False:
-                    print(f"ERROR: Token mismatch detected! Token is for wrong account.", file=sys.stderr)
+                    print("ERROR: Token mismatch detected! Token is for wrong account.", file=sys.stderr)
                     print(f"Expected: {self.email}", file=sys.stderr)
-                    print(f"Deleting incorrect token. Please re-authenticate.", file=sys.stderr)
+                    print("Deleting incorrect token. Please re-authenticate.", file=sys.stderr)
                     # Delete the incorrect token
                     if self.token_file.exists():
                         self.token_file.unlink()

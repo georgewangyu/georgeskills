@@ -5,13 +5,11 @@ Exports Apple Notes directly to markdown format with dates included in filenames
 """
 
 import subprocess
-import os
 import sys
 import re
 import signal
 import base64
-from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 from html import unescape
 
 from repo_paths import resolve_private_repo_root
@@ -243,10 +241,8 @@ def get_recent_notes_since_date(since_date):
     Get all notes modified since a specific date - processes one at a time to avoid memory issues.
     Returns a generator that yields note info strings.
     """
-    # Format date for AppleScript (format: "Monday, November 10, 2025 at 2:00:00 PM")
     # Round down to the second (not minute) to avoid timezone/precision issues while being more precise
     since_date_rounded = since_date.replace(microsecond=0)
-    date_str = since_date_rounded.strftime("%A, %B %d, %Y at %I:%M:%S %p")
 
     # First, get the total count to show progress
     total_notes = get_note_count()
@@ -335,7 +331,7 @@ def get_recent_notes_since_date(since_date):
                     note_info = get_single_note(idx)
                     if note_info and not note_info.startswith("ERROR|||"):
                         recent_notes.append(note_info)
-            except Exception as e:
+            except Exception:
                 # If date parsing fails, fetch the note anyway to be safe
                 note_info = get_single_note(idx)
                 if note_info and not note_info.startswith("ERROR|||"):
@@ -343,7 +339,7 @@ def get_recent_notes_since_date(since_date):
         except subprocess.TimeoutExpired:
             print(f"\n  Timeout checking note {idx}, skipping...")
             continue
-        except Exception as e:
+        except Exception:
             # Skip notes that can't be accessed
             continue
 
@@ -560,7 +556,7 @@ def export_notes_to_markdown():
                     i, total_notes, note_info, existing_notes_map, exported_count, skipped_count, updated_count, error_count, images_dir=images_dir, note_index=idx
                 )
 
-        print(f"\n\nExport summary:")
+        print("\n\nExport summary:")
         print(f"  - New notes exported: {exported_count}")
         print(f"  - Existing notes updated: {updated_count}")
         print(f"  - Unchanged notes skipped: {skipped_count}")
@@ -638,7 +634,6 @@ def _process_single_note(i, total_notes, note_info, existing_notes_map, exported
             old_file_path = existing_file
             # Handle duplicates for renamed files
             counter = 1
-            original_new_path = file_path
             while file_path.exists() and file_path != old_file_path:
                 filename = f"{date_str}_{safe_title}_{counter}.md"
                 file_path = ALL_NOTES_DIR / filename
@@ -654,7 +649,6 @@ def _process_single_note(i, total_notes, note_info, existing_notes_map, exported
     else:
         # Handle duplicates for new notes
         counter = 1
-        original_path = file_path
         while file_path.exists():
             filename = f"{date_str}_{safe_title}_{counter}.md"
             file_path = ALL_NOTES_DIR / filename

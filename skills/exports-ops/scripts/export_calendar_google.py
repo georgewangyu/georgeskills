@@ -14,11 +14,9 @@ Requires:
 - config.json (account configuration)
 """
 
-import os
 import sys
 import re
 import json
-from pathlib import Path
 from datetime import datetime, timedelta
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -123,7 +121,7 @@ class CalendarAccount:
             try:
                 service = build('calendar', 'v3', credentials=creds)
                 if not self.verify_account(service):
-                    log_message(f"ERROR: Authentication failed - wrong account detected!", error=True)
+                    log_message("ERROR: Authentication failed - wrong account detected!", error=True)
                     log_message(f"Expected: {self.email}", error=True)
                     log_message(f"Please delete the token file and try again: {self.token_file}", error=True)
                     # Delete the incorrect token
@@ -133,7 +131,7 @@ class CalendarAccount:
             except Exception as e:
                 log_message(f"Error verifying account after authentication: {e}", error=True)
                 # Still save the token, but warn
-                log_message(f"WARNING: Could not verify account, but saving token anyway", error=True)
+                log_message("WARNING: Could not verify account, but saving token anyway", error=True)
 
             # Save credentials for next run
             try:
@@ -147,9 +145,9 @@ class CalendarAccount:
             try:
                 service = build('calendar', 'v3', credentials=creds)
                 if not self.verify_account(service):
-                    log_message(f"ERROR: Token mismatch detected! Token is for wrong account.", error=True)
+                    log_message("ERROR: Token mismatch detected! Token is for wrong account.", error=True)
                     log_message(f"Expected: {self.email}", error=True)
-                    log_message(f"Deleting incorrect token. Please re-authenticate.", error=True)
+                    log_message("Deleting incorrect token. Please re-authenticate.", error=True)
                     # Delete the incorrect token
                     if self.token_file.exists():
                         self.token_file.unlink()

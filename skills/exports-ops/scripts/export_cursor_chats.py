@@ -5,7 +5,6 @@ Exports Cursor AI chat conversations to markdown format with dates included in f
 """
 
 import sqlite3
-import os
 import sys
 import re
 import json
@@ -456,7 +455,6 @@ def export_chats_to_markdown():
 
             # Handle duplicates
             counter = 1
-            original_path = file_path
             while file_path.exists():
                 filename = f"{date_str}_{safe_title}_{counter}.md"
                 file_path = AI_CHATS_DIR / filename
@@ -472,7 +470,7 @@ def export_chats_to_markdown():
             error_count += 1
             print(f"[{i}/{len(chats)}] Error: {str(e)[:50]}...")
 
-    print(f"\n\nExport summary:")
+    print("\n\nExport summary:")
     print(f"  - Chats exported: {exported_count}")
     print(f"  - Errors: {error_count}")
 

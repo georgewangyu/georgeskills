@@ -150,10 +150,10 @@ Examples:
     for lang in langs:
         if not check_tesseract_lang(lang):
             print(f"Warning: Language '{lang}' may not be installed.", file=sys.stderr)
-            print(f"Install with: brew install tesseract-lang", file=sys.stderr)
-            print(f"Or try: tesseract --list-langs to see available languages", file=sys.stderr)
+            print("Install with: brew install tesseract-lang", file=sys.stderr)
+            print("Or try: tesseract --list-langs to see available languages", file=sys.stderr)
             if lang != 'eng':
-                print(f"Falling back to English only...", file=sys.stderr)
+                print("Falling back to English only...", file=sys.stderr)
                 args.lang = 'eng'
 
     # Extract text
@@ -163,7 +163,7 @@ Examples:
         text = extract_with_pymupdf_images(pdf_path, lang=args.lang)
 
         if text.strip():
-            print(f"\n=== Extracted Text ===\n", file=sys.stderr)
+            print("\n=== Extracted Text ===\n", file=sys.stderr)
             print(text)
         else:
             print("Warning: No text extracted from PDF", file=sys.stderr)

@@ -9,7 +9,6 @@ match the configured account permissions.
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 from repo_paths import resolve_private_repo_root

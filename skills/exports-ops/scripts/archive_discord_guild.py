@@ -24,7 +24,7 @@ import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Iterator
+from typing import Any, Iterator
 
 
 API_BASE = "https://discord.com/api/v10"

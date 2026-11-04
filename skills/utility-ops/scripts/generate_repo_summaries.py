@@ -2,11 +2,11 @@
 """Generate repository summaries in the configured private repo."""
 import json
 import subprocess
-import sys
 from datetime import datetime
-from pathlib import Path
 
 from repo_paths import resolve_private_repo_root
+
+MARKDOWN_HARD_BREAK = "  "
 
 
 def github_owner() -> str:
@@ -72,20 +72,20 @@ def create_repo_summary(repo_data):
     primary_lang = repo_data.get('primaryLanguage', {}).get('name', 'Unknown') if repo_data.get('primaryLanguage') else 'Unknown'
     owner = github_owner()
     url = repo_data.get('url', f'https://github.com/{owner}/{repo_name}')
-    
+
     # Get additional details
     languages = get_repo_languages(repo_name)
     if not languages and primary_lang != 'Unknown':
         languages = [primary_lang]
-    
+
     readme_preview = get_repo_readme(repo_name)
-    
+
     # Create markdown content
     content = f"""# {repo_name}
 
-**Repository**: [{repo_name}]({url})  
-**Visibility**: {'Private' if is_private else 'Public'}  
-**Last Updated**: {format_date(updated_at)}  
+**Repository**: [{repo_name}]({url}){MARKDOWN_HARD_BREAK}
+**Visibility**: {'Private' if is_private else 'Public'}{MARKDOWN_HARD_BREAK}
+**Last Updated**: {format_date(updated_at)}{MARKDOWN_HARD_BREAK}
 **Primary Language**: {primary_lang}
 
 ## Purpose
@@ -103,7 +103,7 @@ def create_repo_summary(repo_data):
 ---
 *Generated automatically from GitHub repository metadata*
 """
-    
+
     return content
 
 def main():
@@ -114,9 +114,9 @@ def main():
         text=True,
         check=True
     )
-    
+
     repos = json.loads(result.stdout)
-    
+
     # Filter out this repo and public docs repo.
     repos = [r for r in repos if r['name'] not in {'liferepo', 'georgeskills'}]
 
@@ -124,7 +124,7 @@ def main():
     private_repo_root = resolve_private_repo_root()
     repos_dir = private_repo_root / 'projects' / 'repos'
     repos_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Generate summary for each repo
     for repo in repos:
         summary = create_repo_summary(repo)
