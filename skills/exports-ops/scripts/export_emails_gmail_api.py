@@ -32,9 +32,12 @@ try:
     from googleapiclient.discovery import build
     from googleapiclient.errors import HttpError
 except ImportError:
-    print("Error: Gmail API libraries not installed.", file=sys.stderr)
-    print("Install with: pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib", file=sys.stderr)
-    sys.exit(1)
+    GOOGLE_LIBS_AVAILABLE = False
+
+    class HttpError(Exception):
+        pass
+else:
+    GOOGLE_LIBS_AVAILABLE = True
 
 GMAIL_READONLY_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
 GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send'
@@ -848,6 +851,11 @@ def parse_arguments():
 def main():
     """Main entry point"""
     args = parse_arguments()
+
+    if not GOOGLE_LIBS_AVAILABLE:
+        print("Error: Gmail API libraries not installed.", file=sys.stderr)
+        print("Install with: pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib", file=sys.stderr)
+        sys.exit(1)
 
     # Register cleanup handler
     atexit.register(release_lock)

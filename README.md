@@ -231,6 +231,18 @@ git config core.hooksPath .githooks
 chmod +x .githooks/commit-msg .githooks/pre-commit
 ```
 
+The same public-safety check runs in CI over every tracked file (`python3 .githooks/public-safety-check.py --tree`), so a clone without hooks is still checked on push.
+
+### Run the checks locally
+
+```bash
+pip install -r requirements-dev.txt
+ruff check .
+pytest -q
+```
+
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same three on every push, on macOS with Python 3.9 and 3.12.
+
 ### 3. Sync skills to your AI assistant
 
 For Codex:
