@@ -20,12 +20,15 @@ from __future__ import annotations
 
 import argparse
 import csv
+import fcntl
 import json
 import math
 import os
 import secrets
 import subprocess
+import tempfile
 from collections import defaultdict
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -372,8 +375,8 @@ def archive_payload(raw_dir: Path, payload: Any, session_id: str | None) -> Path
     raw_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     session_part = (session_id or secrets.token_hex(4)).replace("/", "_")
-    dest = raw_dir / f"{stamp}_{session_part}.json"
-    with dest.open("w", encoding="utf-8") as f:
+    dest = raw_dir / f"{stamp}_{session_part}_{secrets.token_hex(4)}.json"
+    with dest.open("x", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2, sort_keys=True)
         f.write("\n")
     return dest
@@ -399,7 +402,45 @@ def load_existing_rows(dest_csv: Path) -> tuple[list[str], dict[str, dict[str, s
         return fieldnames, rows
 
 
+@contextmanager
+def health_csv_lock(dest_csv: Path):
+    """Exclusive flock on the CSV's folder, shared by server threads and other processes."""
+    folder = dest_csv.resolve().parent
+    folder.mkdir(parents=True, exist_ok=True)
+    fd = os.open(folder, os.O_RDONLY)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        os.close(fd)
+
+
+def write_rows_atomic(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> None:
+    path = path.resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mode = path.stat().st_mode & 0o777 if path.exists() else 0o600
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp_name, mode)
+        os.replace(tmp_name, path)
+    except BaseException:
+        if os.path.exists(tmp_name):
+            os.unlink(tmp_name)
+        raise
+
+
 def upsert_rows(dest_csv: Path, rows: list[dict[str, str]]) -> list[str]:
+    with health_csv_lock(dest_csv):
+        return _upsert_rows_locked(dest_csv, rows)
+
+
+def _upsert_rows_locked(dest_csv: Path, rows: list[dict[str, str]]) -> list[str]:
     fieldnames, existing = load_existing_rows(dest_csv)
     updated_dates: list[str] = []
 
@@ -416,13 +457,7 @@ def upsert_rows(dest_csv: Path, rows: list[dict[str, str]]) -> list[str]:
             target[field_name] = value
         updated_dates.append(date)
 
-    dest_csv.parent.mkdir(parents=True, exist_ok=True)
-    with dest_csv.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for date in sorted(existing.keys()):
-            writer.writerow(existing[date])
-
+    write_rows_atomic(dest_csv, fieldnames, [existing[date] for date in sorted(existing)])
     return sorted(set(updated_dates))
 
 
