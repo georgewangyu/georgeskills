@@ -167,7 +167,7 @@ def log_message(message, error=False):
         LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(LOG_FILE, 'a', encoding='utf-8') as f:
             f.write(log_entry)
-    except:
+    except OSError:
         pass
 
     if error:
@@ -222,6 +222,10 @@ def create_example_config():
         json.dump(example_config, f, indent=2)
     log_message(f"Created example config at {example_file}")
 
+class CalendarFetchError(Exception):
+    pass
+
+
 def get_calendar_list(service):
     """Get list of accessible calendars"""
     try:
@@ -235,8 +239,7 @@ def get_calendar_list(service):
             })
         return calendars
     except HttpError as error:
-        log_message(f"Error getting calendar list: {error}", error=True)
-        return []
+        raise CalendarFetchError(f"Error getting calendar list: {error}") from error
 
 def get_events_for_date(service, calendar_id, target_date):
     """Get events for a specific calendar and date"""
@@ -256,8 +259,7 @@ def get_events_for_date(service, calendar_id, target_date):
 
         return events_result.get('items', [])
     except HttpError as error:
-        log_message(f"Error getting events for calendar {calendar_id}: {error}", error=True)
-        return []
+        raise CalendarFetchError(f"Error getting events for calendar {calendar_id}: {error}") from error
 
 def get_upcoming_events(service, calendar_id, start_date, end_date):
     """Get events for a date range"""
@@ -276,8 +278,7 @@ def get_upcoming_events(service, calendar_id, start_date, end_date):
 
         return events_result.get('items', [])
     except HttpError as error:
-        log_message(f"Error getting upcoming events for calendar {calendar_id}: {error}", error=True)
-        return []
+        raise CalendarFetchError(f"Error getting upcoming events for calendar {calendar_id}: {error}") from error
 
 def format_event_time(event):
     """Format event start/end time for display"""
@@ -409,7 +410,6 @@ def archive_today_to_monthly(accounts_data):
 
     log_message(f"Archiving today's calendar ({date_str}) to monthly archive...")
 
-    # Get all events for today from all accounts
     all_events = get_events_for_date_from_accounts(accounts_data, today)
 
     # Generate markdown for this day
@@ -712,10 +712,18 @@ def main():
             return 1
 
         # 1. Archive today's events to monthly archive (captures any changes during the day)
-        archive_success = archive_today_to_monthly(accounts_data)
+        try:
+            archive_success = archive_today_to_monthly(accounts_data)
+        except CalendarFetchError as error:
+            log_message(f"{error}. Kept the existing monthly archive.", error=True)
+            archive_success = False
 
         # 2. Export weekly calendar (last week + upcoming week)
-        weekly_success = export_weekly_calendar(accounts_data)
+        try:
+            weekly_success = export_weekly_calendar(accounts_data)
+        except CalendarFetchError as error:
+            log_message(f"{error}. Kept the existing weekly calendar.", error=True)
+            weekly_success = False
 
         if archive_success and weekly_success:
             log_message("\n✓ Calendar export completed successfully!")
