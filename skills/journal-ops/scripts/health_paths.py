@@ -88,3 +88,7 @@ def health_auto_export_raw_dir(private_repo_root: Path) -> Path:
 
 def apple_health_export_xml(private_repo_root: Path) -> Path:
     return resolve_health_source_records_root(private_repo_root) / "apple_health_export" / "export.xml"
+
+
+def sleep_hae_csv(private_repo_root: Path) -> Path:
+    return resolve_health_records_root(private_repo_root) / "sleep_from_hae_experimental.csv"
