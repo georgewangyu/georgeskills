@@ -126,5 +126,20 @@ class BulletParsingTests(unittest.TestCase):
         self.assertFalse(normalized.endswith("\n\n"))
 
 
+class ThemeLabelTests(unittest.TestCase):
+    def labels_for(self, text: str) -> list[str]:
+        topic = module.TopicPage(path=Path("t.md"), title="Topic", slug="topic", keywords=[])
+        return module.infer_theme_labels(topic, [text], [], [])
+
+    def test_keywords_match_whole_words_only(self) -> None:
+        content_label = module.THEME_RULES["content_distribution"]["label"]
+        self.assertNotIn(content_label, self.labels_for("rebuild the index with more context next week"))
+        self.assertNotIn(content_label, self.labels_for("the webhook writes a transcript"))
+        self.assertIn(content_label, self.labels_for("a thread on x today"))
+        self.assertIn(content_label, self.labels_for("two videos with hooks"))
+        self.assertIn(content_label, self.labels_for("notes/2025-11-10_tiktok_ideas.md"))
+        self.assertNotIn(content_label, self.labels_for("size xs shirt"))
+
+
 if __name__ == "__main__":
     unittest.main()
