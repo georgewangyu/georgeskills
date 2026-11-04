@@ -13,6 +13,7 @@ import re
 import signal
 import base64
 import json
+from http import HTTPStatus
 import fcntl
 import atexit
 from datetime import datetime, timezone, timedelta
@@ -455,6 +456,9 @@ def choose_message_datetime(header_datetime, internal_datetime, message_id):
         return fallback
     return internal_datetime or datetime.now(timezone.utc)
 
+MESSAGE_GONE = object()
+
+
 def fetch_message_details(service, message_id):
     """Fetch full message details from Gmail API."""
     try:
@@ -514,13 +518,23 @@ def fetch_message_details(service, message_id):
             'content': email_content
         }
     except HttpError as error:
+        if error.resp.status == HTTPStatus.NOT_FOUND:
+            print(f"  Message {message_id} was deleted before it could be fetched; skipping.", file=sys.stderr)
+            return MESSAGE_GONE
         print(f"  Error fetching message {message_id}: {error}", file=sys.stderr)
         return None
     except Exception as e:
         print(f"  Error processing message {message_id}: {e}", file=sys.stderr)
         return None
 
-def get_emails_since(service, since_dt, label='INBOX', max_results=500):
+class GmailFetchError(Exception):
+    pass
+
+
+GMAIL_PAGE_SIZE = 500
+
+
+def get_emails_since(service, since_dt, label='INBOX'):
     """
     Get email message IDs since the provided datetime using Gmail API search.
     Uses search query: 'in:inbox after:YYYY/MM/DD' or 'in:sent after:YYYY/MM/DD'
@@ -547,7 +561,7 @@ def get_emails_since(service, since_dt, label='INBOX', max_results=500):
             results = service.users().messages().list(
                 userId='me',
                 q=query,
-                maxResults=min(500, max_results - len(message_ids)),
+                maxResults=GMAIL_PAGE_SIZE,
                 pageToken=page_token
             ).execute()
 
@@ -555,10 +569,6 @@ def get_emails_since(service, since_dt, label='INBOX', max_results=500):
             message_ids.extend([msg['id'] for msg in messages])
 
             print(f"    Found {len(message_ids)} messages so far...", end='\r')
-
-            # Check if we've reached the limit
-            if len(message_ids) >= max_results:
-                break
 
             # Check for next page
             page_token = results.get('nextPageToken')
@@ -569,8 +579,7 @@ def get_emails_since(service, since_dt, label='INBOX', max_results=500):
         return message_ids
 
     except HttpError as error:
-        print(f"\n  Error searching messages: {error}", file=sys.stderr)
-        return []
+        raise GmailFetchError(f"Error searching {label_name} messages: {error}") from error
 
 def process_emails(service, message_ids, output_dir, email_type="sent", since_dt=None, account=None):
     """Process and export a list of email message IDs to markdown files."""
@@ -612,6 +621,9 @@ def process_emails(service, message_ids, output_dir, email_type="sent", since_dt
 
         # Fetch message details
         message_data = fetch_message_details(service, message_id)
+        if message_data is MESSAGE_GONE:
+            skipped_count += 1
+            continue
         if not message_data:
             error_count += 1
             continue
@@ -776,9 +788,9 @@ def export_emails_for_account(account, since_dt):
     print("Authentication successful!")
     print()
 
+    total_exported = 0
+    total_errors = 0
     try:
-        total_exported = 0
-        total_errors = 0
         latest_timestamp = None
 
         # Get received emails (inbox)
@@ -821,12 +833,16 @@ def export_emails_for_account(account, since_dt):
         if latest_timestamp:
             print(f"  - Latest email timestamp: {latest_timestamp.isoformat()}")
 
-        return True, total_exported, total_errors, latest_timestamp
+        safe_to_advance_marker = total_errors == 0 and not interrupt_requested
+        return safe_to_advance_marker, total_exported, total_errors, latest_timestamp
+    except GmailFetchError as e:
+        print(f"{e}. Last export time for {account.email} unchanged.", file=sys.stderr)
+        return False, total_exported, total_errors, None
     except Exception as e:
         print(f"Error during export for {account.email}: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
-        return False, 0, 0, None
+        return False, total_exported, total_errors, None
 
 def signal_handler(signum, frame):
     """Handle interrupt signals gracefully"""
@@ -917,12 +933,11 @@ def main():
                 print(f"\nUpdated last export time for {account.email} to {latest_timestamp.isoformat()}")
             else:
                 print(f"\nNo newer emails found for {account.email}. Last export time unchanged.")
-
-            total_exported += exported
-            total_errors += errors
         else:
             all_success = False
-            print(f"\nExport failed for {account.email}. Check errors above.")
+            print(f"\nExport incomplete for {account.email}; last export time unchanged. Check errors above.")
+        total_exported += exported
+        total_errors += errors
 
         print()
 
