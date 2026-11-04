@@ -576,12 +576,12 @@ def print_imessage_context(day_text: str) -> None:
 
 
 def build_wiki_ingest_state(*, target_date: str, summary_path: Path) -> dict[str, object] | None:
-    if not summary_path.exists() or not GEORGE_LLM_WIKI_ROOT.exists():
+    if not summary_path.exists() or not LLM_WIKI_ROOT.exists():
         return None
 
     wiki_files = [
         path
-        for path in GEORGE_LLM_WIKI_ROOT.rglob("*.md")
+        for path in LLM_WIKI_ROOT.rglob("*.md")
         if ".git" not in path.parts and "__pycache__" not in path.parts
     ]
     state = build_post_step_state(target_date=target_date, summary_path=summary_path, include_git_head=True)
