@@ -13,8 +13,10 @@ import base64
 import csv
 import json
 import mimetypes
+import os
 import re
 import sys
+import tempfile
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -373,6 +375,48 @@ def send_message_via_service(
     return result.get("id", "")
 
 
+TERMINAL_SEND_STATUSES = {"sent", "delivered", "replied"}
+
+
+def resume_key(lead_id: str, to: str, subject: str) -> tuple[str, str, str]:
+    return lead_id, to.strip().lower(), subject.strip()
+
+
+def load_sent_events(log_path: Path | None) -> dict[tuple[str, str, str], dict[str, str]]:
+    if not log_path or not log_path.exists():
+        return {}
+    sent: dict[tuple[str, str, str], dict[str, str]] = {}
+    with log_path.open(encoding="utf-8") as handle:
+        for line in handle:
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("status") == "sent" and event.get("lead_id"):
+                sent[resume_key(event["lead_id"], event.get("to", ""), event.get("subject", ""))] = event
+    return sent
+
+
+def write_rows_atomic(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> None:
+    path = path.resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mode = path.stat().st_mode & 0o777 if path.exists() else 0o600
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp_name, mode)
+        os.replace(tmp_name, path)
+    except BaseException:
+        if os.path.exists(tmp_name):
+            os.unlink(tmp_name)
+        raise
+
+
 def run_batch_send(
     account,
     batch_csv: Path,
@@ -409,6 +453,7 @@ def run_batch_send(
 
     now = datetime.now().astimezone()
     batch_id = now.strftime("%Y%m%dT%H%M%S")
+    sent_events = load_sent_events(log_path) if skip_sent else {}
     pending: list[tuple[int, dict[str, str]]] = []
     skipped = 0
 
@@ -424,7 +469,21 @@ def run_batch_send(
             row["send_status"] = "skipped"
             skipped += 1
             continue
-        if skip_sent and send_status in {"sent", "delivered", "replied"}:
+        logged = sent_events.get(resume_key(lead_id, recipient, subject))
+        if logged and send_status not in TERMINAL_SEND_STATUSES:
+            row["send_status"] = "sent"
+            row["last_subject"] = subject
+            row["last_sent_at"] = logged.get("timestamp", "")
+            row["gmail_message_id"] = logged.get("gmail_message_id", "")
+            row["last_error"] = ""
+            send_status = "sent"
+        if skip_sent and send_status in TERMINAL_SEND_STATUSES:
+            skipped += 1
+            continue
+        if row.get("draft_status", "").strip().lower() != "approved":
+            row["last_error"] = "draft_status is not approved"
+            if send_status not in TERMINAL_SEND_STATUSES:
+                row["send_status"] = "skipped"
             skipped += 1
             continue
         pending.append((index, row))
@@ -432,84 +491,82 @@ def run_batch_send(
     if log_path:
         log_path.parent.mkdir(parents=True, exist_ok=True)
 
+    record_lock = threading.Lock()
+    sends_settled = threading.Condition(record_lock)
+    stopping = threading.Event()
+    counts = {"sent": 0, "failed": 0, "in_flight": 0}
+
     def emit_log(event: dict[str, str]) -> None:
         if not log_path:
             return
         with log_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(event, ensure_ascii=False) + "\n")
 
-    def worker(index: int, row: dict[str, str]) -> tuple[int, str, str]:
-        service = get_thread_service(account)
+    def checkpoint_result(row: dict[str, str], message_id: str | None, error: Exception | None) -> None:
+        stamp = datetime.now().astimezone().isoformat(timespec="seconds")
         subject = row[subject_column].strip()
-        body = build_body(row[body_column], account.assistant_signature, append_signature)
         to = row[to_column].strip()
-        message_id = send_message_via_service(
-            service,
-            account.email,
-            to,
-            subject,
-            body,
-            cc=cc,
-            attachments=attachments,
-        )
-        return index, message_id, ""
-
-    sent = 0
-    failed = 0
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_map = {
-            executor.submit(worker, index, row): (index, row)
-            for index, row in pending
-        }
-        for future in as_completed(future_map):
-            index, row = future_map[future]
-            stamp = datetime.now().astimezone().isoformat(timespec="seconds")
-            subject = row[subject_column].strip()
-            to = row[to_column].strip()
-            try:
-                _, message_id, _ = future.result()
-                row["draft_status"] = row.get("draft_status", "").strip() or "approved"
+        event = {"batch_id": batch_id, "lead_id": row["lead_id"], "to": to, "subject": subject}
+        with record_lock:
+            row["last_subject"] = subject
+            row["last_sent_at"] = stamp
+            if error is None:
                 row["send_status"] = "sent"
-                row["last_subject"] = subject
-                row["last_sent_at"] = stamp
-                row["gmail_message_id"] = message_id
+                row["gmail_message_id"] = message_id or ""
                 row["last_error"] = ""
-                sent += 1
-                emit_log(
-                    {
-                        "batch_id": batch_id,
-                        "lead_id": row["lead_id"],
-                        "to": to,
-                        "subject": subject,
-                        "status": "sent",
-                        "gmail_message_id": message_id,
-                        "timestamp": stamp,
-                    }
-                )
+                counts["sent"] += 1
+                emit_log({**event, "status": "sent", "gmail_message_id": message_id or "", "timestamp": stamp})
                 print(f"SENT {row['lead_id']} -> {to} ({message_id})")
-            except Exception as exc:
+            else:
                 row["send_status"] = "failed"
-                row["last_subject"] = subject
-                row["last_sent_at"] = stamp
-                row["last_error"] = str(exc)
-                failed += 1
-                emit_log(
-                    {
-                        "batch_id": batch_id,
-                        "lead_id": row["lead_id"],
-                        "to": to,
-                        "subject": subject,
-                        "status": "failed",
-                        "error": str(exc),
-                        "timestamp": stamp,
-                    }
-                )
-                print(f"FAILED {row['lead_id']} -> {to}: {exc}", file=sys.stderr)
+                row["last_error"] = str(error)
+                counts["failed"] += 1
+                emit_log({**event, "status": "failed", "error": str(error), "timestamp": stamp})
+                print(f"FAILED {row['lead_id']} -> {to}: {error}", file=sys.stderr)
+            write_rows_atomic(output_csv, fieldnames, rows)
 
-    with output_csv.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
+    def worker(row: dict[str, str]) -> None:
+        with sends_settled:
+            if stopping.is_set():
+                return
+            counts["in_flight"] += 1
+        try:
+            service = get_thread_service(account)
+            message_id = send_message_via_service(
+                service,
+                account.email,
+                row[to_column].strip(),
+                row[subject_column].strip(),
+                build_body(row[body_column], account.assistant_signature, append_signature),
+                cc=cc,
+                attachments=attachments,
+            )
+        except Exception as exc:
+            checkpoint_result(row, None, exc)
+            return
+        else:
+            checkpoint_result(row, message_id, None)
+        finally:
+            with sends_settled:
+                counts["in_flight"] -= 1
+                sends_settled.notify_all()
+
+    executor = ThreadPoolExecutor(max_workers=max_workers)
+    try:
+        for future in as_completed([executor.submit(worker, row) for _, row in pending]):
+            future.result()
+    except BaseException:
+        # Ctrl-C can land mid-submit, before the executor tracks every thread,
+        # so wait on our own count: no new sends, and every started send recorded.
+        with sends_settled:
+            stopping.set()
+            while counts["in_flight"]:
+                sends_settled.wait()
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise
+    executor.shutdown(wait=True)
+    write_rows_atomic(output_csv, fieldnames, rows)
+    sent, failed = counts["sent"], counts["failed"]
 
     print(
         f"Batch complete: {sent} sent, {failed} failed, {skipped} skipped. "
@@ -546,7 +603,7 @@ def main() -> int:
     parser.add_argument("--reauth", action="store_true", help="Delete the existing token for this account first")
     parser.add_argument("--reply-to-message-id", help="Reply to an existing Gmail message id")
     parser.add_argument("--reply-to-export", help="Reply to an exported markdown email note")
-    parser.add_argument("--batch-csv", help="CSV file with one outbound row per email")
+    parser.add_argument("--batch-csv", help="CSV file with one outbound row per email; only rows with draft_status=approved send")
     parser.add_argument("--batch-output-csv", help="Optional output CSV path; defaults to overwriting --batch-csv")
     parser.add_argument("--batch-log", help="Optional JSONL log path for batch send events")
     parser.add_argument("--to-column", default="contact_email", help="Recipient column name for --batch-csv")
