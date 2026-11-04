@@ -1,6 +1,6 @@
 pytest==8.3.5
 ruff==0.17.3
 Pillow==11.3.0
-google-api-python-client==2.187.0
+google-api-python-client==2.201.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.2
