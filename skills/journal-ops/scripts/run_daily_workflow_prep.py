@@ -1054,6 +1054,14 @@ def main() -> int:
     results.append(hydrate_summary_context(args.date))
     results.append(run_step("Workflow completeness", ["python3", str(CHECK_COMPLETENESS), "--date", args.date], ok_codes={0, 1}))
 
+    # Private opt-in policy; local derived evidence only, never a model poller.
+    allocation_policy = ROOT / "journal" / "allocation" / "policy.json"
+    if args.module_profile != "checkin" and allocation_policy.is_file():
+        results.append(run_step("Activity evidence aggregates", [
+            "python3", str(JOURNAL_OPS_DIR / "activity_evidence_report.py"),
+            "--policy", str(allocation_policy), "--date", args.date,
+        ]))
+
     summary_path = summary_path_for(args.date)
     post_summary_specs: list[ParallelStepSpec] = []
     post_summary_states: list[tuple[str, dict[str, object]]] = []
