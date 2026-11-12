@@ -1,6 +1,6 @@
 # Official capability boundaries
 
-Checked 2026-10-12. Recheck the current
+Checked 2026-10-13. Recheck the current
 [ManyChat Swagger](https://api.manychat.com/swagger) before acting. Its public
 UI loads the [Page API schema](https://api.manychat.com/swagger/compileJson?type=Page_API)
 and [Profile API schema](https://api.manychat.com/swagger/compileJson?type=Profile_API).
@@ -19,6 +19,10 @@ Use `https://api.manychat.com` for the documented operations below.
 | Manage bot fields | GET `/fb/page/getBotFields`; POST `/fb/page/createBotField`, `setBotField`, `setBotFieldByName`, `setBotFields` | Bot fields are account-level, not per-contact values. |
 | Generate template share link | Profile API POST `/user/template/generateSingleUseLink` | Integer `template_id`; separate Profile token. Existing template must be active with single-use sharing enabled. Link expires after first installation; store/redact as a redeemable capability and share only with an approved recipient/destination. |
 | Create/edit/install templates, flow nodes, triggers, or publish/stop automations | Signed-in dashboard | No such endpoint in either checked public schema. Generating a template link is not template creation or automatic installation. |
+
+The checked schemas also have no automation-duplication endpoint. Reuse an
+approved source through the dashboard's My Automations row menu → Duplicate;
+inspect the new copy's state and targeting before editing or activating it.
 
 ## Access and rate limits
 

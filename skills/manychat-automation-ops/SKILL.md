@@ -26,6 +26,21 @@ preserve the user's selected opening DM, follow request, email collection,
 reengagement/follow-up, timing, and targeting options. Ask only for missing
 choices that materially affect execution.
 
+When the user asks to repeat an existing campaign, reuse its observed sequence
+and selected options before changing resource copy or links. Do not add a new
+opening step or redesign the funnel by default. A caption keyword does not
+require keyword-only matching when the creator prefers any comment on a
+specific post. Keep creator-specific trigger preferences and source-flow copy
+in the private adoption layer, not this reusable skill.
+
+For repeated dashboard campaigns, prefer My Automations → the approved source
+automation's row menu → Duplicate. Verify the copy has a distinct identity and
+is inactive before editing its requested context, messages, links, and targeting.
+Preserve the source automation. The row menu differs from the automation page's
+More Actions menu; if duplication is unavailable, use the matching template.
+Inspect Edit mode for the actual opening DM and button: summaries and phone
+previews can omit that step, so their omission does not prove it is disabled.
+
 Draft preparation is not permission to Go Live, Update a live automation, send
 a flow/message, or change campaign ownership. Honor existing explicit
 approval for the exact copy, audience/recipient, and action; otherwise prepare
@@ -33,6 +48,20 @@ a concrete reviewable result and obtain approval at that boundary. Do not
 connect channels, change account types, grant access, or change billing unless
 separately requested. Login/security prompts follow the computer-use tool's
 confirmation policy.
+
+## Prepare before publication
+
+For a planned release with a comment-to-DM promise, complete the matching
+campaign preparation before the media upload. Read the exact spoken CTA and
+verify every promised resource, discount and destination from source evidence.
+When the creator selects next-post targeting, prepare that scope in advance;
+check existing next-post reservations and overlapping providers first. Do not
+replace an active reservation. Go Live before posting requires authorization
+for the exact delivery copy, links and next-post audience. An inactive draft
+is prepared, not ready to deliver. After the Reel is posted, verify the new
+campaign bound to that exact Reel and preserve delivery-test limitations.
+If no campaign CTA exists, record the applicable existing/default readiness
+state without inventing a new DM campaign.
 
 ## Select the supported surface
 
@@ -65,6 +94,13 @@ DM/button, link, email collection, follow request, and follow-up settings in
 preview. Preserve optional selections; disabling the opening DM can remove
 email collection and follow-up functionality. Only one next-post automation
 can be active at a time. Inspect overlaps and ordering before activation.
+
+Do not assume an Instagram specific-post trigger takes precedence over an
+any-post trigger, or apply Facebook precedence rules to Instagram. Check the
+current channel-specific documentation and saved targeting. Keep an overlapping
+default inactive until priority or exclusions are verified; duplication alone
+does not prevent competing replies. Reuse prior delivery evidence for the
+supported flow pattern while verifying changed configuration and resources.
 
 Treat activation as handling future qualifying events. Do not promise replies
 to old comments or run retrospective sends without a separate authorized,
