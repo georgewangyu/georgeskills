@@ -17,6 +17,13 @@ import run_daily_workflow_prep as prep  # noqa: E402
 
 
 class LocationContextTests(unittest.TestCase):
+    def test_coordinate_redaction_accepts_realistic_precision_and_signs(self):
+        for text in ('12.1234, -123.1234', '+12.12345, −123.123456',
+                     '-123.123456789, +12.123456789', '12, 123'):
+            self.assertEqual(prep.redact_location_coordinates('Stop ('+text+')'), 'Stop (unlabeled area)')
+        for text in ('Area name', '999.123456, 999.123456', 'build123.1234, 12.1234'):
+            self.assertEqual(prep.redact_location_coordinates(text), text)
+
     def test_owntracks_status_distinguishes_found_empty_and_stale(self) -> None:
         now = datetime(2026, 9, 8, 20, 0, tzinfo=timezone.utc)
         fresh = [

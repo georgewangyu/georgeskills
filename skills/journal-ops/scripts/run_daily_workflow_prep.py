@@ -737,6 +737,16 @@ def build_health_section(day_text: str) -> str | None:
     return "\n".join(lines)
 
 
+def redact_location_coordinates(text: str) -> str:
+    pair = re.compile(r"(?<![\w.])([+\-−]?\d{1,3}(?:\.\d+)?),\s*([+\-−]?\d{1,3}(?:\.\d+)?)(?![\w.])")
+    def redact(match):
+        first, second = (float(value.replace('−', '-')) for value in match.groups())
+        if (abs(first) <= 90 and abs(second) <= 180) or (abs(first) <= 180 and abs(second) <= 90):
+            return 'unlabeled area'
+        return match.group(0)
+    return pair.sub(redact, text)
+
+
 def build_location_section(day_text: str) -> str | None:
     source = "OwnTracks/S3"
     owntracks_config = build_owntracks_s3_config()
@@ -816,10 +826,7 @@ def build_location_section(day_text: str) -> str | None:
         f" `{total_distance_km:.1f} km` of total travel."
     ]
     if stops:
-        coordinate_label = re.compile(
-            r"(?<![\d.])-?\d{1,3}\.\d{4},\s*-?\d{1,3}\.\d{4}(?![\d.])"
-        )
-        safe_stops = [coordinate_label.sub("unlabeled area", stop) for stop in stops[:5]]
+        safe_stops = [redact_location_coordinates(stop) for stop in stops[:5]]
         stop_text = "; ".join(f"`{stop}`" for stop in safe_stops)
         lines.append(f"- Longer stops that defined the day: {stop_text}.")
     lines.append(f"- Peak observed speed was `{max_speed:.1f} km/h`.")
