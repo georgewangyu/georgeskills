@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clothing Cutouts"
+  short_description: "Create consistent garment sprites from references"
+  default_prompt: "Use $clothing-cutout-ops to create matching transparent clothing sprites from these garment references."
