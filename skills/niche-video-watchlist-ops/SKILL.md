@@ -1,14 +1,15 @@
 ---
 name: niche-video-watchlist-ops
 description: Monitor a defined creator niche or watchlist for high-traction videos and repeatable content ideas.
-memory_tags:
-  - domain:video
-  - workflow:niche-watchlist
-  - skill_role:researcher
-  - repo_boundary:tools
-  - inputs:public-social-account
-  - outputs:watchlist-record
-  - risk:medium
+metadata:
+  memory_tags:
+    - domain:video
+    - workflow:niche-watchlist
+    - skill_role:researcher
+    - repo_boundary:tools
+    - inputs:public-social-account
+    - outputs:watchlist-record
+    - risk:medium
 ---
 
 # Niche Video Watchlist Ops
@@ -37,12 +38,12 @@ Keep user-specific watchlists, private handles, and output archives in the user'
 2. Run targeted search lanes.
    - Prefer `scripts/run_niche_video_sweep.py` for repeatable sweeps.
    - Use YouTube Shorts filters for YouTube.
-   - Use `tiktokbot web-search --backend auto` for TikTok.
-   - Use `igbot private-search` for Instagram search lanes when a private bridge session is available; if it returns `login_required`, keep going with other collectors.
-   - The wrapper passes `--mute-audio true` to TikTok browser automation by default; keep that default unless the user explicitly asks for audio review.
+   - The executable default is `--platform youtube`. TikTok has no permitted keyword collector here; use explicit tracked accounts with `profile-feed` and report the search coverage gap.
+   - Instagram unofficial collection stays disabled without a separately approved last-resort run. A disabled adapter, login/rate gate, or empty result must remain visible in health; do not enable it or initiate login to make a sweep look complete.
+   - No browser collector or automatic provider fallback is invoked. Calls have a bounded timeout and platform circuit breaker; pass `--health-out` to preserve failures.
 3. Include watchlist checks when possible.
-   - For YouTube, query creator/channel names plus niche keywords if channel-specific commands are not available.
-   - For TikTok, query creator handles plus niche keywords; use `tiktok-check-ops` only for one-off account inspection.
+   - For YouTube, use `find --channel-ref` with the verified channel ID, canonical channel URL, or exact handle. Never use keyword results as account evidence.
+   - For TikTok, explicitly select `--platform tiktok`, `both`, or `all` and collect configured watchlist handles through `profile-feed`; keyword lanes are skipped for TikTok.
    - For Instagram watchlist handles, prefer `igbot private-profile <handle>` because known-profile collection can work even when Instagram search/hashtag surfaces require login.
 4. Rank videos.
    - Favor views/subscribers or views/followers over raw views.
@@ -69,7 +70,8 @@ python3 skills/niche-video-watchlist-ops/scripts/run_niche_video_sweep.py \
   --max-base 250000 \
   --min-views 10000 \
   --max-age-days 14 \
-  --tiktok-mute-audio true \
+  --platform youtube \
+  --health-out /tmp/niche-video-sweep-health.json \
   --out /tmp/niche-video-sweep.jsonl
 ```
 
@@ -100,7 +102,6 @@ Return:
 - The search lane or watchlist source that found each video.
 - Concept cluster labels and why each might transfer into the user's niche.
 - A short `watch order` list, not a giant dump.
-- Any missing-data caveats, especially when TikTok only provides ratio signals.
 - Any missing-data caveats, especially when TikTok only provides ratio signals or Instagram search/hashtag collection requires a private session.
 
 ## Guardrails
@@ -109,4 +110,5 @@ Return:
 - Do not equate raw views with a good concept.
 - Do not overfit to one viral accident; look for repeatability across creators or formats.
 - Keep broad trend discovery out of this skill; use `broad-video-trend-radar-ops` for wide, non-niche sweeps.
-- Mute browser automation for media-heavy pages whenever supported; do not play TikTok/Reels/Shorts audio during background research unless the user explicitly asks for audio review. If a TikTok sweep needs sound, require an explicit `--tiktok-mute-audio false` override.
+- Never launch Playwright for a niche sweep. TikTok profile-first coverage does not imply keyword or FYP coverage.
+- Write a new dated output; existing paths are refused. Preserve last-good snapshots and label stale evidence with its original timestamp.

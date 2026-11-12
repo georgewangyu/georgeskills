@@ -6,10 +6,18 @@ import json
 import os
 import re
 import subprocess
+import signal
+import shutil
+import tempfile
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
+from video_observations import observation, canonical_url
+from video_retention import eligibility, eligible_observations
 
 
 def parse_args() -> argparse.Namespace:
@@ -17,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--watchlist", type=Path, required=True, help="Private markdown watchlist path")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
     parser.add_argument("--health-out", type=Path, help="Optional JSON collector-health receipt")
+    parser.add_argument("--retention-review", type=Path, help="Documented collector storage and freshness basis for previous-output deduplication")
     parser.add_argument("--previous", type=Path, help="Previous JSONL output for new-link comparison")
     parser.add_argument("--youtube-bot-dir", default=os.environ.get("YOUTUBEBOT_DIR", ""))
     parser.add_argument("--tiktok-bot-dir", default=os.environ.get("TIKTOKBOT_DIR", ""))
@@ -35,6 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-views", type=int, default=100000)
     parser.add_argument("--max-age-days", type=int, default=45)
     parser.add_argument("--limit-per-account", type=int, default=10)
+    parser.add_argument("--youtube-raw", action="store_true", help="Exact-channel raw observations only; no derived YouTube scoring")
     parser.add_argument("--max-base", type=int, default=10000000)
     parser.add_argument("--timeout-seconds", type=int, default=60)
     parser.add_argument(
@@ -79,7 +89,7 @@ def normalize_key(value: str) -> str:
     return value.lower().strip().replace(" ", "_").replace("-", "_")
 
 
-def load_previous_urls(path: Path | None) -> set[str]:
+def load_previous_urls(path: Path | None, review=None, now=None) -> set[str]:
     if not path or not path.exists():
         return set()
     urls: set[str] = set()
@@ -90,20 +100,34 @@ def load_previous_urls(path: Path | None) -> set[str]:
             row = json.loads(line)
         except json.JSONDecodeError:
             continue
-        url = row.get("url")
+        if not eligibility(row, review, now)["eligible"]:
+            continue
+        url = row.get("canonical_url") or row.get("url")
         if url:
-            urls.add(str(url).split("?")[0])
+            urls.add(canonical_url(url) or str(url))
     return urls
 
 
 def run_json(command: list[str], cwd: str, timeout_seconds: int) -> tuple[list[dict[str, Any]], str | None]:
     try:
-        completed = subprocess.run(command, cwd=cwd, text=True, capture_output=True, timeout=timeout_seconds)
-    except subprocess.TimeoutExpired:
-        return [], f"timeout after {timeout_seconds}s: {' '.join(command)}"
+        process = subprocess.Popen(command, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+        try:
+            stdout, stderr = process.communicate(timeout=timeout_seconds)
+        except subprocess.TimeoutExpired:
+            # Cancel the collector and its Python/browser children before the next account.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.communicate()
+            return [], f"collector timeout after {timeout_seconds}s; process group cancelled"
+        completed = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+    except OSError as error:
+        return [], f"collector could not start: {type(error).__name__}"
     if completed.returncode != 0:
-        message = completed.stderr.strip() or completed.stdout.strip() or f"exit {completed.returncode}"
-        return [], message
+        detail = (completed.stderr + completed.stdout).lower()
+        category = next((label for label in ("login_required", "rate_limit", "permission", "timeout", "identity") if label in detail), "unavailable")
+        return [], f"collector exit {completed.returncode}: {category}"
     try:
         parsed = json.loads(completed.stdout or "[]")
     except json.JSONDecodeError as error:
@@ -148,8 +172,8 @@ def normalize(
         published_at = row.get("postedAt")
         title = row.get("caption") or row.get("title")
     url = row.get("url")
-    clean_url = str(url).split("?")[0] if url else ""
-    return {
+    clean_url = canonical_url(url) or ""
+    legacy = {
         "platform": platform,
         "source_account": account.get("handle", ""),
         "source_url": account.get("url", ""),
@@ -159,7 +183,7 @@ def normalize(
         "creator": row.get("creator") or row.get("channelTitle") or row.get("channel") or "",
         "base": base,
         "views": row.get("views"),
-        "ratio": ratio or row.get("score"),
+        "ratio": ratio if ratio is not None else row.get("score"),
         "outlier": row.get("outlierScore"),
         "published_at": published_at,
         "age_days": compute_age_days(published_at),
@@ -168,11 +192,13 @@ def normalize(
         "is_new": bool(clean_url and clean_url not in previous_urls),
         "source": row.get("source"),
         "collection_method": collection_method or (
-            "search_seed" if platform == "youtube"
+            "channel_uploads" if platform == "youtube"
             else "profile" if platform in {"tiktok", "instagram"}
             else "unknown"
         ),
     }
+
+    return observation({**row, **legacy}, platform)
 
 
 def within_age(row: dict[str, Any], max_age_days: int) -> bool:
@@ -277,6 +303,14 @@ def collect(
 ) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
     rows: list[dict[str, Any]] = []
     health = empty_health()
+    review = getattr(args, "_retention_review", {})
+    if not isinstance(review, dict) or not review.get("sources"):
+        for platform in {account.get("platform") for account in accounts}:
+            if platform in health and args.platform in {"all", platform}:
+                health[platform]["status"] = "enrichment blocked"
+                health[platform]["errors"].append("Missing documented collector retention review; collector not invoked")
+        print("Current-output collection blocked: documented retention review is missing", file=sys.stderr)
+        return [], health
     consecutive_failures = {platform: 0 for platform in health}
     for account in accounts:
         platform = account.get("platform", "").lower()
@@ -289,9 +323,9 @@ def collect(
             health[platform]["skipped_after_circuit_breaker"] += 1
             continue
         if platform == "youtube" and args.youtube_bot_dir:
-            query = account.get("query") or handle
+            channel_ref = account.get("channel_id") or account.get("url") or handle
             command = [
-                "node", "src/cli.js", "find", query,
+                "node", "src/cli.js", "find", "--channel-ref", channel_ref,
                 "--type", "short",
                 "--video-duration", "short",
                 "--days", str(args.max_age_days),
@@ -300,8 +334,11 @@ def collect(
                 "--max-search", "30",
                 "--limit", str(args.limit_per_account),
                 "--sort", "views",
-                "--format", "json",
+                "--format", "json", "--include-baseline-videos",
             ]
+            if getattr(args, "youtube_raw", False):
+                command = ["node", "src/cli.js", "channel-observations", account.get("channel_id") or account.get("url") or handle,
+                           "--limit", str(min(args.limit_per_account, 50))]
             raw, error = run_json(command, args.youtube_bot_dir, args.timeout_seconds)
             record_result(health, platform, raw, error, handle)
             consecutive_failures[platform] = consecutive_failures[platform] + 1 if error else 0
@@ -388,6 +425,12 @@ def collect(
     for platform_health in health.values():
         for error in platform_health["errors"]:
             print(error, file=sys.stderr)
+    rows, excluded = eligible_observations(rows, review)
+    # Exclusion receipts contain indexes and reason codes, never discarded source content.
+    if excluded:
+        print(f"Current-output eligibility blocked {len(excluded)} rows", file=sys.stderr)
+    for value in health.values():
+        value["retention_exclusions"] = excluded
     filtered = [
         row for row in rows
         if int(row.get("views") or 0) >= args.min_views and within_age(row, args.max_age_days)
@@ -406,8 +449,16 @@ def main() -> int:
     if not accounts:
         print("No watchlist accounts found. Add a markdown table with platform and handle columns.", file=sys.stderr)
         return 2
-    previous_urls = load_previous_urls(args.previous)
+    retention_path = getattr(args, "retention_review", None)
+    retention = json.loads(retention_path.read_text()) if retention_path else {}
+    args._retention_review = retention
+    previous_urls = load_previous_urls(args.previous, retention)
+    if args.previous and not retention_path:
+        print("Previous-output dedup blocked: documented retention review is missing", file=sys.stderr)
     rows, health = collect(args, accounts, previous_urls)
+    # Guard the persistence boundary too, including alternative/injected collector callers.
+    rows, persistence_exclusions = eligible_observations(rows, retention)
+    eligibility_exclusions = persistence_exclusions or next((value.get("retention_exclusions", []) for value in health.values() if value.get("retention_exclusions")), [])
     generated_at = datetime.now(timezone.utc)
     attempt_path = args.out.with_name(
         f"{args.out.stem}.attempt-"
@@ -415,12 +466,21 @@ def main() -> int:
         f"{args.out.suffix}"
     )
     write_jsonl(attempt_path, rows)
-    run_status = classify_run(rows, health)
+    blocked_collection = any(value.get("status") == "enrichment blocked" for value in health.values())
+    run_status = "enrichment blocked" if not rows and (eligibility_exclusions or blocked_collection) else classify_run(rows, health)
     previous_output_preserved = args.out.exists()
     promoted = bool(rows)
     if promoted:
         args.out.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(attempt_path, args.out)
+        # Keep the immutable attempt named by the health receipt. Promote a
+        # separate same-filesystem copy atomically so readers see a complete file.
+        with tempfile.NamedTemporaryFile(dir=args.out.parent, prefix=".watchlist-promote-", delete=False) as pending:
+            pending_path = Path(pending.name)
+        try:
+            shutil.copyfile(attempt_path, pending_path)
+            os.replace(pending_path, args.out)
+        finally:
+            pending_path.unlink(missing_ok=True)
     if args.health_out:
         args.health_out.parent.mkdir(parents=True, exist_ok=True)
         args.health_out.write_text(
@@ -435,6 +495,7 @@ def main() -> int:
                 "previous_output_preserved": (
                     previous_output_preserved and not promoted
                 ),
+                "retention_exclusions": eligibility_exclusions,
                 "platforms": health,
             }, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",

@@ -40,7 +40,16 @@ Keep real handles, private notes, and saved run outputs in the user's private re
    - It should be a markdown table with at least `platform` and `handle`.
    - If no watchlist exists, create one in the private repo using the reference format.
 2. Run account checks with `scripts/run_account_video_watchlist.py`.
-   - YouTube: searches Shorts using `query` when present, otherwise the account/channel handle as the query seed. Treat these as search-seeded candidates unless the result creator matches the intended channel.
+   - YouTube: reads channel uploads through `find --channel-ref`, using a verified `channel_id` when supplied, otherwise a channel URL or exact handle. Identity resolution failures remain visible; keyword search is not an account fallback.
+   - For a transient raw-only canary using existing authorized public API access,
+     run `node <path-to-youtubebot>/src/raw-channel-canary.js <verified-channel-id> --limit 3`.
+     It prints raw current API fields only, without scores, baselines, history,
+     or file output. Do not redirect or ingest it into research storage without
+     the applicable review. Stop on access failure; no credential/fallback changes.
+   - `--youtube-raw` on this watchlist wrapper selects unscored observations but
+     still persists research output: collector-specific retention review is
+     mandatory. Missing review blocks its collection, including raw mode.
+     Enriched downstream workflows also require current derived-rights review.
    - TikTok: uses the anonymous direct-HTTP creator embed through
      `tiktokbot profile-feed`; this returns recent public videos, captions,
      view counts, and follower counts without Playwright or a personal browser.
@@ -94,7 +103,7 @@ Return:
 - A machine-readable collector-health receipt for scheduled runs, including
   attempted/succeeded/failed calls, rows returned, fallbacks, circuit-breaker
   skips, and bounded error messages.
-- Any account-specific caveats, especially YouTube query drift when a channel-specific collector is unavailable.
+- Any account-specific caveats, especially unresolved YouTube handle identity or an unavailable comparable baseline.
 - Suggested emulation formats, phrased as reusable structures rather than one-off copies.
 
 ## Guardrails
@@ -110,5 +119,13 @@ Return:
   run. Write a dated attempt first; promote it to `latest` only after the
   health receipt confirms usable rows. A previous snapshot may be referenced
   only with its original collection date and a `stale` label.
-- Do not pretend YouTube search-seeded rows are definitely from the tracked account unless the returned creator/channel matches.
+- Preserve the verified channel ID and observation timestamp in every YouTube row.
 - Mute browser automation for media-heavy pages whenever supported; never intentionally play TikTok/Reels/Shorts audio during background research unless the user asks to listen. If TikTok sound is required, require an explicit `--tiktok-web-mute-audio false` override.
+
+
+Previous-output comparison requires `--retention-review <documented-review.json>`.
+Only prior URLs with explicit source/data class, actual capture time, a current
+collector-specific storage basis and valid storage/freshness deadlines suppress
+new candidates. Missing review or timestamps cannot be repaired using file mtime
+or the current clock. A blocked comparison preserves the prior file and reports
+the gap. This guard does not grant storage/scoring rights or delete retained data.

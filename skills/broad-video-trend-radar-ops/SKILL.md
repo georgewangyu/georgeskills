@@ -31,8 +31,7 @@ Run a wide radar sweep across TikTok, YouTube Shorts, and optionally Instagram R
    - Use 5-12 lanes spanning adjacent and non-adjacent categories.
    - Include at least one lane outside the user's obvious niche.
 2. Run collectors.
-   - Use `scripts/run_broad_video_radar.py` only where the local policy permits
-     its browser-backed TikTok and Instagram lanes.
+   - `scripts/run_broad_video_radar.py` defaults to YouTube. TikTok keyword/trending paths refuse execution without explicit `--allow-browser-collector`; never pass it in a Playwright-prohibited workspace.
    - When browser automation is prohibited, build the TikTok portion from a
      diverse private creator seed list through `account-video-watchlist-ops`
      and label it profile-first discovery, not a personalized FYP.

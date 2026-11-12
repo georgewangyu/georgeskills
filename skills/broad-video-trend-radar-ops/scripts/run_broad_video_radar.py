@@ -22,6 +22,10 @@ DEFAULT_LANES = [
 ]
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
+from video_observations import observation
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a broad YouTube/TikTok/Instagram trend radar sweep.")
     parser.add_argument("--lane", action="append", default=[], help="Broad search lane. Can be repeated.")
@@ -33,8 +37,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--days", type=int, default=120)
     parser.add_argument("--max-age-days", type=int, help="Filter output to videos published within this many days")
     parser.add_argument("--limit-per-lane", type=int, default=8)
-    parser.add_argument("--platform", choices=["all", "both", "youtube", "tiktok", "instagram"], default="all")
+    parser.add_argument("--platform", choices=["all", "both", "youtube", "tiktok", "instagram"], default="youtube")
     parser.add_argument("--include-tiktok-trending", action="store_true")
+    parser.add_argument("--allow-browser-collector", action="store_true", help="Explicit legacy opt-in only where local policy permits Playwright")
     parser.add_argument("--tiktok-mute-audio", choices=["true", "false"], default=os.environ.get("TIKTOK_WEB_MUTE_AUDIO", "true"), help="Mute TikTok browser automation audio")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
     return parser.parse_args()
@@ -63,7 +68,7 @@ def normalize(row: dict[str, Any], lane: str, platform: str) -> dict[str, Any]:
         ratio = row.get("subscriberRatio")
         published_at = row.get("publishedAt")
     age_days = compute_age_days(published_at)
-    return {
+    legacy = {
         "platform": platform,
         "lane": lane,
         "creator": row.get("creator") or row.get("channelTitle") or row.get("channel") or "",
@@ -77,6 +82,8 @@ def normalize(row: dict[str, Any], lane: str, platform: str) -> dict[str, Any]:
         "url": row.get("url"),
         "source": row.get("source"),
     }
+
+    return observation({**row, **legacy}, platform, datetime.now(timezone.utc).isoformat())
 
 
 def compute_age_days(value: Any) -> float | None:
@@ -160,6 +167,9 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
 
 def main() -> int:
     args = parse_args()
+    if (args.platform in {"all", "both", "tiktok"} or args.include_tiktok_trending) and not args.allow_browser_collector:
+        print("TikTok keyword/trending requires a policy-permitted --allow-browser-collector; use account profile-feed instead.", file=sys.stderr)
+        return 2
     if not args.youtube_bot_dir and not args.tiktok_bot_dir and not args.ig_bot_dir:
         print("Set --youtube-bot-dir/--tiktok-bot-dir/--ig-bot-dir or YOUTUBEBOT_DIR/TIKTOKBOT_DIR/IGBOT_DIR.", file=sys.stderr)
         return 2
