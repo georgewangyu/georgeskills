@@ -32,6 +32,7 @@ from print_location_interview_context import (
     fetch_report_stops as fetch_traccar_report_stops,
     haversine_km,
     load_places as load_location_places,
+    owntracks_source_status,
     summarize_owntracks_error,
     summarize_report_stops as summarize_location_report_stops,
     summarize_stop_clusters as summarize_location_stop_clusters,
@@ -740,12 +741,16 @@ def build_location_section(day_text: str) -> str | None:
     source = "OwnTracks/S3"
     owntracks_config = build_owntracks_s3_config()
     owntracks_error: Exception | None = None
+    owntracks_status = "unavailable"
     positions = []
     if owntracks_config is not None:
         try:
             positions = fetch_owntracks_s3_positions(owntracks_config, day_text)
         except Exception as exc:
             owntracks_error = exc
+            owntracks_status = "unreadable"
+        else:
+            owntracks_status = owntracks_source_status(day_text, positions)
 
     traccar_config = None
     if not positions:
@@ -762,13 +767,13 @@ def build_location_section(day_text: str) -> str | None:
         if owntracks_config is not None:
             if owntracks_error is not None:
                 lines.append(
-                    "- OwnTracks/S3 was configured but unreadable: "
+                    "- OwnTracks/S3 status: `unreadable`: "
                     f"{summarize_owntracks_error(owntracks_error)}."
                 )
             else:
-                lines.append("- OwnTracks/S3 returned no positions for this date.")
+                lines.append("- OwnTracks/S3 status: `empty`; no positions were returned for this date.")
         else:
-            lines.append("- OwnTracks/S3 configuration was unavailable.")
+            lines.append("- OwnTracks/S3 status: `unavailable`; configuration was unavailable.")
         if traccar_config is not None:
             lines.append("- The Traccar fallback returned no positions for this date.")
         else:
@@ -795,7 +800,15 @@ def build_location_section(day_text: str) -> str | None:
 
     first = positions[0]
     last = positions[-1]
+    owntracks_status_text = f"`{owntracks_status}`"
+    if owntracks_status == "unreadable" and owntracks_error is not None:
+        owntracks_status_text += f" ({summarize_owntracks_error(owntracks_error)})"
     lines = [
+        (
+            f"- OwnTracks/S3 status: {owntracks_status_text}."
+            if source == "OwnTracks/S3"
+            else f"- OwnTracks/S3 status: {owntracks_status_text}; the Traccar fallback supplied location context."
+        ),
         f"- Source: `{source}`.",
         "- First seen at"
         f" `{first.timestamp.strftime('%H:%M')}` and last seen at"
@@ -803,7 +816,11 @@ def build_location_section(day_text: str) -> str | None:
         f" `{total_distance_km:.1f} km` of total travel."
     ]
     if stops:
-        stop_text = "; ".join(f"`{stop}`" for stop in stops[:5])
+        coordinate_label = re.compile(
+            r"(?<![\d.])-?\d{1,3}\.\d{4},\s*-?\d{1,3}\.\d{4}(?![\d.])"
+        )
+        safe_stops = [coordinate_label.sub("unlabeled area", stop) for stop in stops[:5]]
+        stop_text = "; ".join(f"`{stop}`" for stop in safe_stops)
         lines.append(f"- Longer stops that defined the day: {stop_text}.")
     lines.append(f"- Peak observed speed was `{max_speed:.1f} km/h`.")
     return "\n".join(lines)

@@ -100,6 +100,7 @@ STATIONARY_SPEED_KPH = 3.0
 STOP_RADIUS_M = 120.0
 MIN_STOP_MINUTES = 8
 CACHE_TTL_SECONDS = 300
+OWNTRACKS_STALE_AFTER_HOURS = 12.0
 
 
 def resolve_location_repo_root() -> Path | None:
@@ -393,6 +394,38 @@ def summarize_owntracks_error(exc: Exception) -> str:
     if isinstance(exc, FileNotFoundError) or "no such file or directory: 'aws'" in message:
         return "AWS CLI is unavailable"
     return f"AWS/S3 read failed ({exc.__class__.__name__})"
+
+
+def owntracks_source_status(
+    day_text: str,
+    positions: list[Position],
+    *,
+    now: datetime | None = None,
+) -> str:
+    """Classify OwnTracks coverage without exposing location details."""
+    if not positions:
+        return "empty"
+
+    current = now or datetime.now().astimezone()
+    target_day = datetime.strptime(day_text, "%Y-%m-%d").date()
+    if target_day != current.date():
+        return "found"
+
+    raw_threshold = os.environ.get("OWNTRACKS_STALE_AFTER_HOURS", "").strip()
+    try:
+        threshold_hours = float(raw_threshold) if raw_threshold else OWNTRACKS_STALE_AFTER_HOURS
+    except ValueError:
+        threshold_hours = OWNTRACKS_STALE_AFTER_HOURS
+    if not math.isfinite(threshold_hours):
+        threshold_hours = OWNTRACKS_STALE_AFTER_HOURS
+    threshold_hours = max(0.0, threshold_hours)
+
+    last_seen = positions[-1].timestamp
+    if last_seen.tzinfo is None:
+        last_seen = last_seen.replace(tzinfo=LOCAL_TZ)
+    if current - last_seen.astimezone(current.tzinfo) > timedelta(hours=threshold_hours):
+        return "stale"
+    return "found"
 
 
 def owntracks_s3_day_prefixes(config: OwnTracksS3Config, day_text: str) -> list[str]:
@@ -736,6 +769,7 @@ def print_summary(
     places: list[SavedPlace],
     source_label: str,
     config: TraccarConfig | None = None,
+    source_status: str | None = None,
 ) -> None:
     print(f"Location context for {day_text}:")
     if not positions:
@@ -755,6 +789,8 @@ def print_summary(
     last = positions[-1]
     current_place = nearest_saved_place(last, places)
     print(f"- Source: {source_label}")
+    if source_status is not None:
+        print(f"- Source status: {source_status}")
     print(f"- Position samples: {len(positions)}")
     print(f"- First seen: {first.timestamp.strftime('%H:%M')} | {first.latitude:.4f}, {first.longitude:.4f}")
     print(f"- Last seen: {last.timestamp.strftime('%H:%M')} | {last.latitude:.4f}, {last.longitude:.4f}")
@@ -797,18 +833,29 @@ def main() -> int:
             owntracks_positions = []
             owntracks_error = exc
         if owntracks_positions:
-            print_summary(args.date, owntracks_positions, places, "OwnTracks/S3")
+            print_summary(
+                args.date,
+                owntracks_positions,
+                places,
+                "OwnTracks/S3",
+                source_status=owntracks_source_status(args.date, owntracks_positions),
+            )
             return 0
         if owntracks_error is not None:
             print(
-                f"Location context for {args.date}: OwnTracks/S3 unreadable "
+                f"Location context for {args.date}: OwnTracks/S3 status: unreadable "
                 f"({summarize_owntracks_error(owntracks_error)}); trying Traccar fallback."
             )
         else:
             print(
-                f"Location context for {args.date}: OwnTracks/S3 returned no positions; "
+                f"Location context for {args.date}: OwnTracks/S3 status: empty; "
                 "trying Traccar fallback."
             )
+    else:
+        print(
+            f"Location context for {args.date}: OwnTracks/S3 status: unavailable; "
+            "trying Traccar fallback."
+        )
 
     config = build_config()
     if config is None:
