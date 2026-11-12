@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,6 +21,10 @@ assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
+
+
+def days_ago(days: int) -> str:
+    return (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def health(status: str, succeeded: int = 0) -> dict[str, dict[str, object]]:
@@ -147,7 +152,7 @@ class AccountWatchlistOutputTests(unittest.TestCase):
         recovered = [{
             "url": "https://example.test/video",
             "views": 200_000,
-            "postedAt": "2026-07-29T00:00:00Z",
+            "postedAt": days_ago(3),
         }]
         with patch.object(
             MODULE,
@@ -175,7 +180,7 @@ class AccountWatchlistOutputTests(unittest.TestCase):
             "creator": "example",
             "followers": 10_000,
             "views": 200_000,
-            "postedAt": "2026-08-24T00:00:00Z",
+            "postedAt": days_ago(3),
             "source": "tiktok_embed_profile",
         }]
         with patch.object(MODULE, "run_json", return_value=(recovered, None)) as run:

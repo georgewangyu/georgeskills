@@ -115,9 +115,9 @@ Examples:
     for lang in langs:
         if not check_tesseract_lang(lang):
             print(f"Warning: Language '{lang}' may not be installed.", file=sys.stderr)
-            print(f"Install with: brew install tesseract-lang", file=sys.stderr)
+            print("Install with: brew install tesseract-lang", file=sys.stderr)
             if lang != 'eng':
-                print(f"Falling back to English only...", file=sys.stderr)
+                print("Falling back to English only...", file=sys.stderr)
                 args.lang = 'eng'
 
     # Process each image

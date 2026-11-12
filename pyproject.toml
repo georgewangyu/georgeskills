@@ -1,0 +1,13 @@
+[tool.pytest.ini_options]
+testpaths = ["skills", "scripts"]
+
+[tool.ruff]
+target-version = "py39"
+extend-exclude = ["scripts/transcription/venv"]
+
+[tool.ruff.lint]
+select = ["E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Known crash (max_index undefined); remove with the script's delete-or-fix decision.
+"skills/exports-ops/scripts/export_all_emails.py" = ["F821"]

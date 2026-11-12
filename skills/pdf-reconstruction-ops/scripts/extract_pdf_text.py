@@ -76,13 +76,13 @@ def extract_pdf_text(pdf_path, method='auto'):
             if method == 'pymupdf':
                 raise
             # Fall back to pdfplumber if PyMuPDF not available
-            print(f"Warning: PyMuPDF not available, trying pdfplumber...", file=sys.stderr)
+            print("Warning: PyMuPDF not available, trying pdfplumber...", file=sys.stderr)
         except Exception as e:
             if method == 'pymupdf':
                 raise
             # Fall back to pdfplumber on error
             print(f"Warning: PyMuPDF extraction failed: {e}", file=sys.stderr)
-            print(f"Trying pdfplumber...", file=sys.stderr)
+            print("Trying pdfplumber...", file=sys.stderr)
 
     # Try pdfplumber
     if method == 'auto' or method == 'pdfplumber':

@@ -13,11 +13,9 @@ See EMAIL_MIGRATION_INSTRUCTIONS.md for usage instructions.
 """
 
 import subprocess
-import os
 import sys
 import re
 import signal
-from pathlib import Path
 from datetime import datetime
 from html import unescape
 
@@ -636,7 +634,7 @@ def migrate_all_emails():
     total_sent = sum(m["count"] for m in sent_mailboxes)
     total_received = sum(m["count"] for m in inbox_mailboxes)
 
-    print(f"Total messages to process:")
+    print("Total messages to process:")
     print(f"  - Sent: {total_sent:,}")
     print(f"  - Received: {total_received:,}")
     print(f"  - Total: {total_sent + total_received:,}")

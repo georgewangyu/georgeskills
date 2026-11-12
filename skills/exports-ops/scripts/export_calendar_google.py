@@ -14,11 +14,9 @@ Requires:
 - config.json (account configuration)
 """
 
-import os
 import sys
 import re
 import json
-from pathlib import Path
 from datetime import datetime, timedelta
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -26,6 +24,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from repo_paths import resolve_private_repo_root
+from token_store import save_token
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
@@ -123,7 +122,7 @@ class CalendarAccount:
             try:
                 service = build('calendar', 'v3', credentials=creds)
                 if not self.verify_account(service):
-                    log_message(f"ERROR: Authentication failed - wrong account detected!", error=True)
+                    log_message("ERROR: Authentication failed - wrong account detected!", error=True)
                     log_message(f"Expected: {self.email}", error=True)
                     log_message(f"Please delete the token file and try again: {self.token_file}", error=True)
                     # Delete the incorrect token
@@ -133,12 +132,11 @@ class CalendarAccount:
             except Exception as e:
                 log_message(f"Error verifying account after authentication: {e}", error=True)
                 # Still save the token, but warn
-                log_message(f"WARNING: Could not verify account, but saving token anyway", error=True)
+                log_message("WARNING: Could not verify account, but saving token anyway", error=True)
 
             # Save credentials for next run
             try:
-                with open(self.token_file, 'w') as token:
-                    token.write(creds.to_json())
+                save_token(self.token_file, creds.to_json())
                 log_message(f"Saved credentials for {self.email}")
             except Exception as e:
                 log_message(f"Error saving token for {self.email}: {e}", error=True)
@@ -147,9 +145,9 @@ class CalendarAccount:
             try:
                 service = build('calendar', 'v3', credentials=creds)
                 if not self.verify_account(service):
-                    log_message(f"ERROR: Token mismatch detected! Token is for wrong account.", error=True)
+                    log_message("ERROR: Token mismatch detected! Token is for wrong account.", error=True)
                     log_message(f"Expected: {self.email}", error=True)
-                    log_message(f"Deleting incorrect token. Please re-authenticate.", error=True)
+                    log_message("Deleting incorrect token. Please re-authenticate.", error=True)
                     # Delete the incorrect token
                     if self.token_file.exists():
                         self.token_file.unlink()
@@ -169,7 +167,7 @@ def log_message(message, error=False):
         LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(LOG_FILE, 'a', encoding='utf-8') as f:
             f.write(log_entry)
-    except:
+    except OSError:
         pass
 
     if error:
@@ -224,6 +222,10 @@ def create_example_config():
         json.dump(example_config, f, indent=2)
     log_message(f"Created example config at {example_file}")
 
+class CalendarFetchError(Exception):
+    pass
+
+
 def get_calendar_list(service):
     """Get list of accessible calendars"""
     try:
@@ -237,8 +239,7 @@ def get_calendar_list(service):
             })
         return calendars
     except HttpError as error:
-        log_message(f"Error getting calendar list: {error}", error=True)
-        return []
+        raise CalendarFetchError(f"Error getting calendar list: {error}") from error
 
 def get_events_for_date(service, calendar_id, target_date):
     """Get events for a specific calendar and date"""
@@ -258,8 +259,7 @@ def get_events_for_date(service, calendar_id, target_date):
 
         return events_result.get('items', [])
     except HttpError as error:
-        log_message(f"Error getting events for calendar {calendar_id}: {error}", error=True)
-        return []
+        raise CalendarFetchError(f"Error getting events for calendar {calendar_id}: {error}") from error
 
 def get_upcoming_events(service, calendar_id, start_date, end_date):
     """Get events for a date range"""
@@ -278,8 +278,7 @@ def get_upcoming_events(service, calendar_id, start_date, end_date):
 
         return events_result.get('items', [])
     except HttpError as error:
-        log_message(f"Error getting upcoming events for calendar {calendar_id}: {error}", error=True)
-        return []
+        raise CalendarFetchError(f"Error getting upcoming events for calendar {calendar_id}: {error}") from error
 
 def format_event_time(event):
     """Format event start/end time for display"""
@@ -411,7 +410,6 @@ def archive_today_to_monthly(accounts_data):
 
     log_message(f"Archiving today's calendar ({date_str}) to monthly archive...")
 
-    # Get all events for today from all accounts
     all_events = get_events_for_date_from_accounts(accounts_data, today)
 
     # Generate markdown for this day
@@ -714,10 +712,18 @@ def main():
             return 1
 
         # 1. Archive today's events to monthly archive (captures any changes during the day)
-        archive_success = archive_today_to_monthly(accounts_data)
+        try:
+            archive_success = archive_today_to_monthly(accounts_data)
+        except CalendarFetchError as error:
+            log_message(f"{error}. Kept the existing monthly archive.", error=True)
+            archive_success = False
 
         # 2. Export weekly calendar (last week + upcoming week)
-        weekly_success = export_weekly_calendar(accounts_data)
+        try:
+            weekly_success = export_weekly_calendar(accounts_data)
+        except CalendarFetchError as error:
+            log_message(f"{error}. Kept the existing weekly calendar.", error=True)
+            weekly_success = False
 
         if archive_success and weekly_success:
             log_message("\n✓ Calendar export completed successfully!")

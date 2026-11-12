@@ -20,12 +20,16 @@ from __future__ import annotations
 
 import argparse
 import csv
+import fcntl
 import json
 import math
 import os
 import secrets
 import subprocess
+import sys
+import tempfile
 from collections import defaultdict
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -43,6 +47,9 @@ DEFAULT_DEST = daily_health_metrics_csv(ROOT)
 DEFAULT_RAW_DIR = health_auto_export_raw_dir(ROOT)
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8787
+MAX_BODY_BYTES = 10 * 1024 * 1024
+READ_TIMEOUT_SECONDS = 30
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 SYNC_SCRIPT = HEALTH_OPS_DIR / "sync_health_shortcut_metrics.py"
 
 CANONICAL_FIELDS = [
@@ -372,8 +379,8 @@ def archive_payload(raw_dir: Path, payload: Any, session_id: str | None) -> Path
     raw_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     session_part = (session_id or secrets.token_hex(4)).replace("/", "_")
-    dest = raw_dir / f"{stamp}_{session_part}.json"
-    with dest.open("w", encoding="utf-8") as f:
+    dest = raw_dir / f"{stamp}_{session_part}_{secrets.token_hex(4)}.json"
+    with dest.open("x", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2, sort_keys=True)
         f.write("\n")
     return dest
@@ -399,7 +406,45 @@ def load_existing_rows(dest_csv: Path) -> tuple[list[str], dict[str, dict[str, s
         return fieldnames, rows
 
 
+@contextmanager
+def health_csv_lock(dest_csv: Path):
+    """Exclusive flock on the CSV's folder, shared by server threads and other processes."""
+    folder = dest_csv.resolve().parent
+    folder.mkdir(parents=True, exist_ok=True)
+    fd = os.open(folder, os.O_RDONLY)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        os.close(fd)
+
+
+def write_rows_atomic(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> None:
+    path = path.resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mode = path.stat().st_mode & 0o777 if path.exists() else 0o600
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp_name, mode)
+        os.replace(tmp_name, path)
+    except BaseException:
+        if os.path.exists(tmp_name):
+            os.unlink(tmp_name)
+        raise
+
+
 def upsert_rows(dest_csv: Path, rows: list[dict[str, str]]) -> list[str]:
+    with health_csv_lock(dest_csv):
+        return _upsert_rows_locked(dest_csv, rows)
+
+
+def _upsert_rows_locked(dest_csv: Path, rows: list[dict[str, str]]) -> list[str]:
     fieldnames, existing = load_existing_rows(dest_csv)
     updated_dates: list[str] = []
 
@@ -416,13 +461,7 @@ def upsert_rows(dest_csv: Path, rows: list[dict[str, str]]) -> list[str]:
             target[field_name] = value
         updated_dates.append(date)
 
-    dest_csv.parent.mkdir(parents=True, exist_ok=True)
-    with dest_csv.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for date in sorted(existing.keys()):
-            writer.writerow(existing[date])
-
+    write_rows_atomic(dest_csv, fieldnames, [existing[date] for date in sorted(existing)])
     return sorted(set(updated_dates))
 
 
@@ -460,6 +499,7 @@ def ingest_payload(
 
 class ReceiverHandler(BaseHTTPRequestHandler):
     server_version = "HealthAutoExportReceiver/0.1"
+    timeout = READ_TIMEOUT_SECONDS
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -478,11 +518,21 @@ class ReceiverHandler(BaseHTTPRequestHandler):
         token = getattr(self.server, "auth_token", "")
         if token:
             auth_header = self.headers.get("Authorization", "")
-            if auth_header != f"Bearer {token}":
+            if not secrets.compare_digest(auth_header.encode(), f"Bearer {token}".encode()):
                 self._send_json(HTTPStatus.UNAUTHORIZED, {"error": "unauthorized"})
                 return
 
-        length = int(self.headers.get("Content-Length", "0") or "0")
+        try:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+        except ValueError:
+            length = -1
+        if length < 0:
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid_content_length"})
+            return
+        if length > MAX_BODY_BYTES:
+            self.close_connection = True
+            self._send_json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "body_too_large", "max_bytes": MAX_BODY_BYTES})
+            return
         raw = self.rfile.read(length)
         try:
             payload = json.loads(raw.decode("utf-8"))
@@ -504,7 +554,17 @@ class ReceiverHandler(BaseHTTPRequestHandler):
         print(f"[receiver] {self.address_string()} - {format % args}")
 
 
+def bind_error(host: str, auth_token: str) -> str | None:
+    if host in LOOPBACK_HOSTS or auth_token:
+        return None
+    return f"Refusing to listen on {host} without --auth-token (or HEALTH_AUTO_EXPORT_TOKEN): anyone on the network could write health data."
+
+
 def serve(host: str, port: int, dest_csv: Path, raw_dir: Path, auth_token: str, sync_write: bool) -> int:
+    error = bind_error(host, auth_token)
+    if error:
+        print(error, file=sys.stderr)
+        return 2
     httpd = ThreadingHTTPServer((host, port), ReceiverHandler)
     httpd.dest_csv = dest_csv
     httpd.raw_dir = raw_dir
@@ -527,7 +587,7 @@ def main() -> int:
     parser.add_argument("--serve", action="store_true", help="Run as a local HTTP server")
     parser.add_argument("--host", default=DEFAULT_HOST, help="Server bind host")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Server bind port")
-    parser.add_argument("--auth-token", default=os.environ.get("HEALTH_AUTO_EXPORT_TOKEN", ""), help="Optional bearer token")
+    parser.add_argument("--auth-token", default=os.environ.get("HEALTH_AUTO_EXPORT_TOKEN", ""), help="Bearer token; required unless --host is loopback")
     parser.add_argument("--input-json", default="", help="Ingest a JSON payload from a file instead of serving HTTP")
     parser.add_argument("--dest-csv", default=str(DEFAULT_DEST), help="Canonical health CSV path")
     parser.add_argument("--raw-dir", default=str(DEFAULT_RAW_DIR), help="Directory to archive raw payloads")

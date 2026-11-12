@@ -542,14 +542,23 @@ def word_counter(texts: list[str]) -> Counter[str]:
     return counter
 
 
+THEME_KEYWORD_PATTERNS = {
+    name: [
+        re.compile(rf"(?<![a-z0-9]){re.escape(keyword)}{'(?:e?s)?' if len(keyword) >= 3 else ''}(?![a-z0-9])")
+        for keyword in sorted(theme["keywords"])
+    ]
+    for name, theme in THEME_RULES.items()
+}
+
+
 def infer_theme_labels(topic: TopicPage, evidence_texts: list[str], source_snippets: list[str], seed_paths: list[str]) -> list[str]:
     haystacks = [topic.title.lower(), *topic.keywords, *[p.lower() for p in seed_paths], *[t.lower() for t in evidence_texts], *[t.lower() for t in source_snippets]]
     score_by_theme: dict[str, int] = {}
     for theme_name, theme in THEME_RULES.items():
         score = 0
-        for keyword in theme["keywords"]:
+        for pattern in THEME_KEYWORD_PATTERNS[theme_name]:
             for haystack in haystacks:
-                if keyword in haystack:
+                if pattern.search(haystack):
                     score += 1
         if score > 0:
             score_by_theme[theme_name] = score

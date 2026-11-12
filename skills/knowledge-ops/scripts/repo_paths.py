@@ -54,6 +54,7 @@ def _pointer_from_liferepo_config(here: Path) -> Path | None:
             if candidate.exists():
                 return candidate
 
+        # Name-only config keeps paths private and portable across machines.
         private_name = str(data.get("private_repo_name", "")).strip()
         if private_name and "/" not in private_name and "\\" not in private_name:
             candidate = (liferepo.parent / private_name).resolve()

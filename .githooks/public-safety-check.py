@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Callable, NamedTuple
 
 
 EMAIL_RE = re.compile(r"\b[A-Z0-9._%+\-]+@(?:[A-Z0-9\-]+\.)+[A-Z]{2,}\b", re.IGNORECASE)
@@ -133,6 +135,33 @@ def added_lines(path: str) -> list[tuple[int, str]]:
     return lines
 
 
+def tracked_files() -> list[str]:
+    output = git_output("ls-files", "-z")
+    return [item for item in output.split("\0") if item and os.path.isfile(item)]
+
+
+def is_binary_file(path: str) -> bool:
+    with open(path, "rb") as handle:
+        return b"\0" in handle.read(8192)
+
+
+def all_lines(path: str) -> list[tuple[int, str]]:
+    with open(path, encoding="utf-8", errors="replace") as handle:
+        return [(number, line.rstrip("\n")) for number, line in enumerate(handle, start=1)]
+
+
+class Source(NamedTuple):
+    list_files: Callable[[], list[str]]
+    is_binary: Callable[[str], bool]
+    lines_of: Callable[[str], list[tuple[int, str]]]
+    check_local_identity: bool
+
+
+STAGED = Source(staged_files, is_binary, added_lines, check_local_identity=True)
+# CI: the runner's home, user and git identity are not the author's.
+TREE = Source(tracked_files, is_binary_file, all_lines, check_local_identity=False)
+
+
 def identity_patterns() -> list[tuple[str, re.Pattern[str]]]:
     values: list[tuple[str, str]] = []
     home = str(Path.home())
@@ -174,10 +203,10 @@ def line_has_non_placeholder_email(text: str) -> str | None:
     return None
 
 
-def find_issues() -> list[str]:
+def find_issues(source: Source = STAGED) -> list[str]:
     issues: list[str] = []
-    identities = identity_patterns()
-    files = staged_files()
+    identities = identity_patterns() if source.check_local_identity else []
+    files = source.list_files()
 
     for path in files:
         # Filename-level block — reject sensitive filenames outright
@@ -186,12 +215,12 @@ def find_issues() -> list[str]:
                 issues.append(f"{path}: blocked filename — sensitive file type should not be committed to a public repo")
                 break
 
-        if is_binary(path):
+        if source.is_binary(path):
             continue
 
         is_validator_file = path == ".githooks/public-safety-check.py"
 
-        for line_number, text in added_lines(path):
+        for line_number, text in source.lines_of(path):
             for label, pattern in identities:
                 if pattern.search(text):
                     issues.append(f"{path}:{line_number}: found local {label} in staged addition")
@@ -221,21 +250,24 @@ def find_issues() -> list[str]:
     return issues
 
 
-def main() -> int:
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description="Block private data from public commits.")
+    parser.add_argument("--tree", action="store_true", help="check every tracked file (CI), not staged additions")
+    source = TREE if parser.parse_args(argv).tree else STAGED
     try:
-        files = staged_files()
+        files = source.list_files()
     except subprocess.CalledProcessError as exc:
-        print(f"public-safety-check: failed to inspect staged files: {exc}", file=sys.stderr)
+        print(f"public-safety-check: failed to list files: {exc}", file=sys.stderr)
         return 1
 
     if not files:
         return 0
 
-    issues = find_issues()
+    issues = find_issues(source)
     if not issues:
         return 0
 
-    print("public-safety-check: blocked commit due to public-safety findings.", file=sys.stderr)
+    print("public-safety-check: blocked due to public-safety findings.", file=sys.stderr)
     for issue in issues:
         print(f"- {issue}", file=sys.stderr)
     print(
@@ -246,4 +278,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))

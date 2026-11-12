@@ -6,7 +6,6 @@ Reads daily metrics from CSV and generates time series charts.
 
 import csv
 import sys
-from pathlib import Path
 from datetime import datetime, timedelta
 from collections import defaultdict
 import argparse
@@ -205,9 +204,6 @@ def create_correlation_chart(data, output_path):
     """Create correlation scatter plots"""
     if not data:
         return
-
-    # Prepare data
-    dates = [d['date'] for d in data]
 
     # Correlation pairs to analyze
     correlations = [

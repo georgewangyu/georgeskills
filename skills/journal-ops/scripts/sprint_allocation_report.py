@@ -605,7 +605,7 @@ def render_markdown(report: dict, include_daily: bool) -> str:
     carry = report["carry_forward"]
     metrics = report["metrics"]
     lines = [
-        f"# Sprint Allocation Report",
+        "# Sprint Allocation Report",
         "",
         f"- **Window**: {report['window']['start_date']} to {report['window']['end_date']}",
         f"- **Days tracked**: {report['window']['days_tracked']} / {report['window']['days_in_window']}",
