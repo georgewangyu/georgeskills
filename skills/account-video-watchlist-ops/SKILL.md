@@ -129,3 +129,21 @@ collector-specific storage basis and valid storage/freshness deadlines suppress
 new candidates. Missing review or timestamps cannot be repaired using file mtime
 or the current clock. A blocked comparison preserves the prior file and reports
 the gap. This guard does not grant storage/scoring rights or delete retained data.
+
+Collection and observation persistence require a current collector-specific review.
+Pass `--retention-review` with a private JSON file containing a `sources` mapping
+keyed by the exact collector (`youtube_data_api`, `instagram_private_api`,
+`tiktok_embed_profile`, `tiktok_web_search`, or `tiktok_web_trending`, as used).
+Each entry must match `platform` and `data_class`, explicitly set
+`metadata_collection_allowed: true` and `metadata_storage_allowed: true`, and
+provide a reviewed `basis_ref`, future `review_expires_at`, `max_storage_days`
+and `max_freshness_days`. This file records an independently established basis;
+creating it does not grant source rights. YouTube non-authorized public metadata
+may not exceed 30 storage days. Other collectors need their own reviewed basis.
+Missing, expired or mismatched permission blocks the bot before invocation.
+Only actual collector capture timestamps are accepted; never substitute run time.
+Stored derived scores are cleared. A comparable baseline additionally requires
+`derived_metrics_allowed: true` and at least three eligible comparable peers.
+An empty/ineligible attempt preserves the last good output; broad/niche outputs
+are immutable and an existing destination is refused. Keep real reviews and
+observation records in private project storage.

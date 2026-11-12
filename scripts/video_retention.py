@@ -4,6 +4,18 @@ from statistics import median
 from video_observations import timestamp, number, first, observation
 
 
+def collection_permission(review, source, platform, data_class='non_authorized_public_metadata', now=None):
+    """Require an exact, current collection/storage basis before a bot call."""
+    now = now or datetime.now(timezone.utc)
+    sources = review.get('sources', {}) if isinstance(review, dict) else {}
+    policy = sources.get(source, {}) if isinstance(sources, dict) else {}
+    if not isinstance(policy, dict) or policy.get('metadata_collection_allowed') is not True:
+        return {'allowed': False, 'reason': 'missing_collection_permission'}
+    verdict = eligibility({'source': source, 'platform': platform,
+        'data_class': data_class, 'observed_at': now.isoformat()}, review, now)
+    return {'allowed': verdict['eligible'], 'reason': verdict['reason']}
+
+
 def eligibility(row, review, now=None):
     now = now or datetime.now(timezone.utc)
     def blocked(reason):
@@ -72,10 +84,12 @@ def eligible_observations(raw_rows, review, now=None):
             continue
         row = observation(clear_cached_scores(raw))
         peers = []
+        policy = review['sources'][raw.get('collector') or raw.get('source')]
+        derived_allowed = policy.get('derived_metrics_allowed') is True
         # A current outer row does not make nested historic counters current.
         members = first(raw, 'baseline_members', 'baselineVideos') or []
         latest = {}
-        for peer in members if isinstance(members, list) else []:
+        for peer in members if derived_allowed and isinstance(members, list) else []:
             if not eligibility(peer, review, now)['eligible']:
                 continue
             if (peer.get('collector') or peer.get('source')) != (raw.get('collector') or raw.get('source')) or peer.get('data_class') != raw.get('data_class'):

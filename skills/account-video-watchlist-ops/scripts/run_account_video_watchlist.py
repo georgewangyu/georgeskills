@@ -17,7 +17,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 from video_observations import observation, canonical_url
-from video_retention import eligibility, eligible_observations
+from video_retention import eligibility, eligible_observations, collection_permission
 
 
 def parse_args() -> argparse.Namespace:
@@ -319,6 +319,13 @@ def collect(
             continue
         if platform not in health:
             continue
+        collector = {'youtube': 'youtube_data_api', 'instagram': 'instagram_private_api',
+                     'tiktok': 'tiktok_embed_profile' if args.tiktok_collector == 'profile-feed' else 'tiktok_web_search'}[platform]
+        permission = collection_permission(review, collector, platform)
+        if not permission['allowed']:
+            health[platform]['status'] = 'enrichment blocked'
+            health[platform]['errors'].append('Collector not invoked: ' + permission['reason'])
+            continue
         if consecutive_failures[platform] >= max(args.failure_threshold, 1):
             health[platform]["skipped_after_circuit_breaker"] += 1
             continue
@@ -421,7 +428,10 @@ def collect(
             record_result(health, platform, raw, error, handle)
             consecutive_failures[platform] = consecutive_failures[platform] + 1 if error else 0
             rows.extend(normalize(item, account, platform, previous_urls) for item in raw)
+    blocked_platforms = {key for key, value in health.items() if value['status'] == 'enrichment blocked'}
     finalize_health(health)
+    for key in blocked_platforms:
+        health[key]['status'] = 'enrichment blocked'
     for platform_health in health.values():
         for error in platform_health["errors"]:
             print(error, file=sys.stderr)

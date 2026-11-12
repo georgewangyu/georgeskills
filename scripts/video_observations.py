@@ -42,8 +42,11 @@ def public_payload(value):
             public_payload(item)
     elif isinstance(value, str) and value.startswith(('https://', 'http://')):
         url = urlsplit(value)
-        if url.username or url.password or any(re.search(r'token|secret|password|authorization', k, re.I) for k, _ in parse_qsl(url.query)):
+        params = parse_qsl(url.query) + parse_qsl(url.fragment)
+        if url.username or url.password or any(re.search(r'token|secret|password|authorization|credential|api[_-]?key|signature', k, re.I) for k, _ in params):
             raise ValueError('Credential-bearing URLs are not observation metadata')
+        for _, item in params:
+            public_payload(item)
     return value
 
 

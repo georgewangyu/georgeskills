@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 from video_observations import observation
+from video_retention import collection_permission, eligible_observations
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "account-video-watchlist-ops" / "scripts"))
 from run_account_video_watchlist import run_json as bounded_run_json, empty_health, finalize_health
 
@@ -32,6 +33,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout-seconds", type=int, default=45)
     parser.add_argument("--failure-threshold", type=int, default=2)
     parser.add_argument("--health-out", type=Path)
+    parser.add_argument("--retention-review", type=Path, help="Current collector-specific collection/storage review")
     parser.add_argument("--watchlist-only", action="store_true", help="Skip search lanes and only run supported watchlist collectors")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
     return parser.parse_args()
@@ -64,6 +66,7 @@ def merge_args(args: argparse.Namespace, config: dict[str, Any]) -> dict[str, An
         "timeout_seconds": args.timeout_seconds,
         "failure_threshold": args.failure_threshold,
         "health_out": args.health_out,
+        "retention_review": json.loads(args.retention_review.read_text()) if args.retention_review else config.get('retention_review', {}),
         "out": args.out,
     }
 
@@ -105,7 +108,7 @@ def normalize(row: dict[str, Any], lane: str, platform: str) -> dict[str, Any]:
         "source": row.get("source"),
     }
 
-    return observation({**row, **legacy}, platform, datetime.now(timezone.utc).isoformat())
+    return observation({**row, **legacy}, platform)
 
 
 def compute_age_days(value: Any) -> float | None:
@@ -137,6 +140,14 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
 
     def capture(command, source, lane):
         state = health[source]
+        collector = {'youtube': 'youtube_data_api', 'tiktok': 'tiktok_embed_profile',
+                     'instagram': 'instagram_private_api'}[source]
+        review = settings.get('retention_review', {})
+        permission = collection_permission(review, collector, source)
+        if not permission['allowed']:
+            state['status'] = 'enrichment blocked'
+            state['errors'].append({'lane': lane, 'error': permission['reason']})
+            return
         if failures[source] >= settings["failure_threshold"]:
             state["skipped_after_circuit_breaker"] += 1
             return
@@ -152,7 +163,9 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
         failures[source] = 0
         state["succeeded"] += 1
         state["rows_returned"] += len(raw)
-        rows.extend(row for row in (normalize(row, lane, source) for row in raw)
+        admitted, excluded = eligible_observations(raw, review)
+        state.setdefault('retention_exclusions', []).extend(excluded)
+        rows.extend(row for row in (normalize(row, lane, source) for row in admitted)
                     if within_age(row, settings["max_age_days"]))
 
     # Keyword discovery is YouTube/optional Instagram only. TikTok embeds expose
@@ -185,7 +198,10 @@ def collect(settings: dict[str, Any]) -> list[dict[str, Any]]:
                        "--max-results", "20", "--limit", str(settings["limit_per_lane"]),
                        "--min-views", str(settings["min_views"]), "--format", "json"]
         capture(command, source, f"{source} watchlist:{handle}")
+    blocked = {key for key, value in health.items() if value['status'] == 'enrichment blocked'}
     finalize_health(health)
+    for key in blocked:
+        health[key]['status'] = 'enrichment blocked'
     for state in health.values():
         if state["status"] == "success" and not state["rows_returned"]:
             state["status"] = "degraded"
@@ -210,6 +226,9 @@ def main() -> int:
     if settings["health_out"]:
         settings["health_out"].parent.mkdir(parents=True, exist_ok=True)
         settings["health_out"].write_text(json.dumps(settings["health"], indent=2) + "\n")
+    if not rows:
+        print('No eligible observations; existing output preserved.', file=sys.stderr)
+        return 2
     # Attempts are immutable. An unavailable run must not replace a good snapshot.
     with settings["out"].open("x", encoding="utf-8") as handle:
         for row in rows:

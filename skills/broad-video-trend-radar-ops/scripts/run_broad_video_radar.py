@@ -24,6 +24,7 @@ DEFAULT_LANES = [
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 from video_observations import observation
+from video_retention import collection_permission, eligible_observations
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--allow-browser-collector", action="store_true", help="Explicit legacy opt-in only where local policy permits Playwright")
     parser.add_argument("--tiktok-mute-audio", choices=["true", "false"], default=os.environ.get("TIKTOK_WEB_MUTE_AUDIO", "true"), help="Mute TikTok browser automation audio")
     parser.add_argument("--out", type=Path, required=True, help="Output JSONL path")
+    parser.add_argument("--retention-review", type=Path, help="Current collector-specific collection/storage review")
     return parser.parse_args()
 
 
@@ -83,7 +85,7 @@ def normalize(row: dict[str, Any], lane: str, platform: str) -> dict[str, Any]:
         "source": row.get("source"),
     }
 
-    return observation({**row, **legacy}, platform, datetime.now(timezone.utc).isoformat())
+    return observation({**row, **legacy}, platform)
 
 
 def compute_age_days(value: Any) -> float | None:
@@ -112,6 +114,15 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
     include_youtube = args.platform in {"all", "both", "youtube"}
     include_tiktok = args.platform in {"all", "both", "tiktok"}
     include_instagram = args.platform in {"all", "instagram"}
+    review = getattr(args, '_retention_review', {})
+    def capture(command, cwd, lane, platform, collector):
+        permission = collection_permission(review, collector, platform)
+        if not permission['allowed']:
+            print(platform + ' collector blocked: ' + permission['reason'], file=sys.stderr)
+            return []
+        admitted, _ = eligible_observations(run_json(command, cwd), review)
+        return [item for item in (normalize(row, lane, platform) for row in admitted)
+                if within_age(item, args.max_age_days)]
     for lane in lanes:
         if include_youtube and args.youtube_bot_dir:
             command = [
@@ -126,7 +137,7 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
                 "--sort", "subscriber-ratio",
                 "--format", "json",
             ]
-            rows.extend(row for row in (normalize(row, lane, "youtube") for row in run_json(command, args.youtube_bot_dir)) if within_age(row, args.max_age_days))
+            rows.extend(capture(command, args.youtube_bot_dir, lane, 'youtube', 'youtube_data_api'))
         if include_tiktok and args.tiktok_bot_dir:
             command = [
                 "node", "src/cli.js", "web-search", lane,
@@ -138,7 +149,7 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
                 "--mute-audio", args.tiktok_mute_audio,
                 "--format", "json",
             ]
-            rows.extend(row for row in (normalize(row, lane, "tiktok") for row in run_json(command, args.tiktok_bot_dir)) if within_age(row, args.max_age_days))
+            rows.extend(capture(command, args.tiktok_bot_dir, lane, 'tiktok', 'tiktok_web_search'))
         if include_instagram and args.ig_bot_dir:
             command = [
                 "node", "src/cli.js", "private-search", lane,
@@ -149,7 +160,7 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
                 "--sort", "views-per-follower",
                 "--format", "json",
             ]
-            rows.extend(row for row in (normalize(row, lane, "instagram") for row in run_json(command, args.ig_bot_dir)) if within_age(row, args.max_age_days))
+            rows.extend(capture(command, args.ig_bot_dir, lane, 'instagram', 'instagram_private_api'))
     if args.include_tiktok_trending and args.tiktok_bot_dir and include_tiktok:
         command = [
             "node", "src/cli.js", "web-trending",
@@ -161,21 +172,29 @@ def collect(args: argparse.Namespace) -> list[dict[str, Any]]:
             "--mute-audio", args.tiktok_mute_audio,
             "--format", "json",
         ]
-        rows.extend(row for row in (normalize(row, "tiktok trending", "tiktok") for row in run_json(command, args.tiktok_bot_dir)) if within_age(row, args.max_age_days))
+        rows.extend(capture(command, args.tiktok_bot_dir, 'tiktok trending', 'tiktok', 'tiktok_web_trending'))
     return sorted(rows, key=lambda row: float(row.get("ratio") or 0), reverse=True)
 
 
 def main() -> int:
     args = parse_args()
+    review_path = getattr(args, 'retention_review', None)
+    args._retention_review = json.loads(review_path.read_text()) if review_path else {}
     if (args.platform in {"all", "both", "tiktok"} or args.include_tiktok_trending) and not args.allow_browser_collector:
         print("TikTok keyword/trending requires a policy-permitted --allow-browser-collector; use account profile-feed instead.", file=sys.stderr)
         return 2
     if not args.youtube_bot_dir and not args.tiktok_bot_dir and not args.ig_bot_dir:
         print("Set --youtube-bot-dir/--tiktok-bot-dir/--ig-bot-dir or YOUTUBEBOT_DIR/TIKTOKBOT_DIR/IGBOT_DIR.", file=sys.stderr)
         return 2
-    args.out.parent.mkdir(parents=True, exist_ok=True)
+    if args.out.exists():
+        raise FileExistsError('Refusing existing observation output')
     rows = collect(args)
-    with args.out.open("w", encoding="utf-8") as handle:
+    rows, _ = eligible_observations(rows, args._retention_review)
+    if not rows:
+        print('No eligible observations; existing output preserved.', file=sys.stderr)
+        return 2
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("x", encoding="utf-8") as handle:
         for row in rows:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
     print(f"wrote {len(rows)} rows to {args.out}")

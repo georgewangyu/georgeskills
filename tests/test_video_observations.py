@@ -25,8 +25,12 @@ class Observations(unittest.TestCase):
         self.assertIsNone(v.observation({'views':20})['observed_at'])
 
     def test_secrets_refused(self):
-        for payload in [{'accessToken':'x'}, {'nested':{'cookies':'x'}}, {'url':'https://x.test/?token=x'}]:
+        for payload in [{'accessToken':'x'}, {'nested':{'cookies':'x'}}, {'url':'https://x.test/?token=x'}, {'url':'https://x.test/#access_token=x'}, {'nested':['https://x.test/#api%5Fkey=x']}, {'url':'https://x.test/?next=https%3A%2F%2Fx.test%2F%23token%3Dx'}]:
             with self.assertRaises(ValueError): v.observation(payload)
+
+    def test_safe_fragment_survives_source_fields(self):
+        payload = {'url':'https://example.test/video#chapter-2'}
+        self.assertEqual(v.public_payload(payload), payload)
 
     def test_growth_real_timestamps(self):
         past=[row(100,'2026-10-10T06:00:00Z'),row(200,'2026-10-10T08:00:00Z')]

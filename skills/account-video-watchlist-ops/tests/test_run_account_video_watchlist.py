@@ -29,8 +29,8 @@ def days_ago(days: int) -> str:
 def fixture_review():
     return {'sources':{source:{'platform':platform,'data_class':'non_authorized_public_metadata','basis_ref':'synthetic-test-only',
         'review_expires_at':(datetime.now(timezone.utc)+timedelta(days=1)).isoformat(),
-        'metadata_storage_allowed':True,'max_storage_days':30,'max_freshness_days':7}
-        for platform,source in [('youtube','youtube_data_api'),('tiktok','tiktok_embed_profile')]}}
+        'metadata_collection_allowed':True,'derived_metrics_allowed':True,'metadata_storage_allowed':True,'max_storage_days':30,'max_freshness_days':7}
+        for platform,source in [('youtube','youtube_data_api'),('tiktok','tiktok_embed_profile'),('tiktok','tiktok_web_search')]}}
 
 def fixture_row(value, platform='youtube'):
     return {**value, 'platform':platform, 'source':'youtube_data_api' if platform=='youtube' else 'tiktok_embed_profile',
@@ -155,6 +155,20 @@ class AccountWatchlistOutputTests(unittest.TestCase):
         self.assertEqual(self.invoke([fixture_row({'id':'current','views':100})],health('success',1)),1)
         self.assertEqual(self.out.read_text(),'protected latest')
 
+    def test_expired_unrelated_and_storage_only_reviews_never_collect(self):
+        for case in ('expired', 'unrelated', 'storage_only', 'wrong_class'):
+            args = self.collect_args('youtube')
+            policy = args._retention_review['sources']['youtube_data_api']
+            if case == 'expired': policy['review_expires_at'] = '2000-01-01T00:00:00Z'
+            if case == 'unrelated': del args._retention_review['sources']['youtube_data_api']
+            if case == 'storage_only': policy.pop('metadata_collection_allowed')
+            if case == 'wrong_class': policy['data_class'] = 'other'
+            with self.subTest(case=case), patch.object(MODULE, 'run_json') as run:
+                rows, receipt = MODULE.collect(args, [{'platform':'youtube','handle':'example'}], set())
+                run.assert_not_called()
+                self.assertEqual(rows, [])
+                self.assertEqual(receipt['youtube']['status'], 'enrichment blocked')
+
     def test_platform_circuit_breaker_skips_remaining_accounts(self) -> None:
         accounts = [
             {"platform": "youtube", "handle": f"creator-{index}"}
@@ -192,6 +206,7 @@ class AccountWatchlistOutputTests(unittest.TestCase):
         ) as primary:
             args = self.collect_args("tiktok")
             args.tiktok_collector = "web-search"
+            recovered[0]["source"] = "tiktok_web_search"
             rows, receipt = MODULE.collect(
                 args,
                 accounts,
