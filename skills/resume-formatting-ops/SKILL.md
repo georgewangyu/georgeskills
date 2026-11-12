@@ -53,6 +53,7 @@ Do not use when:
 5. Run parseability checks.
    - `pdfinfo <resume.pdf>`: confirm page count.
    - `pdftotext <resume.pdf> -`: confirm section order, names, dates, skills, and links parse in a sane reading order.
+   - When the candidate's current location is required, verify that the exact intended city and region appear in extracted text and that a rendered page places it in the requested position without shifting existing header alignment. Check every generated variant; do not infer success from the source alone.
    - If a repo-specific validator exists, run it.
 6. Run visual QA when layout risk is nontrivial.
    - Inspect the generated PDF screenshot or render.
